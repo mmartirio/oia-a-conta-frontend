@@ -1,0 +1,25 @@
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+}
+
+.p-none { padding: 0; }
+.p-sm   { padding: 0.75rem; }
+.p-md   { padding: 1.25rem; }
+.p-lg   { padding: 1.75rem; }
+
+.clickable {
+  cursor: pointer;
+  transition: box-shadow 0.15s, transform 0.1s;
+}
+
+.clickable:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.clickable:active {
+  transform: translateY(0);
+}
