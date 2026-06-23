@@ -41,7 +41,7 @@ const NAV_SOLO: NavItem[] = [
   { to: '/cozinha',             label: 'Cozinha',     Icon: ChefHat },
   { to: '/garcon/comandas',     label: 'Comanda',     Icon: ClipboardList },
   { to: '/garcon',              label: 'Garçom',      Icon: UtensilsCrossed },
-  { to: '/garcon/delivery',     label: 'Delivery',    Icon: Package },
+  { to: '/delivery',            label: 'Delivery',    Icon: Package },
   { to: '/pdv',                 label: 'Caixa (PDV)', Icon: ShoppingCart },
   { to: '/entregador',          label: 'Entregador',  Icon: Truck },
   { to: '/admin/whatsapp',      label: 'WhatsApp',    Icon: WhatsAppIcon },

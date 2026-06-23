@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { produtoApi } from '../../api/produtoApi'
 import { categoriaApi } from '../../api/categoriaApi'
 import { entregaApi } from '../../api/entregaApi'
@@ -26,8 +26,6 @@ const METODO_LABEL: Record<MetodoPagamento, string> = {
 
 export function GarconDelivery() {
   const navigate = useNavigate()
-  const location = useLocation()
-  const basePath = location.pathname.startsWith('/admin') ? '/admin' : '/garcon'
 
   const [categorias, setCategorias] = useState<Categoria[]>([])
   const [produtos, setProdutos] = useState<Produto[]>([])
@@ -99,7 +97,7 @@ export function GarconDelivery() {
           quantidade: i.quantidade,
         })),
       })
-      navigate(`${basePath}/delivery`, { replace: true })
+      navigate(`/delivery`, { replace: true })
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } }).response?.data?.message
       alert(msg ?? 'Erro ao criar entrega')
@@ -111,7 +109,7 @@ export function GarconDelivery() {
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <button className={styles.back} onClick={() => navigate(`${basePath}/delivery`)}>← Voltar</button>
+        <button className={styles.back} onClick={() => navigate(`/delivery`)}>← Voltar</button>
         <h1 className={styles.title}>Novo Delivery</h1>
       </div>
 

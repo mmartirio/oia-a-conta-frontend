@@ -135,8 +135,8 @@ export function App() {
                     <Route path="/garcon/comandas" element={<GarconComandas />} />
                     <Route path="/garcon/comanda/:id" element={<GarconComanda />} />
                     <Route path="/garcon/comanda/:id/novo-pedido" element={<GarconNovoPedido />} />
-                    <Route path="/garcon/delivery" element={<GarconDeliveryLista />} />
-                    <Route path="/garcon/delivery/novo" element={<GarconDelivery />} />
+                    <Route path="/delivery" element={<GarconDeliveryLista />} />
+                    <Route path="/delivery/novo" element={<GarconDelivery />} />
                     <Route path="/pdv" element={<PdvSalao />} />
                     <Route path="/pdv/delivery" element={<PdvDelivery />} />
                     <Route path="/entregador" element={<EntregadorPainel />} />
@@ -150,8 +150,6 @@ export function App() {
                     <Route path="/garcon/comandas" element={<GarconComandas />} />
                     <Route path="/garcon/comanda/:id" element={<GarconComanda />} />
                     <Route path="/garcon/comanda/:id/novo-pedido" element={<GarconNovoPedido />} />
-                    <Route path="/garcon/delivery" element={<GarconDeliveryLista />} />
-                    <Route path="/garcon/delivery/novo" element={<GarconDelivery />} />
                   </Route>
                 </Route>
 

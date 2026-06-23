@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { entregaApi } from '../../api/entregaApi'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
@@ -23,9 +23,7 @@ const ACOES: Record<StatusAtivo, { label: string; fn: (id: number) => Promise<un
 }
 
 export function GarconDeliveryLista() {
-  const navigate  = useNavigate()
-  const location  = useLocation()
-  const basePath  = location.pathname.startsWith('/admin') ? '/admin' : '/garcon'
+  const navigate = useNavigate()
 
   const [entregas,    setEntregas]    = useState<Entrega[]>([])
   const [loading,     setLoading]     = useState(true)
@@ -91,7 +89,7 @@ export function GarconDeliveryLista() {
         </div>
         <div className={styles.headerActions}>
           <Button variant="outline" size="sm" onClick={load}>Atualizar</Button>
-          <Button onClick={() => navigate(`${basePath}/delivery/novo`)}>+ Nova Entrega</Button>
+          <Button onClick={() => navigate('/delivery/novo')}>+ Nova Entrega</Button>
         </div>
       </div>
 
