@@ -9,8 +9,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Comanda Digital',
-        short_name: 'Comanda',
+        name: 'Oia a Conta',
+        short_name: 'Oia a Conta',
         description: 'Sistema de gestão de pedidos para restaurantes',
         theme_color: '#2563eb',
         background_color: '#ffffff',

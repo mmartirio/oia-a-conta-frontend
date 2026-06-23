@@ -18,8 +18,15 @@
 }
 
 .logo {
-  font-size: 3rem;
   margin-bottom: 0.5rem;
+}
+
+.logo img {
+  max-width: 60%;
+  max-height: 80px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
 }
 
 .title {

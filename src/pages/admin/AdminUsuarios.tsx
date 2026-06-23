@@ -35,7 +35,7 @@ export function AdminUsuarios() {
   const load = () =>
     usuarioApi.listar().then(r => setUsuarios(r.data)).finally(() => setLoading(false))
 
-  useEffect(load, [])
+  useEffect(() => { load() }, [])
 
   const openCreate = () => {
     setEditing(null)

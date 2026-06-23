@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { NotificationAlert } from '../NotificationAlert'
+import logo from '../../assets/logo/OIA A CONTA - LOGO.png'
 import styles from './GarconLayout.module.css'
 
 export function GarconLayout() {
@@ -9,7 +10,7 @@ export function GarconLayout() {
   return (
     <div className={styles.layout}>
       <header className={styles.header}>
-        <div className={styles.brand}>🍴 Comanda Digital</div>
+        <div className={styles.brand}><img src={logo} alt="Oia a Conta" className={styles.brandLogo} /></div>
         <nav className={styles.nav}>
           <NavLink to="/garcon" end className={({ isActive }) => isActive ? styles.active : ''}>
             Mesas

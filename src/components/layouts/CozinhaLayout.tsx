@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { NotificationAlert } from '../NotificationAlert'
+import logo from '../../assets/logo/OIA A CONTA - LOGO.png'
 import styles from './CozinhaLayout.module.css'
 
 export function CozinhaLayout() {
@@ -9,7 +10,7 @@ export function CozinhaLayout() {
   return (
     <div className={styles.layout}>
       <header className={styles.header}>
-        <span className={styles.brand}>👨‍🍳 Cozinha</span>
+        <img src={logo} alt="Oia a Conta" className={styles.brand} />
         <span className={styles.user}>{user?.nome}</span>
         <button onClick={logout} className={styles.logoutBtn}>Sair</button>
       </header>

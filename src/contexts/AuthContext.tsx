@@ -12,7 +12,10 @@ interface AuthContextValue {
     adminNome: string
     email: string
     senha: string
+    telefone?: string
+    planoId?: number
   }) => Promise<Usuario>
+  verificarEmail: (email: string, codigo: string) => Promise<Usuario>
   logout: () => void
 }
 
@@ -56,8 +59,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     adminNome: string
     email: string
     senha: string
+    telefone?: string
+    planoId?: number
   }): Promise<Usuario> => {
     const { data } = await authApi.registro(formData)
+    localStorage.setItem('token', data.token)
+    setUser(data.usuario)
+    return data.usuario
+  }
+
+  const verificarEmail = async (email: string, codigo: string): Promise<Usuario> => {
+    const { data } = await authApi.verificarEmail(email, codigo)
     localStorage.setItem('token', data.token)
     setUser(data.usuario)
     return data.usuario
@@ -69,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, loginGoogle, registro, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, loginGoogle, registro, verificarEmail, logout }}>
       {children}
     </AuthContext.Provider>
   )

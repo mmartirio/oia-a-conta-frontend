@@ -18,7 +18,7 @@ export function GarconMesas() {
   const load = () =>
     mesaApi.listar().then(r => setMesas(r.data)).finally(() => setLoading(false))
 
-  useEffect(load, [])
+  useEffect(() => { load() }, [])
 
   const handleMesaClick = async (mesa: Mesa) => {
     if (mesa.status === 'OCUPADA' || mesa.status === 'AGUARDANDO_PAGAMENTO') {

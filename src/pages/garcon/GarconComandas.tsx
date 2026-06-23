@@ -16,7 +16,7 @@ export function GarconComandas() {
   const load = () =>
     comandaApi.listarAbertas().then(r => setComandas(r.data)).finally(() => setLoading(false))
 
-  useEffect(load, [])
+  useEffect(() => { load() }, [])
 
   return (
     <div className={styles.page}>

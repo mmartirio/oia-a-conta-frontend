@@ -1,0 +1,74 @@
+.page { display: flex; flex-direction: column; gap: 1.5rem; }
+.title { font-size: 1.5rem; font-weight: 800; margin: 0 0 0.25rem; }
+
+.card { background: var(--color-surface); border: 1.5px solid var(--color-border); border-radius: var(--radius-lg); padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+.sectionTitle { font-size: 1.0625rem; font-weight: 700; margin: 0; }
+.sectionHint { font-size: 0.8125rem; color: var(--color-text-secondary); margin: 0; }
+
+/* status */
+.statusRow { display: flex; align-items: center; gap: 0.75rem; }
+.statusLabel { font-size: 0.9375rem; font-weight: 600; }
+
+.badgeConectado   { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.8125rem; font-weight: 700; background: #dcfce7; color: #166534; }
+.badgeConectado::before   { content: '●'; font-size: 0.625rem; }
+.badgeAguardando  { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.8125rem; font-weight: 700; background: #fef9c3; color: #854d0e; }
+.badgeAguardando::before  { content: '●'; font-size: 0.625rem; }
+.badgeDesconectado{ display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.8125rem; font-weight: 700; background: #fee2e2; color: #991b1b; }
+.badgeDesconectado::before{ content: '●'; font-size: 0.625rem; }
+.badgeErro        { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.8125rem; font-weight: 700; background: #fee2e2; color: #991b1b; }
+.badgeErro::before{ content: '●'; font-size: 0.625rem; }
+
+/* QR code */
+.qrBox { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; padding: 1.25rem; background: var(--color-bg); border: 1.5px dashed var(--color-border); border-radius: var(--radius-md); }
+.qrInstrucao { font-size: 0.875rem; color: var(--color-text-secondary); text-align: center; margin: 0; max-width: 380px; }
+.qrImage { width: 240px; height: 240px; border-radius: var(--radius-md); }
+.qrRaw { font-size: 0.625rem; font-family: monospace; word-break: break-all; max-width: 300px; text-align: center; color: var(--color-text-secondary); }
+.qrPolling { font-size: 0.75rem; color: var(--color-text-secondary); margin: 0; }
+.erroMsg { font-size: 0.875rem; color: #991b1b; }
+
+/* actions */
+.actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+.btnDesconectar { padding: 0.5rem 1rem; border: 1.5px solid #dc2626; background: transparent; color: #dc2626; border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+.btnDesconectar:hover { background: #fee2e2; }
+.btnRefresh { padding: 0.5rem 1rem; border: 1.5px solid var(--color-border); background: transparent; color: var(--color-text-secondary); border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+.btnRefresh:hover { background: var(--color-bg); }
+
+/* mensagens */
+.mensagensList { display: flex; flex-direction: column; gap: 1.25rem; }
+.mensagemItem { display: flex; flex-direction: column; gap: 0.5rem; padding: 1rem; background: var(--color-bg); border: 1.5px solid var(--color-border); border-radius: var(--radius-md); }
+.mensagemHeader { display: flex; align-items: center; justify-content: space-between; gap: 0.625rem; }
+.mensagemHeaderLeft { display: flex; align-items: center; gap: 0.625rem; }
+.ordemBtns { display: flex; flex-direction: column; gap: 1px; }
+.btnOrdem { width: 24px; height: 18px; padding: 0; border: 1.5px solid var(--color-border); background: var(--color-surface); color: var(--color-text-secondary); border-radius: 4px; font-size: 0.625rem; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; transition: background 0.15s; }
+.btnOrdem:hover:not(:disabled) { background: var(--color-bg); color: var(--color-text); }
+.btnOrdem:disabled { opacity: 0.3; cursor: not-allowed; }
+.mensagemLabel { font-size: 0.875rem; font-weight: 600; color: var(--color-text); }
+.badgeCustom { font-size: 0.6875rem; font-weight: 700; background: #dbeafe; color: #1d4ed8; padding: 0.125rem 0.5rem; border-radius: 999px; }
+.variavelHint { font-size: 0.75rem; color: var(--color-text-secondary); margin: 0; font-style: italic; }
+.textarea { width: 100%; padding: 0.5625rem 0.75rem; border: 1.5px solid var(--color-border); border-radius: var(--radius-md); font-size: 0.875rem; background: var(--color-surface); color: var(--color-text); resize: vertical; font-family: inherit; transition: border-color 0.15s; box-sizing: border-box; }
+.textarea:focus { outline: none; border-color: var(--color-primary); }
+.mensagemActions { display: flex; align-items: center; gap: 0.625rem; }
+.btnRestaurar { padding: 0.375rem 0.75rem; border: 1.5px solid var(--color-border); background: transparent; color: var(--color-text-secondary); border-radius: var(--radius-md); font-size: 0.8125rem; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+.btnRestaurar:hover { background: var(--color-bg); }
+.salvoOk { font-size: 0.8125rem; font-weight: 600; color: #166534; }
+.badgeRemovida { font-size: 0.6875rem; font-weight: 700; background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; padding: 0.125rem 0.5rem; border-radius: 999px; }
+.textareaDesativada { opacity: 0.45; cursor: not-allowed; }
+.avisoRemovida { font-size: 0.8rem; color: #991b1b; background: #fee2e2; border: 1px solid #fca5a5; border-radius: var(--radius-md); padding: 0.5rem 0.75rem; margin: 0; }
+
+/* cabeçalho da seção com botão adicionar */
+.sectionHeader { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+.btnAdicionar { padding: 0.4375rem 1rem; border: 1.5px solid var(--color-primary); background: transparent; color: var(--color-primary); border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background 0.15s; white-space: nowrap; flex-shrink: 0; }
+.btnAdicionar:hover { background: #eff6ff; }
+
+/* formulário de nova mensagem */
+.novaForm { display: flex; flex-direction: column; gap: 0.625rem; padding: 1rem; background: #f0f9ff; border: 1.5px dashed #93c5fd; border-radius: var(--radius-md); }
+.novaInput { padding: 0.5rem 0.75rem; border: 1.5px solid var(--color-border); border-radius: var(--radius-md); font-size: 0.875rem; background: var(--color-surface); color: var(--color-text); font-family: inherit; }
+.novaInput:focus { outline: none; border-color: var(--color-primary); }
+
+/* badges adicionais */
+.mensagemBadges { display: flex; gap: 0.375rem; align-items: center; }
+.badgeNova { font-size: 0.6875rem; font-weight: 700; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; padding: 0.125rem 0.5rem; border-radius: 999px; }
+
+/* botão remover */
+.btnRemover { padding: 0.375rem 0.75rem; border: 1.5px solid #dc2626; background: transparent; color: #dc2626; border-radius: var(--radius-md); font-size: 0.8125rem; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+.btnRemover:hover { background: #fee2e2; }

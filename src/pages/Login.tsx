@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react'
+import { useState, FormEvent, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google'
 import { jwtDecode } from 'jwt-decode'
@@ -7,12 +7,13 @@ import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import type { Role } from '../types'
 import styles from './Auth.module.css'
+import logo from '../assets/logo/OIA A CONTA - LOGO.png'
 
 interface GooglePayload { email: string; name: string }
 
 function redirectByRole(role: Role, navigate: ReturnType<typeof useNavigate>) {
   const routes: Record<Role, string> = {
-    SUPER_ADMIN: '/admin',
+    SUPER_ADMIN: '/gestor',
     ADMIN: '/admin',
     GARCON: '/garcon',
     COZINHA: '/cozinha'
@@ -22,11 +23,15 @@ function redirectByRole(role: Role, navigate: ReturnType<typeof useNavigate>) {
 
 export function Login() {
   const navigate = useNavigate()
-  const { login, loginGoogle } = useAuth()
+  const { login, loginGoogle, user, loading: authLoading } = useAuth()
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!authLoading && user) redirectByRole(user.role, navigate)
+  }, [user, authLoading, navigate])
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -60,8 +65,7 @@ export function Login() {
   return (
     <div className={styles.page}>
       <div className={styles.card}>
-        <div className={styles.logo}>🍴</div>
-        <h1 className={styles.title}>Comanda Digital</h1>
+        <div className={styles.logo}><img src={logo} alt="Oia a Conta" /></div>
         <p className={styles.subtitle}>Faça login para continuar</p>
 
         {error && <div className={styles.alert}>{error}</div>}

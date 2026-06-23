@@ -1,0 +1,251 @@
+.planCard {
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 900px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  text-align: center;
+}
+
+.planTitle {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--color-text);
+  margin: 0 0 0.5rem;
+}
+
+.planGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.25rem;
+  margin: 2rem 0;
+  text-align: left;
+}
+
+.planItem {
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+  position: relative;
+}
+
+.planItem:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 4px 20px rgba(99,102,241,0.15);
+  transform: translateY(-2px);
+}
+
+.planItem h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 0.5rem;
+}
+
+.planItem p {
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  margin: 0.5rem 0 1rem;
+}
+
+.planDestaque {
+  border-color: var(--color-primary);
+  box-shadow: 0 4px 20px rgba(99,102,241,0.2);
+}
+
+.badge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.preco {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  margin: 0.5rem 0;
+}
+
+.preco span {
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
+.features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.25rem;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.features li::before {
+  content: '✓ ';
+  color: #16a34a;
+  font-weight: 700;
+}
+
+.features li {
+  padding: 0.2rem 0;
+}
+
+/* Google badge */
+.googleBadge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f0fdf4;
+  border: 1.5px solid #bbf7d0;
+  border-radius: var(--radius-md);
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  color: #166534;
+  margin-bottom: 1rem;
+}
+.googleBadge strong { color: #14532d; }
+.googleBadgeRemover {
+  margin-left: auto;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  font-size: 1.125rem;
+  line-height: 1;
+  padding: 0 0.125rem;
+}
+.googleBadgeRemover:hover { color: #dc2626; }
+
+/* OTP */
+.otpGrid {
+  display: flex;
+  gap: 0.625rem;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.otpInput {
+  width: 48px;
+  height: 56px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text);
+  background: var(--color-surface);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.otpInput:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+}
+
+.verifyTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 0.5rem;
+}
+
+.reenviar {
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.voltarLink {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  font-size: inherit;
+  text-decoration: none;
+}
+
+.voltarLink:hover {
+  text-decoration: underline;
+}
+
+.voltarLink:disabled {
+  opacity: 0.5;
+  cursor: default;
+  text-decoration: none;
+}
+
+/* Contrato */
+.contratoPlano {
+  background: #eff6ff;
+  border: 1.5px solid #bfdbfe;
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+}
+.contratoPlanoHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+.contratoPlanoNome { font-size: 1rem; font-weight: 800; color: var(--color-text); }
+.contratoPlanoPreco { font-size: 1.25rem; font-weight: 800; color: var(--color-primary); }
+.contratoPlanoPreco small { font-size: 0.75rem; font-weight: 400; color: var(--color-text-secondary); }
+.contratoLimites {
+  list-style: none; padding: 0; margin: 0;
+  font-size: 0.8125rem; color: var(--color-text-secondary);
+  display: flex; flex-wrap: wrap; gap: 0.25rem 1rem;
+}
+.contratoLimites li::before { content: '✓ '; color: #16a34a; font-weight: 700; }
+
+.contratoResumo {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+.contratoResumoRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--color-border);
+}
+.contratoResumoRow:last-child { border-bottom: none; }
+.contratoResumoRow span { color: var(--color-text-secondary); }
+
+.contratoTermos {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+}
+.contratoTermosTitulo { font-size: 0.875rem; font-weight: 700; margin: 0 0 0.5rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.contratoTermosTexto {
+  font-size: 0.8125rem; color: var(--color-text-secondary);
+  max-height: 140px; overflow-y: auto; margin-bottom: 0.875rem;
+  line-height: 1.6;
+}
+.contratoTermosTexto ul { padding-left: 1.25rem; margin: 0.25rem 0; }
+.contratoTermosTexto li { margin-bottom: 0.25rem; }
+.contratoCheckbox {
+  display: flex; align-items: flex-start; gap: 0.625rem;
+  font-size: 0.875rem; color: var(--color-text); cursor: pointer; font-weight: 600;
+}
+.contratoCheckbox input { margin-top: 2px; accent-color: var(--color-primary); width: 16px; height: 16px; flex-shrink: 0; }

@@ -1,0 +1,415 @@
+/* ── Base ───────────────────────────────────────────────────────────────── */
+:root {
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --text: #1e293b;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --radius: 12px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+.page {
+  min-height: 100dvh;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  max-width: 480px;
+  margin: 0 auto;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: var(--text);
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+.header {
+  background: var(--primary);
+  color: #fff;
+  padding: 1.25rem 1rem 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.headerTitle {
+  font-size: 1.15rem;
+  font-weight: 700;
+  flex: 1;
+}
+
+.headerSub {
+  font-size: 0.75rem;
+  opacity: 0.8;
+  margin-top: 0.15rem;
+}
+
+.btnBack {
+  background: rgba(255,255,255,0.2);
+  border: none;
+  color: #fff;
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+/* ── Categorias nav ──────────────────────────────────────────────────────── */
+.categoriasNav {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  scrollbar-width: none;
+}
+.categoriasNav::-webkit-scrollbar { display: none; }
+
+.catBtn {
+  background: transparent;
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  padding: 0.35rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  color: var(--muted);
+  transition: all 0.15s;
+}
+
+.catBtnAtivo {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+/* ── Produtos ────────────────────────────────────────────────────────────── */
+.produtos {
+  flex: 1;
+  padding: 0.75rem 1rem 6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.produtoCard {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 1rem;
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}
+
+.produtoInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.produtoNome {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.produtoDesc {
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.produtoPreco {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-top: 0.25rem;
+}
+
+.produtoAcoes {
+  flex-shrink: 0;
+}
+
+.btnAdd {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.qtdControls {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.btnQtd {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.qtdNum {
+  font-weight: 700;
+  font-size: 1rem;
+  min-width: 1.2rem;
+  text-align: center;
+}
+
+/* ── Cart bar ────────────────────────────────────────────────────────────── */
+.cartBar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(to top, var(--bg) 80%, transparent);
+  z-index: 20;
+}
+
+.btnCart {
+  width: 100%;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.9rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 16px rgba(37,99,235,0.35);
+}
+
+.cartBadge {
+  background: rgba(255,255,255,0.3);
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.cartTotal {
+  font-weight: 700;
+}
+
+/* ── Checkout ────────────────────────────────────────────────────────────── */
+.checkoutWrapper {
+  padding: 1.25rem 1rem 6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.checkoutTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.resumoPedido {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}
+
+.resumoItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.resumoQtd {
+  font-weight: 700;
+  color: var(--primary);
+  min-width: 2rem;
+}
+
+.resumoNome {
+  flex: 1;
+  color: var(--text);
+}
+
+.resumoPreco {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.resumoTotal {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 1rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.6rem;
+  margin-top: 0.25rem;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.input {
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  background: var(--card);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.input:focus {
+  border-color: var(--primary);
+}
+
+.inputHint {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.btnPedido {
+  width: 100%;
+  background: #16a34a;
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 1rem;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(22,163,74,0.3);
+}
+
+.btnPedido:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Sucesso ─────────────────────────────────────────────────────────────── */
+.sucessoPage {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  padding: 1.5rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.sucessoCard {
+  background: var(--card);
+  border-radius: 20px;
+  padding: 2.5rem 2rem;
+  text-align: center;
+  max-width: 380px;
+  width: 100%;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+}
+
+.sucessoIcon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.sucessoTitle {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  color: var(--text);
+}
+
+.sucessoDesc {
+  font-size: 0.95rem;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 1.75rem;
+}
+
+.btnVoltar {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.85rem 2rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ── Loading / Erro ──────────────────────────────────────────────────────── */
+.loadingPage {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  background: var(--bg);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.loadingLogo {
+  width: 140px;
+  opacity: 0.7;
+}
+
+.erroMsg {
+  color: #dc2626;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+.footer {
+  display: flex;
+  justify-content: center;
+  padding: 1.5rem 1rem 5rem;
+}
+
+.footerLogo {
+  width: 90px;
+  opacity: 0.4;
+}

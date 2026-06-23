@@ -24,6 +24,14 @@
   font-size: 1.125rem;
   color: var(--color-primary);
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+}
+
+.brandLogo {
+  max-height: 36px;
+  width: auto;
+  object-fit: contain;
 }
 
 .nav {
