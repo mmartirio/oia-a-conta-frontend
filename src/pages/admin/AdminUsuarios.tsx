@@ -23,19 +23,6 @@ const ABAS: { id: Aba; label: string }[] = [
 
 interface UserForm { nome: string; email: string; senha: string; role: Role; grupoId: number | null }
 
-const ROLES: { value: Role; label: string }[] = [
-  { value: 'GARCON', label: 'Garçom' },
-  { value: 'COZINHA', label: 'Cozinha' },
-  { value: 'ADMIN', label: 'Administrador' }
-]
-
-const ROLE_LABEL: Record<Role, string> = {
-  SUPER_ADMIN: 'Super Admin',
-  ADMIN: 'Administrador',
-  GARCON: 'Garçom',
-  COZINHA: 'Cozinha'
-}
-
 interface GrupoForm { nome: string; permissoes: Set<string> }
 const GRUPO_FORM_VAZIO: GrupoForm = { nome: '', permissoes: new Set() }
 
@@ -95,7 +82,7 @@ export function AdminUsuarios() {
     setSaving(true)
     try {
       if (editing) {
-        const payload: Partial<UserForm> = { nome: form.nome, role: form.role, grupoId: form.grupoId }
+        const payload: Partial<UserForm> = { nome: form.nome, email: form.email, role: form.role, grupoId: form.grupoId }
         if (form.senha) payload.senha = form.senha
         await usuarioApi.atualizar(editing.id, payload)
       } else {
@@ -232,12 +219,6 @@ export function AdminUsuarios() {
                   <span className={styles.nome}>{u.nome}</span>
                   <span className={styles.email}>{u.email}</span>
                 </div>
-                <Badge
-                  variant={u.role === 'ADMIN' ? 'primary' : u.role === 'COZINHA' ? 'warning' : 'info'}
-                  size="sm"
-                >
-                  {ROLE_LABEL[u.role]}
-                </Badge>
                 {u.grupoNome && <Badge variant="default" size="sm">{u.grupoNome}</Badge>}
                 <Badge variant={u.ativo ? 'success' : 'default'} size="sm">
                   {u.ativo ? 'Ativo' : 'Inativo'}
@@ -337,30 +318,14 @@ export function AdminUsuarios() {
           />
 
           <div className={styles.formField}>
-            <label className={styles.label} htmlFor="user-role">Perfil</label>
-            <select
-              id="user-role"
-              className={styles.select}
-              value={form.role}
-              onChange={e => setForm(f => ({ ...f, role: e.target.value as Role }))}
-            >
-              {ROLES.map(r => (
-                <option key={r.value} value={r.value}>{r.label}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className={styles.formField}>
-            <label className={styles.label} htmlFor="user-grupo">
-              Grupo (opcional — restringe o acesso além do papel acima)
-            </label>
+            <label className={styles.label} htmlFor="user-grupo">Grupo</label>
             <select
               id="user-grupo"
               className={styles.select}
               value={form.grupoId ?? ''}
               onChange={e => setForm(f => ({ ...f, grupoId: e.target.value ? Number(e.target.value) : null }))}
             >
-              <option value="">Nenhum — usa só o papel fixo</option>
+              <option value="">Nenhum — sem acesso ao admin</option>
               {grupos.map(g => (
                 <option key={g.id} value={g.id}>{g.nome}</option>
               ))}
