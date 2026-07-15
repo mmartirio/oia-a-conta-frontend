@@ -1,5 +1,5 @@
 import api from './axios'
-import type { Comanda, Entrega, RestauranteConfig } from '../types'
+import type { Comanda, Entrega, MetodoPagamento, Page, RestauranteConfig } from '../types'
 
 export const pdvApi = {
   listarAguardandoPagamento: () =>
@@ -8,12 +8,21 @@ export const pdvApi = {
   confirmarPagamentoComanda: (id: number, data: { metodoPagamento: string; parcelas?: number }) =>
     api.put<Comanda>(`/api/comandas/${id}/confirmar-pagamento`, data),
 
-  listarEntregasPendentes: () =>
-    api.get<Entrega[]>('/api/entregas/pendentes-pagamento'),
+  // Paginação real — ver components/ui/Pagination.
+  listarEntregasPendentes: (page = 0) =>
+    api.get<Page<Entrega>>('/api/entregas/pendentes-pagamento', { params: { page } }),
 
   confirmarPagamentoEntrega: (id: number) =>
     api.put<Entrega>(`/api/entregas/${id}/confirmar-pagamento`),
 
   getConfig: () =>
     api.get<RestauranteConfig>('/api/configuracoes'),
+
+  criarVenda: (data: {
+    itens: { produtoId: number; produtoNome: string; quantidade: number; precoUnitario: number; observacao?: string }[]
+    metodoPagamento: MetodoPagamento
+    parcelas?: number
+    observacao?: string
+  }) =>
+    api.post<Comanda>('/api/pdv/vendas', data),
 }
