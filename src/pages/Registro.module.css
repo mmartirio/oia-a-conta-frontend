@@ -60,7 +60,7 @@
 
 .destaque {
   border-color: var(--color-primary);
-  box-shadow: 0 8px 32px rgba(99,102,241,0.25);
+  box-shadow: 0 8px 32px rgba(var(--color-primary-rgb), 0.25);
 }
 
 .badge {
@@ -122,7 +122,7 @@
 
 .funcList li::before {
   content: '✓ ';
-  color: #16a34a;
+  color: var(--color-success);
   font-weight: 700;
 }
 
@@ -140,8 +140,8 @@
 }
 
 .planoBadgeSelected {
-  background: #ede9fe;
-  color: #4f46e5;
+  background: color-mix(in srgb, var(--color-primary) 12%, white);
+  color: var(--color-primary-dark);
   border-radius: var(--radius-md);
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
@@ -161,8 +161,8 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  background: #f0fdf4;
-  color: #166534;
+  background: color-mix(in srgb, var(--color-success) 15%, white);
+  color: color-mix(in srgb, var(--color-success) 70%, black);
   border-radius: var(--radius-md);
   padding: 0.5rem 1rem;
   font-size: 0.8125rem;
@@ -173,14 +173,14 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #16a34a;
+  background: var(--color-success);
   flex-shrink: 0;
 }
 
 .googleRemover {
   background: none;
   border: none;
-  color: #166534;
+  color: color-mix(in srgb, var(--color-success) 70%, black);
   text-decoration: underline;
   cursor: pointer;
   font-size: 0.8125rem;
@@ -194,9 +194,9 @@
 }
 
 .contrato {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   padding: 0.75rem 1rem;
   margin: 0.5rem 0;
   max-height: 180px;
@@ -206,13 +206,13 @@
 .contratoTitle {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text);
   margin: 0 0 0.5rem;
 }
 
 .contratoTexto {
   font-size: 0.8125rem;
-  color: #334155;
+  color: var(--color-text);
   margin: 0 0 0.75rem;
   line-height: 1.5;
 }
@@ -221,7 +221,7 @@
   margin: 0 0 0.75rem 1rem;
   padding: 0;
   font-size: 0.8rem;
-  color: #475569;
+  color: var(--color-text-secondary);
   line-height: 1.8;
 }
 
@@ -231,7 +231,7 @@
   gap: 0.5rem;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: #1e293b;
+  color: var(--color-text);
   cursor: pointer;
 }
 
@@ -250,16 +250,16 @@
   text-align: center;
   font-size: 1.5rem;
   font-weight: 700;
-  border: 2px solid #e2e8f0;
-  border-radius: 8px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
   outline: none;
   transition: border-color 0.15s;
-  background: #fff;
-  color: #1e293b;
+  background: var(--color-surface);
+  color: var(--color-text);
 }
 
 .codigoInput:focus {
-  border-color: var(--color-primary, #f97316);
+  border-color: var(--color-primary);
 }
 
 .reenvioRow {

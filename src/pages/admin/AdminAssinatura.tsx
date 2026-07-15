@@ -36,7 +36,7 @@ export function AdminAssinatura() {
     billingApi.meuContrato()
       .then(async r => {
         setContrato(r.data)
-        const p = await billingApi.listarPagamentos(r.data.id)
+        const p = await billingApi.listarTodosPagamentos(r.data.id)
         setPagamentos(p.data)
       })
       .catch(() => setErro('Nenhuma assinatura encontrada para este restaurante.'))

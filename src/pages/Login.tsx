@@ -5,20 +5,28 @@ import { jwtDecode } from 'jwt-decode'
 import { useAuth } from '../contexts/AuthContext'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
-import type { Role } from '../types'
+import { primeiraRotaPermitida } from '../constants/permissoes'
+import type { Role, Usuario } from '../types'
 import styles from './Auth.module.css'
 import logo from '../assets/logo/OIA A CONTA - LOGO.png'
 
 interface GooglePayload { email: string; name: string }
 
-function redirectByRole(role: Role, navigate: ReturnType<typeof useNavigate>) {
+function redirectByRole(usuario: Usuario, navigate: ReturnType<typeof useNavigate>) {
+  // ADMIN com grupo restrito pode não ter acesso ao Dashboard (rota padrão)
+  // — manda pra primeira rota do sidebar que o grupo permite. SUPER_ADMIN
+  // não usa esse sidebar (vai pro console /gestor), fica de fora.
+  if (usuario.role === 'ADMIN') {
+    navigate(primeiraRotaPermitida(usuario.permissoes), { replace: true })
+    return
+  }
   const routes: Record<Role, string> = {
     SUPER_ADMIN: '/gestor',
     ADMIN: '/admin',
     GARCON: '/garcon',
     COZINHA: '/cozinha'
   }
-  navigate(routes[role] ?? '/garcon', { replace: true })
+  navigate(routes[usuario.role] ?? '/garcon', { replace: true })
 }
 
 export function Login() {
@@ -30,7 +38,7 @@ export function Login() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (!authLoading && user) redirectByRole(user.role, navigate)
+    if (!authLoading && user) redirectByRole(user, navigate)
   }, [user, authLoading, navigate])
 
   const handleSubmit = async (e: FormEvent) => {
@@ -39,7 +47,7 @@ export function Login() {
     setLoading(true)
     try {
       const user = await login(email, senha)
-      redirectByRole(user.role, navigate)
+      redirectByRole(user, navigate)
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })
         .response?.data?.message
@@ -54,7 +62,7 @@ export function Login() {
     try {
       const { email: gEmail, name } = jwtDecode<GooglePayload>(credentialResponse.credential)
       const user = await loginGoogle(gEmail, name)
-      redirectByRole(user.role, navigate)
+      redirectByRole(user, navigate)
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })
         .response?.data?.message
@@ -66,7 +74,16 @@ export function Login() {
     <div className={styles.page}>
       <div className={styles.card}>
         <div className={styles.logo}><img src={logo} alt="Oia a Conta" /></div>
-        <p className={styles.subtitle}>Faça login para continuar</p>
+        <p className={styles.subtitle}>Entre para organizar mesas, pedidos e vendas com mais calma.</p>
+
+        <div className={styles.helperBox}>
+          <p className={styles.helperTitle}>O que você encontra aqui</p>
+          <ul className={styles.featureList}>
+            <li>Mesas, comandas e pedidos em um só lugar</li>
+            <li>Fluxo de delivery, caixa e entregas</li>
+            <li>Atalhos para WhatsApp, financeiro e configuração</li>
+          </ul>
+        </div>
 
         {error && <div className={styles.alert}>{error}</div>}
 

@@ -6,18 +6,19 @@ interface UsuarioPayload {
   email: string
   senha?: string
   role: Role
+  grupoId?: number | null
 }
 
 export const usuarioApi = {
   listar: () =>
-    api.get<Usuario[]>('/api/auth/usuarios'),
+    api.get<Usuario[]>('/api/usuarios'),
 
   criar: (data: UsuarioPayload) =>
-    api.post<Usuario>('/api/auth/usuarios', data),
+    api.post<Usuario>('/api/usuarios', data),
 
   atualizar: (id: number, data: Partial<UsuarioPayload>) =>
-    api.put<Usuario>(`/api/auth/usuarios/${id}`, data),
+    api.put<Usuario>(`/api/usuarios/${id}`, data),
 
   desativar: (id: number) =>
-    api.delete(`/api/auth/usuarios/${id}`)
+    api.delete(`/api/usuarios/${id}`)
 }

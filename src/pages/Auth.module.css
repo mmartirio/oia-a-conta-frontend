@@ -3,7 +3,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #6366f1 100%);
+  background: var(--gradient-sol);
   padding: 1rem;
 }
 
@@ -38,8 +38,33 @@
 
 .subtitle {
   color: var(--color-text-secondary);
-  margin: 0 0 1.75rem;
+  margin: 0 0 1rem;
   font-size: 0.9375rem;
+}
+
+.helperBox {
+  background: rgba(var(--color-primary-rgb), 0.08);
+  border: 1px solid rgba(var(--color-primary-rgb), 0.16);
+  border-radius: var(--radius-lg);
+  padding: 0.95rem 1rem;
+  margin-bottom: 1.25rem;
+  text-align: left;
+}
+
+.helperTitle {
+  margin: 0 0 0.45rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.featureList {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--color-text-secondary);
+  font-size: 0.86rem;
+  display: grid;
+  gap: 0.35rem;
 }
 
 .form {
@@ -50,8 +75,8 @@
 }
 
 .alert {
-  background: #fee2e2;
-  color: #991b1b;
+  background: color-mix(in srgb, var(--color-danger) 15%, white);
+  color: color-mix(in srgb, var(--color-danger) 70%, black);
   border-radius: var(--radius-md);
   padding: 0.75rem 1rem;
   margin-bottom: 1rem;
