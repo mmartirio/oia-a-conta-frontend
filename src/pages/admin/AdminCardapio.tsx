@@ -6,14 +6,25 @@ import { Input } from '../../components/ui/Input'
 import { Modal } from '../../components/ui/Modal'
 import { Badge } from '../../components/ui/Badge'
 import { Card } from '../../components/ui/Card'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
+import { useToast } from '../../contexts/ToastContext'
 import { formatCurrency } from '../../utils/formatters'
 import type { Categoria, Produto } from '../../types'
 import styles from './AdminCardapio.module.css'
 
 type Tab = 'categorias' | 'produtos'
 
+const IMAGEM_MAX_BYTES = 1 * 1024 * 1024
+
 interface CatForm  { nome: string }
-interface ProdForm { nome: string; descricao: string; preco: string; categoriaId: string }
+interface ProdForm {
+  nome: string
+  descricao: string
+  preco: string
+  categoriaId: string
+  // null = sem foto; "" = remover a foto atual; data URI = foto nova ou já existente.
+  imagemBase64: string | null
+}
 
 export function AdminCardapio() {
   const [tab, setTab] = useState<Tab>('produtos')
@@ -30,9 +41,14 @@ export function AdminCardapio() {
 
   const [prodModal, setProdModal] = useState(false)
   const [editProd, setEditProd] = useState<Produto | null>(null)
-  const [prodForm, setProdForm] = useState<ProdForm>({ nome: '', descricao: '', preco: '', categoriaId: '' })
+  const [prodForm, setProdForm] = useState<ProdForm>({ nome: '', descricao: '', preco: '', categoriaId: '', imagemBase64: null })
   const [savingProd, setSavingProd] = useState(false)
   const [prodError, setProdError] = useState('')
+
+  const [confirmDeleteCat, setConfirmDeleteCat] = useState<Categoria | null>(null)
+  const [confirmDeleteProd, setConfirmDeleteProd] = useState<Produto | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  const toast = useToast()
 
   const loadCategorias = () =>
     categoriaApi.listar().then(r => setCategorias(r.data)).catch(() => {})
@@ -80,20 +96,24 @@ export function AdminCardapio() {
     }
   }
 
-  const handleDeleteCat = async (c: Categoria) => {
-    if (!confirm(`Desativar categoria "${c.nome}"?`)) return
+  const handleDeleteCat = async () => {
+    if (!confirmDeleteCat) return
+    setDeleting(true)
     try {
-      await categoriaApi.desativar(c.id)
+      await categoriaApi.desativar(confirmDeleteCat.id)
       loadCategorias()
     } catch {
-      alert('Erro ao desativar categoria')
+      toast.error('Erro ao desativar categoria')
+    } finally {
+      setDeleting(false)
+      setConfirmDeleteCat(null)
     }
   }
 
   // ── Produtos ────────────────────────────────────────────
   const openCreateProd = () => {
     setEditProd(null)
-    setProdForm({ nome: '', descricao: '', preco: '', categoriaId: String(categorias[0]?.id ?? '') })
+    setProdForm({ nome: '', descricao: '', preco: '', categoriaId: String(categorias[0]?.id ?? ''), imagemBase64: null })
     setProdError('')
     setProdModal(true)
   }
@@ -104,10 +124,30 @@ export function AdminCardapio() {
       nome: p.nome,
       descricao: p.descricao ?? '',
       preco: String(p.preco),
-      categoriaId: String(p.categoriaId)
+      categoriaId: String(p.categoriaId),
+      imagemBase64: p.imagemBase64 ?? null
     })
     setProdError('')
     setProdModal(true)
+  }
+
+  const handleUploadImagemProduto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    if (file.size > IMAGEM_MAX_BYTES) {
+      toast.error('Imagem muito grande. Envie um arquivo de até 1MB.')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => {
+      setProdForm(f => ({ ...f, imagemBase64: reader.result as string }))
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleRemoverImagemProduto = () => {
+    setProdForm(f => ({ ...f, imagemBase64: '' }))
   }
 
   const handleSaveProd = async (e: FormEvent) => {
@@ -119,7 +159,8 @@ export function AdminCardapio() {
         nome: prodForm.nome,
         descricao: prodForm.descricao || undefined,
         preco: parseFloat(prodForm.preco),
-        categoriaId: Number(prodForm.categoriaId)
+        categoriaId: Number(prodForm.categoriaId),
+        imagemBase64: prodForm.imagemBase64
       }
       if (editProd) {
         await produtoApi.atualizar(editProd.id, payload)
@@ -136,13 +177,17 @@ export function AdminCardapio() {
     }
   }
 
-  const handleDeleteProd = async (p: Produto) => {
-    if (!confirm(`Desativar "${p.nome}"?`)) return
+  const handleDeleteProd = async () => {
+    if (!confirmDeleteProd) return
+    setDeleting(true)
     try {
-      await produtoApi.desativar(p.id)
+      await produtoApi.desativar(confirmDeleteProd.id)
       loadProdutos(filtroCategoria)
     } catch {
-      alert('Erro ao desativar produto')
+      toast.error('Erro ao desativar produto')
+    } finally {
+      setDeleting(false)
+      setConfirmDeleteProd(null)
     }
   }
 
@@ -201,7 +246,12 @@ export function AdminCardapio() {
             {produtos.map(p => (
               <Card key={p.id} className={styles.prodCard}>
                 <div className={styles.prodHeader}>
-                  <span className={styles.prodNome}>{p.nome}</span>
+                  <div className={styles.prodHeaderLeft}>
+                    {p.imagemBase64
+                      ? <img src={p.imagemBase64} alt={p.nome} className={styles.prodThumb} />
+                      : <div className={styles.prodThumbPlaceholder} aria-hidden="true">Sem foto</div>}
+                    <span className={styles.prodNome}>{p.nome}</span>
+                  </div>
                   <Badge variant={p.ativo ? 'success' : 'default'} size="sm">
                     {p.ativo ? 'Ativo' : 'Inativo'}
                   </Badge>
@@ -213,7 +263,7 @@ export function AdminCardapio() {
                 </p>
                 <div className={styles.prodActions}>
                   <Button variant="outline" size="sm" onClick={() => openEditProd(p)}>Editar</Button>
-                  <Button variant="danger" size="sm" onClick={() => handleDeleteProd(p)} disabled={!p.ativo}>
+                  <Button variant="danger" size="sm" onClick={() => setConfirmDeleteProd(p)} disabled={!p.ativo}>
                     Desativar
                   </Button>
                 </div>
@@ -243,7 +293,7 @@ export function AdminCardapio() {
                 </Badge>
                 <div className={styles.catActions}>
                   <Button variant="outline" size="sm" onClick={() => openEditCat(c)}>Editar</Button>
-                  <Button variant="danger" size="sm" onClick={() => handleDeleteCat(c)} disabled={!c.ativo}>
+                  <Button variant="danger" size="sm" onClick={() => setConfirmDeleteCat(c)} disabled={!c.ativo}>
                     Desativar
                   </Button>
                 </div>
@@ -343,8 +393,57 @@ export function AdminCardapio() {
             required
             placeholder="0,00"
           />
+
+          <div className={styles.formField}>
+            <label className={styles.label}>Foto do produto (opcional)</label>
+            <div className={styles.imagemBox}>
+              <div className={styles.imagemPreview}>
+                {prodForm.imagemBase64
+                  ? <img src={prodForm.imagemBase64} alt="Prévia do produto" className={styles.imagemImg} />
+                  : <span className={styles.hint}>Sem foto</span>}
+              </div>
+              <div className={styles.imagemActions}>
+                <label className={styles.btnUploadImagem}>
+                  Enviar foto
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    onChange={handleUploadImagemProduto}
+                    hidden
+                  />
+                </label>
+                {prodForm.imagemBase64 && (
+                  <Button type="button" variant="ghost" size="sm" onClick={handleRemoverImagemProduto}>
+                    Remover foto
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={!!confirmDeleteCat}
+        title="Desativar categoria"
+        message={`Desativar categoria "${confirmDeleteCat?.nome}"?`}
+        confirmLabel="Desativar"
+        danger
+        loading={deleting}
+        onConfirm={handleDeleteCat}
+        onCancel={() => setConfirmDeleteCat(null)}
+      />
+
+      <ConfirmDialog
+        isOpen={!!confirmDeleteProd}
+        title="Desativar produto"
+        message={`Desativar "${confirmDeleteProd?.nome}"?`}
+        confirmLabel="Desativar"
+        danger
+        loading={deleting}
+        onConfirm={handleDeleteProd}
+        onCancel={() => setConfirmDeleteProd(null)}
+      />
     </div>
   )
 }

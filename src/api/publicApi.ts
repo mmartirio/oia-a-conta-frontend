@@ -8,6 +8,14 @@ export interface RestaurantePublico {
   id: number
   nome: string
   slug: string
+  telefone: string
+  logoUrl: string | null
+  corPrimaria: string | null
+  corSecundaria: string | null
+  corAccent: string | null
+  corTexto: string | null
+  backgroundUrl: string | null
+  backgroundOpacidade: number | null
 }
 
 export interface ProdutoPublico {
@@ -15,6 +23,7 @@ export interface ProdutoPublico {
   nome: string
   descricao: string
   preco: number
+  imagemBase64: string | null
   ativo: boolean
 }
 
@@ -41,8 +50,11 @@ export const publicApi = {
   fazerPedido: (restauranteId: number, data: {
     clienteNome: string
     telefone: string
+    endereco: string
+    metodoPagamento: string
+    observacao?: string
     itens: ItemPedido[]
-  }) => api.post<{ mensagem: string; telefone: string }>(
+  }) => api.post<{ mensagem: string; telefone: string; entregaId: number }>(
     `/api/whatsapp/publico/${restauranteId}/pedido`, data
   ),
 }

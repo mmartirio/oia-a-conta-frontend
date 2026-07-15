@@ -7,6 +7,8 @@ interface ProdutoPayload {
   preco: number
   categoriaId: number
   ativo?: boolean
+  // null/ausente = não altera a imagem atual; "" explícito = remove a imagem.
+  imagemBase64?: string | null
 }
 
 export const produtoApi = {
