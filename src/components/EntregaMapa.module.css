@@ -1,0 +1,33 @@
+.mapaWrap {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1.5px solid var(--color-border);
+  flex: 1;
+  min-height: 380px;
+}
+
+.mapa {
+  width: 100%;
+  height: 100%;
+  min-height: 380px;
+}
+
+.popupHora {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.iconeRestaurante {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  font-size: 1.15rem;
+  background: #fff;
+  border: 2px solid var(--color-primary);
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.35);
+}
