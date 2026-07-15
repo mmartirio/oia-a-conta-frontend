@@ -7,7 +7,12 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: 'auto',
+      strategies: 'generateSW',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
+      devOptions: {
+        enabled: false
+      },
       manifest: {
         name: 'Oia a Conta',
         short_name: 'Oia a Conta',
