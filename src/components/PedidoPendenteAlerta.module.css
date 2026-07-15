@@ -1,0 +1,199 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(15, 23, 42, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: fadeIn 0.15s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.card {
+  position: relative;
+  background: var(--color-surface, #fff);
+  border-radius: 20px;
+  padding: 1.75rem;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35); }
+  50% { box-shadow: 0 20px 70px rgba(239, 68, 68, 0.45); }
+}
+
+.contador {
+  position: absolute;
+  top: -0.75rem;
+  right: 1rem;
+  background: var(--color-danger, #ef4444);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+}
+
+.titulo {
+  font-size: 1.35rem;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 0.5rem;
+  color: var(--color-text, #0f172a);
+}
+
+.contagem {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary, #64748b);
+  margin-bottom: 1rem;
+}
+
+.contagem strong { font-variant-numeric: tabular-nums; }
+
+.contagemUrgente {
+  color: var(--color-danger, #ef4444);
+  font-weight: 700;
+}
+
+.resumo {
+  background: var(--color-bg, #f8fafc);
+  border-radius: 14px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.cliente { font-weight: 700; font-size: 1rem; color: var(--color-text, #0f172a); }
+.telefone { font-size: 0.85rem; color: var(--color-text-secondary, #64748b); }
+.endereco { font-size: 0.85rem; color: var(--color-text-secondary, #64748b); }
+
+.itens {
+  list-style: none;
+  margin: 0.4rem 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.9rem;
+  color: var(--color-text, #0f172a);
+}
+
+.obs {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary, #64748b);
+  font-style: italic;
+}
+
+.rodape {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--color-border, #e2e8f0);
+  padding-top: 0.5rem;
+  margin-top: 0.3rem;
+}
+
+.pagamento {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-secondary, #64748b);
+  text-transform: capitalize;
+}
+
+.total { font-size: 1.1rem; font-weight: 800; color: var(--color-primary, #cf4622); }
+
+.acoes {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.btnAceitar {
+  flex: 1;
+  background: var(--color-success, #22c55e);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 0.9rem;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btnAceitar:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btnRejeitar {
+  flex-shrink: 0;
+  width: 52px;
+  border-radius: 12px;
+  border: 1.5px solid var(--color-danger, #ef4444);
+  background: transparent;
+  color: var(--color-danger, #ef4444);
+  font-size: 1.25rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btnRejeitar:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.rejeitarBox {
+  margin-top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rejeitarLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-secondary, #64748b);
+}
+
+.rejeitarInput {
+  border: 1.5px solid var(--color-border, #e2e8f0);
+  border-radius: 10px;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+  resize: none;
+}
+
+.rejeitarAcoes {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btnVoltar {
+  flex: 1;
+  background: transparent;
+  border: 1.5px solid var(--color-border, #e2e8f0);
+  border-radius: 10px;
+  padding: 0.6rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--color-text-secondary, #64748b);
+}
+
+.btnConfirmarRecusa {
+  flex: 1.5;
+  background: var(--color-danger, #ef4444);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 0.6rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btnConfirmarRecusa:disabled { opacity: 0.6; cursor: not-allowed; }
