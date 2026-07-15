@@ -49,4 +49,10 @@ export const whatsappAdminApi = {
 
   salvarOrdem: (itens: { chave: string; ordem: number }[]) =>
     api.put('/api/whatsapp/admin/mensagens/ordem', itens),
+
+  chatbotStatus: () =>
+    api.get<{ ativo: boolean }>('/api/whatsapp/admin/chatbot-status'),
+
+  atualizarChatbotStatus: (ativo: boolean) =>
+    api.put<{ ativo: boolean }>('/api/whatsapp/admin/chatbot-status', { ativo }),
 }

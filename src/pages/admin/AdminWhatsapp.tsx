@@ -1,6 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
+import { FiMessageCircle, FiBell } from 'react-icons/fi'
 import { whatsappAdminApi, type WhatsappStatus, type MensagemTemplate } from '../../api/whatsappAdminApi'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
+import { Badge } from '../../components/ui/Badge'
+import { Tabs } from '../../components/ui/Tabs'
+import { Switch } from '../../components/ui/Switch'
+import { useToast } from '../../contexts/ToastContext'
+import { useAuth } from '../../contexts/AuthContext'
+import { AdminWhatsappConversas } from './AdminWhatsappConversas'
 import styles from './AdminWhatsapp.module.css'
+
+type AbaWhatsapp = 'conexao' | 'mensagens' | 'conversas'
+
+const ABAS: { id: AbaWhatsapp; label: string; permission: string }[] = [
+  { id: 'conexao', label: 'Conexão', permission: 'WHATSAPP_CONEXAO' },
+  { id: 'mensagens', label: 'Mensagens', permission: 'WHATSAPP_MENSAGENS' },
+  { id: 'conversas', label: 'Conversas', permission: 'WHATSAPP_CONVERSAS' },
+]
 
 const ESTADO_LABEL: Record<string, string> = {
   CONECTADO: 'Conectado',
@@ -9,15 +25,25 @@ const ESTADO_LABEL: Record<string, string> = {
   ERRO: 'Erro',
 }
 
+const GRUPO_ICON: Record<string, React.ElementType> = {
+  chatbot: FiMessageCircle,
+  notificacao: FiBell,
+}
+
 const GRUPO_LABELS: Record<string, string> = {
-  chatbot: '💬 Conversa do Chatbot',
-  notificacao: '🔔 Notificações de Status do Pedido',
+  chatbot: 'Conversa do Chatbot',
+  notificacao: 'Notificações de Status do Pedido',
 }
 
 interface NovaMsg { label: string; texto: string }
 const NOVA_VAZIA: NovaMsg = { label: '', texto: '' }
 
 export function AdminWhatsapp() {
+  const { user } = useAuth()
+  const abasPermitidas = user?.permissoes
+    ? ABAS.filter(a => user.permissoes!.includes(a.permission))
+    : ABAS
+  const [aba, setAba] = useState<AbaWhatsapp>(abasPermitidas[0]?.id ?? 'conexao')
   const [status, setStatus] = useState<WhatsappStatus | null>(null)
   const [mensagens, setMensagens] = useState<MensagemTemplate[]>([])
   const [loadingStatus, setLoadingStatus] = useState(true)
@@ -30,6 +56,13 @@ export function AdminWhatsapp() {
   const [criando, setCriando] = useState<Record<string, boolean>>({})
   const [formAberto, setFormAberto] = useState<Record<string, boolean>>({})
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [confirmDesconectar, setConfirmDesconectar] = useState(false)
+  const [confirmRestaurar, setConfirmRestaurar] = useState<MensagemTemplate | null>(null)
+  const [confirmRemover, setConfirmRemover] = useState<MensagemTemplate | null>(null)
+  const [chatbotAtivo, setChatbotAtivo] = useState(true)
+  const [loadingChatbotStatus, setLoadingChatbotStatus] = useState(true)
+  const [salvandoChatbotStatus, setSalvandoChatbotStatus] = useState(false)
+  const toast = useToast()
 
   const carregarStatus = async () => {
     try {
@@ -62,7 +95,24 @@ export function AdminWhatsapp() {
   useEffect(() => {
     carregarStatus()
     carregarMensagens()
+    whatsappAdminApi.chatbotStatus()
+      .then(r => setChatbotAtivo(r.data.ativo))
+      .catch(() => {})
+      .finally(() => setLoadingChatbotStatus(false))
   }, [])
+
+  const handleToggleChatbot = async (ativo: boolean) => {
+    setSalvandoChatbotStatus(true)
+    try {
+      const r = await whatsappAdminApi.atualizarChatbotStatus(ativo)
+      setChatbotAtivo(r.data.ativo)
+      toast.success(r.data.ativo ? 'Chatbot ativado' : 'Chatbot desativado')
+    } catch {
+      toast.error('Erro ao atualizar o status do chatbot')
+    } finally {
+      setSalvandoChatbotStatus(false)
+    }
+  }
 
   useEffect(() => {
     if (status?.estado === 'AGUARDANDO_SCAN') {
@@ -87,9 +137,9 @@ export function AdminWhatsapp() {
   }
 
   const handleDesconectar = async () => {
-    if (!confirm('Deseja desconectar o WhatsApp? O bot ficará offline.')) return
     await whatsappAdminApi.desconectar()
     await carregarStatus()
+    setConfirmDesconectar(false)
   }
 
   const handleSalvar = async (chave: string) => {
@@ -104,19 +154,18 @@ export function AdminWhatsapp() {
     }
   }
 
-  const handleRestaurar = async (m: MensagemTemplate) => {
-    if (!confirm('Restaurar o texto padrão desta mensagem?')) return
-    await whatsappAdminApi.restaurar(m.chave)
+  const handleRestaurar = async () => {
+    if (!confirmRestaurar) return
+    await whatsappAdminApi.restaurar(confirmRestaurar.chave)
     await carregarMensagens()
+    setConfirmRestaurar(null)
   }
 
-  const handleRemover = async (m: MensagemTemplate) => {
-    const msg = m.sistema
-      ? `Remover a mensagem "${m.label}" do chatbot? O bot irá pular esta etapa.`
-      : `Remover a mensagem "${m.label}"? Esta ação não pode ser desfeita.`
-    if (!confirm(msg)) return
-    await whatsappAdminApi.remover(m.chave)
+  const handleRemover = async () => {
+    if (!confirmRemover) return
+    await whatsappAdminApi.remover(confirmRemover.chave)
     await carregarMensagens()
+    setConfirmRemover(null)
   }
 
   const moverMensagem = async (chave: string, direcao: 'cima' | 'baixo', grupo: string) => {
@@ -155,26 +204,28 @@ export function AdminWhatsapp() {
 
   const grupos = ['chatbot', 'notificacao']
 
-  const estadoClass = status
-    ? status.estado === 'CONECTADO' ? styles.badgeConectado
-    : status.estado === 'AGUARDANDO_SCAN' ? styles.badgeAguardando
-    : status.estado === 'ERRO' ? styles.badgeErro
-    : styles.badgeDesconectado
-    : styles.badgeDesconectado
+  const estadoVariant = status
+    ? status.estado === 'CONECTADO' ? 'success'
+    : status.estado === 'AGUARDANDO_SCAN' ? 'warning'
+    : status.estado === 'ERRO' ? 'danger'
+    : 'default'
+    : 'default'
 
   return (
     <div className={styles.page}>
       <h1 className={styles.title}>WhatsApp</h1>
 
-      {/* ── Conexão ── */}
-      <section className={styles.card}>
+      <Tabs tabs={abasPermitidas} activeTab={aba} onChange={id => setAba(id as AbaWhatsapp)} />
+
+      {aba === 'conexao' && (
+      <section className={`${styles.card} ${styles.cardConexao}`}>
         <h2 className={styles.sectionTitle}>Conexão</h2>
 
         <div className={styles.statusRow}>
           <span className={styles.statusLabel}>Status:</span>
           {loadingStatus
-            ? <span className={styles.badgeDesconectado}>Verificando...</span>
-            : <span className={estadoClass}>{ESTADO_LABEL[status?.estado ?? ''] ?? '—'}</span>
+            ? <Badge variant="default" size="md">Verificando...</Badge>
+            : <Badge variant={estadoVariant as 'success' | 'warning' | 'danger' | 'default'} size="md">{ESTADO_LABEL[status?.estado ?? ''] ?? '—'}</Badge>
           }
         </div>
 
@@ -199,6 +250,24 @@ export function AdminWhatsapp() {
           <p className={styles.erroMsg}>Erro: {status.mensagem}</p>
         )}
 
+        <div className={styles.statusRow}>
+          <span className={styles.statusLabel}>Chatbot:</span>
+          {!loadingChatbotStatus && (
+            <Switch
+              checked={chatbotAtivo}
+              onChange={handleToggleChatbot}
+              disabled={salvandoChatbotStatus}
+              label={chatbotAtivo ? 'Ativo' : 'Desativado'}
+            />
+          )}
+        </div>
+        {!chatbotAtivo && (
+          <p className={styles.sectionHint}>
+            O bot não responde automaticamente, mas a conexão do WhatsApp continua ativa e as mensagens
+            recebidas continuam aparecendo em Conversas — o atendimento fica manual até reativar.
+          </p>
+        )}
+
         <div className={styles.actions}>
           {status?.estado !== 'CONECTADO' && (
             <button
@@ -212,7 +281,7 @@ export function AdminWhatsapp() {
             </button>
           )}
           {status?.estado === 'CONECTADO' && (
-            <button className={styles.btnDesconectar} onClick={handleDesconectar}>
+            <button className={styles.btnDesconectar} onClick={() => setConfirmDesconectar(true)}>
               Desconectar
             </button>
           )}
@@ -223,17 +292,24 @@ export function AdminWhatsapp() {
           )}
         </div>
       </section>
+      )}
 
       {/* ── Mensagens por grupo ── */}
+      {aba === 'mensagens' && (
+      <div className={styles.gruposCol}>
       {grupos.map(grupo => {
         const grupoMsgs = mensagens.filter(m => m.grupo === grupo)
         const aberto = !!formAberto[grupo]
         const form = novaMsg[grupo] ?? NOVA_VAZIA
+        const GrupoIcon = GRUPO_ICON[grupo]
         return (
           <section key={grupo} className={styles.card}>
             <div className={styles.sectionHeader}>
               <div>
-                <h2 className={styles.sectionTitle}>{GRUPO_LABELS[grupo] ?? grupo}</h2>
+                <h2 className={styles.sectionTitle}>
+                  {GrupoIcon && <GrupoIcon size={17} className={styles.grupoIcon} />}
+                  {GRUPO_LABELS[grupo] ?? grupo}
+                </h2>
                 <p className={styles.sectionHint}>
                   {grupo === 'chatbot'
                     ? 'Mensagens enviadas durante a conversa. Use ▲▼ para reordenar.'
@@ -335,7 +411,7 @@ export function AdminWhatsapp() {
                     {m.sistema && (
                       <button
                         className={styles.btnRestaurar}
-                        onClick={() => handleRestaurar(m)}
+                        onClick={() => setConfirmRestaurar(m)}
                         title="Restaurar o texto original padrão"
                       >
                         Restaurar padrão
@@ -343,7 +419,7 @@ export function AdminWhatsapp() {
                     )}
                     <button
                       className={styles.btnRemover}
-                      onClick={() => handleRemover(m)}
+                      onClick={() => setConfirmRemover(m)}
                     >
                       Remover
                     </button>
@@ -357,6 +433,41 @@ export function AdminWhatsapp() {
           </section>
         )
       })}
+      </div>
+      )}
+
+      {aba === 'conversas' && <AdminWhatsappConversas />}
+
+      <ConfirmDialog
+        isOpen={confirmDesconectar}
+        title="Desconectar WhatsApp"
+        message="Deseja desconectar o WhatsApp? O bot ficará offline."
+        confirmLabel="Desconectar"
+        danger
+        onConfirm={handleDesconectar}
+        onCancel={() => setConfirmDesconectar(false)}
+      />
+
+      <ConfirmDialog
+        isOpen={!!confirmRestaurar}
+        title="Restaurar mensagem"
+        message="Restaurar o texto padrão desta mensagem?"
+        confirmLabel="Restaurar"
+        onConfirm={handleRestaurar}
+        onCancel={() => setConfirmRestaurar(null)}
+      />
+
+      <ConfirmDialog
+        isOpen={!!confirmRemover}
+        title="Remover mensagem"
+        message={confirmRemover?.sistema
+          ? `Remover a mensagem "${confirmRemover?.label}" do chatbot? O bot irá pular esta etapa.`
+          : `Remover a mensagem "${confirmRemover?.label}"? Esta ação não pode ser desfeita.`}
+        confirmLabel="Remover"
+        danger
+        onConfirm={handleRemover}
+        onCancel={() => setConfirmRemover(null)}
+      />
     </div>
   )
 }

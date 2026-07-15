@@ -1,0 +1,278 @@
+.layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 480px;
+}
+
+.loadingBox { display: flex; align-items: center; justify-content: center; padding: 2.5rem 0; }
+
+/* ── Coluna esquerda: lista de conversas ── */
+.listaCol {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.lista { list-style: none; margin: 0; padding: 0; overflow-y: auto; max-height: 560px; }
+
+.itemConversa {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.itemConversa:hover { background: var(--color-bg); }
+.itemAtivo { background: color-mix(in srgb, var(--color-primary) 10%, white); }
+.itemAtivo:hover { background: color-mix(in srgb, var(--color-primary) 14%, white); }
+
+.direcaoIcon {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.direcaoEnviada { background: color-mix(in srgb, var(--color-primary) 15%, white); color: var(--color-primary); }
+.direcaoRecebida { background: color-mix(in srgb, var(--color-info) 15%, white); color: color-mix(in srgb, var(--color-info) 65%, black); }
+
+.itemInfo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.125rem; }
+.itemNome { font-size: 0.875rem; font-weight: 700; color: var(--color-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.itemPreview { font-size: 0.78125rem; color: var(--color-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.itemHora { flex-shrink: 0; font-size: 0.6875rem; color: var(--color-text-secondary); white-space: nowrap; }
+
+.itemNaoLidaDot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-primary);
+}
+
+/* ── Coluna direita: thread da conversa ── */
+.threadCol {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  min-height: 420px;
+}
+
+.placeholder {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+.placeholderIcon { color: var(--color-text-muted); }
+
+.threadHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.25rem;
+  border-bottom: 1.5px solid var(--color-border);
+}
+
+.threadHeaderIcon { color: var(--color-primary); flex-shrink: 0; }
+.threadHeaderNome { font-size: 0.9375rem; font-weight: 700; color: var(--color-text); }
+.threadHeaderTelefone { font-size: 0.8125rem; color: var(--color-text-secondary); }
+
+.editNomeTrigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  border-radius: 50%;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.editNomeTrigger:hover { background: var(--color-bg); color: var(--color-primary); }
+
+.editNomeBox {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.editNomeInput {
+  flex: 1;
+  min-width: 0;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0.3rem 0.625rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: var(--color-text);
+  background: var(--color-bg);
+  outline: none;
+}
+
+.editNomeInput:focus { border-color: var(--color-primary); }
+
+.editNomeBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.editNomeBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.threadBody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding: 1.25rem;
+  overflow-y: auto;
+  max-height: 560px;
+}
+
+.btnCarregarMais {
+  align-self: center;
+  padding: 0.375rem 0.875rem;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+  transition: background 0.15s;
+}
+
+.btnCarregarMais:hover:not(:disabled) { background: var(--color-border); }
+.btnCarregarMais:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.bolha {
+  max-width: 70%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5625rem 0.75rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+}
+
+.bolhaEnviada {
+  align-self: flex-end;
+  background: var(--color-primary);
+  color: #fff;
+  border-bottom-right-radius: 2px;
+}
+
+.bolhaRecebida {
+  align-self: flex-start;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  color: var(--color-text);
+  border-bottom-left-radius: 2px;
+}
+
+.bolhaTexto { margin: 0; white-space: pre-wrap; word-break: break-word; }
+
+.bolhaHora {
+  align-self: flex-end;
+  font-size: 0.6875rem;
+  opacity: 0.75;
+}
+
+.threadComposer {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.625rem;
+  padding: 0.875rem 1.25rem;
+  border-top: 1.5px solid var(--color-border);
+}
+
+.composerInput {
+  flex: 1;
+  resize: none;
+  max-height: 120px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: var(--color-text);
+  background: var(--color-bg);
+  outline: none;
+}
+
+.composerInput:focus { border-color: var(--color-primary); }
+.composerInput:disabled { opacity: 0.6; }
+
+.composerBtn {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.composerBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* telas largas: lista e thread lado a lado */
+@media (min-width: 1024px) {
+  .layout {
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  .listaCol {
+    flex: 0 0 340px;
+  }
+
+  .threadCol {
+    flex: 1;
+    min-width: 0;
+  }
+}
