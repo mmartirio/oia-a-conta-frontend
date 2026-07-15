@@ -1,14 +1,20 @@
-import { useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { NavLink, Outlet } from 'react-router-dom'
 import {
-  LayoutDashboard, ChefHat, ClipboardList, UtensilsCrossed,
-  ShoppingCart, Truck, Headphones, Settings, Users, User,
-  BookOpen, LayoutGrid, Wallet, Package,
-} from 'lucide-react'
+  FiGrid, FiCoffee, FiClipboard, FiHexagon,
+  FiShoppingCart, FiTruck, FiHeadphones, FiSettings, FiUsers,
+  FiBookOpen, FiLayout, FiDollarSign, FiPackage,
+} from 'react-icons/fi'
 import { useAuth } from '../../contexts/AuthContext'
+import { useNotification } from '../../contexts/NotificationContext'
 import { NotificationAlert } from '../NotificationAlert'
+import { PedidoPendenteAlerta } from '../PedidoPendenteAlerta'
+import { pausaApi, type PausaStatus } from '../../api/pausaApi'
+import { PERMISSAO_CONTAINERS } from '../../constants/permissoes'
 import logo from '../../assets/logo/OIA A CONTA - LOGO.png'
 import styles from './AdminLayout.module.css'
+
+const INTERVALO_ATUALIZACAO_STATUS_MS = 60_000
 
 function WhatsAppIcon({ size = 17 }: { size?: number }) {
   return (
@@ -25,86 +31,99 @@ interface NavItem {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Icon: React.ElementType<any>
   end?: boolean
+  permission: string
 }
 
-const NAV_GESTAO: NavItem[] = [
-  { to: '/admin',               label: 'Dashboard',   Icon: LayoutDashboard, end: true },
-  { to: '/admin/cardapio',      label: 'Cardápio',    Icon: BookOpen },
-  { to: '/admin/mesas',         label: 'Mesas',       Icon: LayoutGrid },
-  { to: '/admin/usuarios',      label: 'Usuários',    Icon: Users },
-  { to: '/admin/financeiro',    label: 'Financeiro',  Icon: Wallet },
-  { to: '/admin/whatsapp',      label: 'WhatsApp',    Icon: WhatsAppIcon },
-]
-
-const NAV_SOLO: NavItem[] = [
-  { to: '/admin',               label: 'Dashboard',   Icon: LayoutDashboard, end: true },
-  { to: '/cozinha',             label: 'Cozinha',     Icon: ChefHat },
-  { to: '/garcon/comandas',     label: 'Comanda',     Icon: ClipboardList },
-  { to: '/garcon',              label: 'Garçom',      Icon: UtensilsCrossed },
-  { to: '/delivery',            label: 'Delivery',    Icon: Package },
-  { to: '/pdv',                 label: 'Caixa (PDV)', Icon: ShoppingCart },
-  { to: '/entregador',          label: 'Entregador',  Icon: Truck },
-  { to: '/admin/whatsapp',      label: 'WhatsApp',    Icon: WhatsAppIcon },
+const NAV_ITEMS: NavItem[] = [
+  { to: '/admin',               label: 'Dashboard',   Icon: FiGrid, end: true, permission: 'DASHBOARD' },
+  { to: '/pdv',                 label: 'Caixa (PDV)', Icon: FiShoppingCart, permission: 'CAIXA_PDV' },
+  { to: '/admin/cardapio',      label: 'Cardápio',    Icon: FiBookOpen, permission: 'CARDAPIO' },
+  { to: '/admin/mesas',         label: 'Mesas',       Icon: FiLayout, permission: 'MESAS' },
+  { to: '/cozinha',             label: 'Cozinha',     Icon: FiCoffee, permission: 'COZINHA' },
+  { to: '/garcon/comandas',     label: 'Comanda',     Icon: FiClipboard, permission: 'COMANDA' },
+  { to: '/garcon',              label: 'Garçom',      Icon: FiHexagon, permission: 'GARCOM' },
+  { to: '/delivery',            label: 'Delivery',    Icon: FiPackage, permission: 'DELIVERY' },
+  { to: '/entregador',          label: 'Entregador',  Icon: FiTruck, permission: 'ENTREGADOR' },
+  { to: '/admin/usuarios',      label: 'Usuários',    Icon: FiUsers, permission: 'USUARIOS' },
+  { to: '/admin/financeiro',    label: 'Financeiro',  Icon: FiDollarSign, permission: 'FINANCEIRO' },
+  { to: '/admin/whatsapp',      label: 'WhatsApp',    Icon: WhatsAppIcon, permission: 'WHATSAPP_CONEXAO' },
 ]
 
 const NAV_BOTTOM: NavItem[] = [
-  { to: '/admin/suporte',       label: 'Suporte',      Icon: Headphones },
-  { to: '/admin/configuracoes', label: 'Configurações', Icon: Settings },
+  { to: '/admin/suporte',       label: 'Suporte',      Icon: FiHeadphones, permission: 'SUPORTE' },
+  { to: '/admin/configuracoes', label: 'Configurações', Icon: FiSettings, permission: 'CONFIG_STATUS_LOJA' },
 ]
 
-function useSoloMode() {
-  const [solo, setSolo] = useState(() => localStorage.getItem('soloMode') === 'true')
-  const navigate = useNavigate()
+// WhatsApp e Configurações têm várias sub-permissões (uma por tab/item) — o
+// item do sidebar aparece se o usuário tiver QUALQUER uma delas, não uma
+// permissão única fixa.
+const FILHOS_WHATSAPP = PERMISSAO_CONTAINERS.find(c => c.chave === 'WHATSAPP')?.filhos?.map(f => f.chave) ?? []
+const FILHOS_CONFIG = PERMISSAO_CONTAINERS.find(c => c.chave === 'CONFIGURACOES')?.filhos?.map(f => f.chave) ?? []
 
-  const toggle = () => {
-    setSolo(prev => {
-      const next = !prev
-      localStorage.setItem('soloMode', String(next))
-      navigate(next ? '/cozinha' : '/admin', { replace: true })
-      return next
-    })
-  }
-
-  return { solo, toggle }
+function temAcessoNavItem(permissoes: string[] | null | undefined, item: NavItem): boolean {
+  if (!permissoes) return true
+  if (item.to === '/admin/whatsapp') return FILHOS_WHATSAPP.some(p => permissoes.includes(p))
+  if (item.to === '/admin/configuracoes') return FILHOS_CONFIG.some(p => permissoes.includes(p))
+  return permissoes.includes(item.permission)
 }
 
 export function AdminLayout() {
   const { user, logout } = useAuth()
-  const { solo, toggle } = useSoloMode()
+  const { conversasWhatsappNaoLidas } = useNotification()
+  const [statusLoja, setStatusLoja] = useState<PausaStatus | null>(null)
 
-  const navItems = solo ? NAV_SOLO : NAV_GESTAO
+  useEffect(() => {
+    const restauranteId = user?.restauranteId
+    if (!restauranteId) return
+
+    const carregarStatus = () => {
+      pausaApi.status(restauranteId).then(r => setStatusLoja(r.data)).catch(() => {})
+    }
+    carregarStatus()
+    const interval = setInterval(carregarStatus, INTERVALO_ATUALIZACAO_STATUS_MS)
+    return () => clearInterval(interval)
+  }, [user?.restauranteId])
 
   return (
     <div className={styles.layout}>
       <aside className={styles.sidebar}>
         <div className={styles.brand}>
           <img src={logo} alt="Oia a Conta" className={styles.brandLogo} />
+          <div className={styles.brandText}>
+            <p className={styles.brandSubtitle}>Gestão simples</p>
+          </div>
+          {statusLoja && (
+            <div
+              className={`${styles.statusLoja} ${statusLoja.aberto ? styles.statusAberta : styles.statusFechada}`}
+              title={statusLoja.motivo}
+            >
+              <span className={styles.statusDot} />
+              <span>{statusLoja.aberto ? 'Loja aberta' : 'Loja fechada'}</span>
+            </div>
+          )}
         </div>
 
-        <button
-          className={`${styles.soloToggle} ${solo ? styles.soloOn : ''}`}
-          onClick={toggle}
-          title={solo ? 'Sair do Modo Solo' : 'Entrar no Modo Solo'}
-        >
-          {solo ? <User size={15} /> : <Users size={15} />}
-          <span className={styles.soloLabel}>{solo ? 'Modo Solo' : 'Gestão'}</span>
-          <span className={styles.soloSwitch}>{solo ? 'ON' : 'OFF'}</span>
-        </button>
-
         <nav className={styles.nav}>
-          {navItems.map(item => (
+          {NAV_ITEMS.filter(item => temAcessoNavItem(user?.permissoes, item)).map(item => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.end}
               className={({ isActive }) => `${styles.navItem} ${isActive ? styles.active : ''}`}
             >
-              <item.Icon size={17} />
+              <span className={styles.navIconWrap}>
+                <item.Icon size={17} />
+                {item.to === '/admin/whatsapp' && conversasWhatsappNaoLidas > 0 && (
+                  <span className={styles.navBadge}>
+                    {conversasWhatsappNaoLidas > 99 ? '99+' : conversasWhatsappNaoLidas}
+                  </span>
+                )}
+              </span>
               <span>{item.label}</span>
             </NavLink>
           ))}
           <div className={styles.navDivider} />
-          {NAV_BOTTOM.map(item => (
+          {NAV_BOTTOM.filter(item => temAcessoNavItem(user?.permissoes, item)).map(item => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -118,12 +137,13 @@ export function AdminLayout() {
 
         <div className={styles.userSection}>
           <p className={styles.userName}>{user?.nome}</p>
-          <p className={styles.userRole}>{solo ? 'Modo Solo ativo' : 'Administrador'}</p>
+          <p className={styles.userRole}>Administrador</p>
           <button className={styles.logoutBtn} onClick={logout}>Sair</button>
         </div>
       </aside>
       <main className={styles.main}>
         <NotificationAlert />
+        <PedidoPendenteAlerta />
         <Outlet />
       </main>
     </div>
