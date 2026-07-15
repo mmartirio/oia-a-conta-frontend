@@ -1,12 +1,14 @@
 :root {
-  /* Colors */
-  --color-primary: #2563eb;
-  --color-primary-dark: #1d4ed8;
-  --color-secondary: #7c3aed;
-  --color-success: #16a34a;
-  --color-warning: #d97706;
-  --color-danger: #dc2626;
-  --color-info: #0284c7;
+  /* Colors — identidade "sertaneja" derivada do logo (terracota / laranja-sol / azul-marinho) */
+  --color-primary: #CF4622;
+  --color-primary-dark: #A83A1C;
+  --color-primary-rgb: 207, 70, 34;
+  --color-secondary: #F68E05;
+  --color-accent: #012F54;
+  --color-success: #3A8C4A;
+  --color-warning: #E8890C;
+  --color-danger: #C4351F;
+  --color-info: #2C6E8C;
 
   /* Status colors */
   --color-enviado: #3498db;
@@ -15,13 +17,12 @@
   --color-entregue: #95a5a6;
 
   /* Neutrals */
-  --color-bg: #f1f5f9;
+  --color-bg: #f7f4f0;
   --color-surface: #ffffff;
-  --color-border: #e2e8f0;
+  --color-border: #e5ded6;
   --color-text: #0f172a;
   --color-text-secondary: #64748b;
   --color-text-muted: #94a3b8;
-  --radius-sm: 4px;
 
   /* Spacing */
   --spacing-xs: 4px;
@@ -54,4 +55,7 @@
 
   /* Transitions */
   --transition: 0.2s ease;
+
+  /* Textura sertaneja leve — usar com moderação (hero da página pública, headers de destaque) */
+  --gradient-sol: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
 }
