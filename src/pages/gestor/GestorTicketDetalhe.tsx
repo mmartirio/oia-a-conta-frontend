@@ -2,9 +2,9 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { billingApi, type Ticket, type MensagemTicket } from '../../api/billingApi'
 import { Button } from '../../components/ui/Button'
-import styles from './SuperAdmin.module.css'
+import styles from './Gestor.module.css'
 
-export function SuperAdminTicketDetalhe() {
+export function GestorTicketDetalhe() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [ticket, setTicket] = useState<Ticket | null>(null)
@@ -47,7 +47,7 @@ export function SuperAdminTicketDetalhe() {
   return (
     <div>
       <div className={styles.toolbar}>
-        <Button variant="ghost" onClick={() => navigate('/super-admin/tickets')}>← Voltar</Button>
+        <Button variant="ghost" onClick={() => navigate('/gestor/tickets')}>← Voltar</Button>
         <h1 className={styles.pageTitle} style={{ margin: 0 }}>Ticket #{ticket.id}</h1>
       </div>
 

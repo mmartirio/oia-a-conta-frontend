@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { billingApi, type Contrato, type Pagamento } from '../../api/billingApi'
 import { Button } from '../../components/ui/Button'
+import { Pagination } from '../../components/ui/Pagination'
 import styles from './Gestor.module.css'
 
 interface ItemCobranca extends Pagamento {
@@ -9,12 +10,15 @@ interface ItemCobranca extends Pagamento {
   contratoId: number
 }
 
+const PAGE_SIZE = 20
+
 export function GestorCobrancas() {
   const [itens, setItens] = useState<ItemCobranca[]>([])
   const [contratos, setContratos] = useState<Contrato[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filtroStatus, setFiltroStatus] = useState('TODOS')
+  const [page, setPage] = useState(0)
 
   // Modal pagamento manual
   const [paModal, setPaModal] = useState<Contrato | null>(null)
@@ -25,11 +29,12 @@ export function GestorCobrancas() {
 
   const carregar = async () => {
     setLoading(true)
-    const r = await billingApi.listarContratos()
+    // Idem GestorPagamentos: sem endpoint agregado no backend, buscamos tudo e paginamos client-side.
+    const r = await billingApi.listarTodosContratos()
     setContratos(r.data)
     const todos: ItemCobranca[] = []
     await Promise.allSettled(r.data.map(async c => {
-      const p = await billingApi.listarPagamentos(c.id)
+      const p = await billingApi.listarTodosPagamentos(c.id)
       p.data.forEach(pag => todos.push({
         ...pag,
         restauranteId: c.restauranteId,
@@ -52,6 +57,10 @@ export function GestorCobrancas() {
     return okStatus && okSearch
   })
 
+  const totalPages = Math.max(1, Math.ceil(filtrados.length / PAGE_SIZE))
+  const paginaAtual = Math.min(page, totalPages - 1)
+  const paginados = filtrados.slice(paginaAtual * PAGE_SIZE, paginaAtual * PAGE_SIZE + PAGE_SIZE)
+
   const handlePagManual = async () => {
     if (!paModal || !paValor) return
     setSaving(true)
@@ -59,6 +68,7 @@ export function GestorCobrancas() {
       await billingApi.pagamentoManual(paModal.id, Number(paValor), paObs)
       setFeedback('Pagamento registrado com sucesso!')
       setPaModal(null); setPaValor(''); setPaObs('')
+      setPage(0)
       carregar()
     } catch {
       setFeedback('Erro ao registrar pagamento')
@@ -81,8 +91,8 @@ export function GestorCobrancas() {
       <div className={styles.toolbar} style={{ marginBottom: '1rem' }}>
         <input className={styles.searchInput}
           placeholder="Buscar por restaurante ou plano..."
-          value={search} onChange={e => setSearch(e.target.value)} />
-        <select className={styles.filterSelect} value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)}>
+          value={search} onChange={e => { setSearch(e.target.value); setPage(0) }} />
+        <select className={styles.filterSelect} value={filtroStatus} onChange={e => { setFiltroStatus(e.target.value); setPage(0) }}>
           {['TODOS', 'PAGO', 'PENDENTE', 'ESTORNADO', 'FALHOU'].map(s => (
             <option key={s} value={s}>{s === 'TODOS' ? 'Todos os status' : s}</option>
           ))}
@@ -104,7 +114,7 @@ export function GestorCobrancas() {
               </tr>
             </thead>
             <tbody>
-              {filtrados.map(p => (
+              {paginados.map(p => (
                 <tr key={p.id}>
                   <td>{new Date(p.dataPagamento || p.createdAt).toLocaleDateString('pt-BR')}</td>
                   <td>#{p.restauranteId}</td>
@@ -122,6 +132,7 @@ export function GestorCobrancas() {
               )}
             </tbody>
           </table>
+          <Pagination page={paginaAtual} totalPages={totalPages} onPageChange={setPage} />
         </div>
       )}
 

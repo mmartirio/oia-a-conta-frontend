@@ -1,11 +1,16 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { billingApi, type Contrato } from '../../api/billingApi'
 import { gestorApi, type UsuarioAdmin } from '../../api/gestorApi'
 import { Button } from '../../components/ui/Button'
+import { Pagination } from '../../components/ui/Pagination'
 import styles from './Gestor.module.css'
 
 export function GestorEmpresas() {
+  const navigate = useNavigate()
   const [contratos, setContratos] = useState<Contrato[]>([])
+  const [page, setPage] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
 
@@ -22,10 +27,14 @@ export function GestorEmpresas() {
   const [savingStatus, setSavingStatus] = useState(false)
 
   useEffect(() => {
-    billingApi.listarContratos()
-      .then(r => setContratos(r.data))
+    setLoading(true)
+    billingApi.listarContratos(page)
+      .then(r => {
+        setContratos(r.data.content)
+        setTotalPages(r.data.totalPages)
+      })
       .finally(() => setLoading(false))
-  }, [])
+  }, [page])
 
   const filtrados = contratos.filter(c =>
     search === '' ||
@@ -98,7 +107,15 @@ export function GestorEmpresas() {
             <tbody>
               {filtrados.map(c => (
                 <tr key={c.id}>
-                  <td><strong>#{c.restauranteId}</strong></td>
+                  <td>
+                    <button
+                      className={styles.linkButton}
+                      onClick={() => navigate(`/gestor/empresas/${c.restauranteId}`)}
+                      title="Ver detalhes da empresa"
+                    >
+                      <strong>#{c.restauranteId}</strong>
+                    </button>
+                  </td>
                   <td>{c.plano?.nome ?? '—'}</td>
                   <td>
                     <span className={`${styles.badge} ${styles[`status${c.status}`]}`}>{c.status}</span>
@@ -106,6 +123,9 @@ export function GestorEmpresas() {
                   <td>{c.dataInicio ? new Date(c.dataInicio).toLocaleDateString('pt-BR') : '—'}</td>
                   <td>{c.dataProximoVencimento ? new Date(c.dataProximoVencimento).toLocaleDateString('pt-BR') : '—'}</td>
                   <td style={{ display: 'flex', gap: '0.5rem' }}>
+                    <Button size="sm" variant="ghost" onClick={() => navigate(`/gestor/empresas/${c.restauranteId}`)}>
+                      Detalhes
+                    </Button>
                     <Button size="sm" variant="ghost" onClick={() => {
                       setStatusModal(c); setNovoStatus(c.status)
                     }}>
@@ -122,6 +142,7 @@ export function GestorEmpresas() {
               )}
             </tbody>
           </table>
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
         </div>
       )}
 

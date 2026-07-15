@@ -23,14 +23,14 @@ export function GestorDashboard() {
   const load = async () => {
     try {
       const [c, p] = await Promise.all([
-        billingApi.listarContratos(),
+        billingApi.listarTodosContratos(),
         billingApi.listarTodosPlanos(),
       ])
       setContratos(c.data)
       setPlanos(p.data)
       const allPags: Pagamento[] = []
       await Promise.allSettled(c.data.map(async cont => {
-        const pag = await billingApi.listarPagamentos(cont.id)
+        const pag = await billingApi.listarTodosPagamentos(cont.id)
         allPags.push(...pag.data)
       }))
       setPagamentos(allPags)

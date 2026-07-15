@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Layers, Building2, CreditCard, TrendingUp } from 'lucide-react'
+import { FiGrid, FiLayers, FiHome, FiCreditCard, FiTrendingUp, FiDollarSign, FiHelpCircle, FiPieChart } from 'react-icons/fi'
 import { useAuth } from '../../contexts/AuthContext'
 import logo from '../../assets/logo/OIA A CONTA - LOGO.png'
 import styles from './GestorLayout.module.css'
@@ -13,11 +13,14 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { to: '/gestor',           label: 'Dashboard', Icon: LayoutDashboard, end: true },
-  { to: '/gestor/planos',    label: 'Planos',    Icon: Layers },
-  { to: '/gestor/empresas',  label: 'Empresas',  Icon: Building2 },
-  { to: '/gestor/cobrancas', label: 'Cobranças', Icon: CreditCard },
-  { to: '/gestor/relatorios',label: 'Relatórios',Icon: TrendingUp },
+  { to: '/gestor',            label: 'Dashboard',  Icon: FiGrid, end: true },
+  { to: '/gestor/planos',     label: 'Planos',     Icon: FiLayers },
+  { to: '/gestor/empresas',   label: 'Empresas',   Icon: FiHome },
+  { to: '/gestor/cobrancas',  label: 'Cobranças',  Icon: FiCreditCard },
+  { to: '/gestor/pagamentos', label: 'Pagamentos', Icon: FiDollarSign },
+  { to: '/gestor/tickets',    label: 'Suporte',    Icon: FiHelpCircle },
+  { to: '/gestor/financeiro', label: 'Financeiro', Icon: FiPieChart },
+  { to: '/gestor/relatorios', label: 'Relatórios', Icon: FiTrendingUp },
 ]
 
 export function GestorLayout() {

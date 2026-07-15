@@ -5,6 +5,8 @@ import {
 } from 'recharts'
 import { billingApi } from '../../api/billingApi'
 import { Button } from '../../components/ui/Button'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
+import { useToast } from '../../contexts/ToastContext'
 import styles from './Gestor.module.css'
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
@@ -19,6 +21,9 @@ export function GestorRelatorios() {
   const [relatorio, setRelatorio] = useState<Record<string, unknown> | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [confirmBloqueio, setConfirmBloqueio] = useState(false)
+  const [bloqueando, setBloqueando] = useState(false)
+  const toast = useToast()
 
   const buscar = async () => {
     setLoading(true); setError('')
@@ -33,9 +38,16 @@ export function GestorRelatorios() {
   }
 
   const bloquearInadimplentes = async () => {
-    if (!confirm('Confirmar bloqueio manual de todos os contratos inadimplentes há mais de 5 dias?')) return
-    await billingApi.bloquearInadimplentes()
-    alert('Processamento de bloqueio concluído.')
+    setBloqueando(true)
+    try {
+      await billingApi.bloquearInadimplentes()
+      toast.success('Processamento de bloqueio concluído.')
+    } catch {
+      toast.error('Erro ao processar bloqueio')
+    } finally {
+      setBloqueando(false)
+      setConfirmBloqueio(false)
+    }
   }
 
   // Transforma relatorio em dados para gráficos
@@ -67,7 +79,7 @@ export function GestorRelatorios() {
             <input type="date" value={fim} onChange={e => setFim(e.target.value)} />
           </div>
           <Button loading={loading} onClick={buscar}>Gerar relatório</Button>
-          <Button variant="ghost" onClick={bloquearInadimplentes}>
+          <Button variant="ghost" onClick={() => setConfirmBloqueio(true)}>
             Bloquear inadimplentes agora
           </Button>
         </div>
@@ -129,6 +141,17 @@ export function GestorRelatorios() {
           )}
         </>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmBloqueio}
+        title="Bloquear inadimplentes"
+        message="Confirmar bloqueio manual de todos os contratos inadimplentes há mais de 5 dias?"
+        confirmLabel="Bloquear"
+        danger
+        loading={bloqueando}
+        onConfirm={bloquearInadimplentes}
+        onCancel={() => setConfirmBloqueio(false)}
+      />
     </div>
   )
 }

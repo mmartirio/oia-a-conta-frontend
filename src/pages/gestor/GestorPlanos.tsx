@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { billingApi, type Plano } from '../../api/billingApi'
 import { Button } from '../../components/ui/Button'
 import styles from './Gestor.module.css'
-import planoStyles from '../super-admin/SuperAdminPlanos.module.css'
 
 const FUNCIONALIDADES_DISPONIVEIS = [
   'Cardápio digital',
@@ -139,7 +138,7 @@ export function GestorPlanos() {
                     <td style={{ maxWidth: 200 }}>
                       {funcs.length === 0
                         ? <span style={{ color: 'var(--color-text-secondary)' }}>—</span>
-                        : <ul className={planoStyles.funcList}>{funcs.map((f, i) => <li key={i}>{f}</li>)}</ul>
+                        : <ul className={styles.funcList}>{funcs.map((f, i) => <li key={i}>{f}</li>)}</ul>
                       }
                     </td>
                     <td>
@@ -164,7 +163,7 @@ export function GestorPlanos() {
 
       {modal && (
         <div className={styles.overlay}>
-          <div className={`${styles.modal} ${planoStyles.modal}`}>
+          <div className={`${styles.modal} ${styles.planoModal}`}>
             <h2 className={styles.modalTitle}>{modal === 'criar' ? 'Novo plano' : 'Editar plano'}</h2>
 
             <div className={styles.formGroup}>
@@ -176,7 +175,7 @@ export function GestorPlanos() {
                 <label>Descrição</label>
                 <input type="text" value={form.descricao} onChange={e => setForm(f => ({ ...f, descricao: e.target.value }))} />
               </div>
-              <div className={planoStyles.row2}>
+              <div className={styles.row2}>
                 <div className={styles.formRow}>
                   <label>Preço mensal (R$)</label>
                   <input type="number" min="0" step="0.01" value={form.precoMensal}
@@ -196,9 +195,9 @@ export function GestorPlanos() {
 
               <div className={styles.formRow}>
                 <label>Funcionalidades incluídas</label>
-                <div className={planoStyles.funcGrid}>
+                <div className={styles.funcGrid}>
                   {FUNCIONALIDADES_DISPONIVEIS.map(func => (
-                    <label key={func} className={planoStyles.funcCheck}>
+                    <label key={func} className={styles.funcCheck}>
                       <input
                         type="checkbox"
                         checked={form.funcionalidades.includes(func)}

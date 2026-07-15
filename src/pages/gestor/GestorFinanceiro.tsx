@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { billingApi } from '../../api/billingApi'
 import { Button } from '../../components/ui/Button'
-import styles from './SuperAdmin.module.css'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
+import { useToast } from '../../contexts/ToastContext'
+import styles from './Gestor.module.css'
 
-export function SuperAdminFinanceiro() {
+export function GestorFinanceiro() {
   const hoje = new Date()
   const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().slice(0, 10)
   const ultimoDia = hoje.toISOString().slice(0, 10)
@@ -13,6 +15,9 @@ export function SuperAdminFinanceiro() {
   const [relatorio, setRelatorio] = useState<Record<string, unknown> | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [confirmBloqueio, setConfirmBloqueio] = useState(false)
+  const [bloqueando, setBloqueando] = useState(false)
+  const toast = useToast()
 
   const buscar = async () => {
     setLoading(true); setError('')
@@ -27,9 +32,16 @@ export function SuperAdminFinanceiro() {
   }
 
   const bloquear = async () => {
-    if (!confirm('Confirmar bloqueio manual de todos os inadimplentes?')) return
-    await billingApi.bloquearInadimplentes()
-    alert('Processamento concluído')
+    setBloqueando(true)
+    try {
+      await billingApi.bloquearInadimplentes()
+      toast.success('Processamento concluído')
+    } catch {
+      toast.error('Erro ao processar bloqueio')
+    } finally {
+      setBloqueando(false)
+      setConfirmBloqueio(false)
+    }
   }
 
   return (
@@ -46,10 +58,10 @@ export function SuperAdminFinanceiro() {
           <input type="date" value={fim} onChange={e => setFim(e.target.value)} />
         </div>
         <Button loading={loading} onClick={buscar}>Gerar relatório</Button>
-        <Button variant="ghost" onClick={bloquear}>Bloquear inadimplentes agora</Button>
+        <Button variant="ghost" onClick={() => setConfirmBloqueio(true)}>Bloquear inadimplentes agora</Button>
       </div>
 
-      {error && <p style={{ color: '#dc2626' }}>{error}</p>}
+      {error && <p style={{ color: 'var(--color-danger)' }}>{error}</p>}
 
       {relatorio && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
@@ -65,6 +77,17 @@ export function SuperAdminFinanceiro() {
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmBloqueio}
+        title="Bloquear inadimplentes"
+        message="Confirmar bloqueio manual de todos os inadimplentes?"
+        confirmLabel="Bloquear"
+        danger
+        loading={bloqueando}
+        onConfirm={bloquear}
+        onCancel={() => setConfirmBloqueio(false)}
+      />
     </div>
   )
 }
