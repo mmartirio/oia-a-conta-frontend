@@ -72,6 +72,20 @@ export function formatTime(isoString?: string | null): string {
   }).format(new Date(isoString))
 }
 
+export function formatRelativeTime(isoString?: string | null): string {
+  if (!isoString) return ''
+  const diffMs = Date.now() - new Date(isoString).getTime()
+  const diffSec = Math.floor(diffMs / 1000)
+  if (diffSec < 60) return 'agora'
+  const diffMin = Math.floor(diffSec / 60)
+  if (diffMin < 60) return `${diffMin} min`
+  const diffHour = Math.floor(diffMin / 60)
+  if (diffHour < 24) return `${diffHour} h`
+  const diffDay = Math.floor(diffHour / 24)
+  if (diffDay < 7) return `${diffDay} d`
+  return formatDate(isoString)
+}
+
 export const STATUS_MESA_LABEL: Record<StatusMesa, string> = {
   DISPONIVEL: 'Disponível',
   OCUPADA: 'Ocupada',
@@ -82,7 +96,8 @@ export const STATUS_PEDIDO_LABEL: Record<StatusPedido, string> = {
   ENVIADO: 'Enviado',
   PREPARANDO: 'Preparando',
   PRONTO: 'Pronto',
-  ENTREGUE: 'Entregue'
+  ENTREGUE: 'Entregue',
+  CANCELADO: 'Cancelado'
 }
 
 export const METODO_PAGAMENTO_LABEL: Record<MetodoPagamento, string> = {

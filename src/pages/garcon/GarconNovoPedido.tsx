@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { FiArrowLeft } from 'react-icons/fi'
 import { categoriaApi } from '../../api/categoriaApi'
 import { produtoApi } from '../../api/produtoApi'
 import { pedidoApi } from '../../api/pedidoApi'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
+import { useToast } from '../../contexts/ToastContext'
 import { formatCurrency } from '../../utils/formatters'
 import type { Categoria, Produto, ItemPedidoRequest } from '../../types'
 import styles from './GarconNovoPedido.module.css'
@@ -17,6 +19,7 @@ interface CartItem extends ItemPedidoRequest {
 export function GarconNovoPedido() {
   const { id: comandaId } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const toast = useToast()
 
   const [categorias, setCategorias] = useState<Categoria[]>([])
   const [produtos, setProdutos] = useState<Produto[]>([])
@@ -74,7 +77,7 @@ export function GarconNovoPedido() {
       navigate(`/garcon/comanda/${comandaId}`, { replace: true })
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } }).response?.data?.message
-      alert(msg ?? 'Erro ao enviar pedido')
+      toast.error(msg ?? 'Erro ao enviar pedido')
     } finally {
       setSaving(false)
     }
@@ -83,7 +86,7 @@ export function GarconNovoPedido() {
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <button className={styles.back} onClick={() => navigate(-1)}>← Voltar</button>
+        <button className={styles.back} onClick={() => navigate(-1)}><FiArrowLeft size={16} /> Voltar</button>
         <h1 className={styles.title}>Novo Pedido</h1>
       </div>
 

@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { FiPlus } from 'react-icons/fi'
 import { pdvApi } from '../../api/pdvApi'
+import { useToast } from '../../contexts/ToastContext'
+import { Pagination } from '../../components/ui/Pagination'
 import type { Entrega, RestauranteConfig } from '../../types'
 import styles from './PdvDelivery.module.css'
+import buttonStyles from '../../components/ui/Button.module.css'
 
 function metodoTag(m: string) {
   if (m === 'PIX') return styles.tagPix
@@ -26,22 +31,26 @@ export function PdvDelivery() {
   const [confirmandoId, setConfirmandoId] = useState<number | null>(null)
   const [pixEntrega, setPixEntrega] = useState<Entrega | null>(null)
   const [copiado, setCopiado] = useState(false)
+  const [page, setPage] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const toast = useToast()
 
   const carregar = async () => {
     setLoading(true)
     try {
       const [r1, r2] = await Promise.all([
-        pdvApi.listarEntregasPendentes(),
+        pdvApi.listarEntregasPendentes(page),
         pdvApi.getConfig(),
       ])
-      setEntregas(r1.data)
+      setEntregas(r1.data.content)
+      setTotalPages(r1.data.totalPages)
       setConfig(r2.data)
     } finally {
       setLoading(false)
     }
   }
 
-  useEffect(() => { carregar() }, [])
+  useEffect(() => { carregar() }, [page])
 
   const confirmar = async (id: number) => {
     setConfirmandoId(id)
@@ -49,7 +58,7 @@ export function PdvDelivery() {
       await pdvApi.confirmarPagamentoEntrega(id)
       await carregar()
     } catch {
-      alert('Erro ao confirmar pagamento')
+      toast.error('Erro ao confirmar pagamento')
     } finally {
       setConfirmandoId(null)
     }
@@ -75,7 +84,12 @@ export function PdvDelivery() {
     <div className={styles.page}>
       <div className={styles.header}>
         <h1 className={styles.title}>Delivery — Aguardando Confirmação</h1>
-        <button className="btn btn-secondary" onClick={carregar}>Atualizar</button>
+        <div className={styles.headerActions}>
+          <Link to="/pdv/delivery/novo" className={`${buttonStyles.btn} ${buttonStyles.primary} ${buttonStyles.md}`}>
+            <FiPlus size={16} /> Novo Delivery
+          </Link>
+          <button className="btn btn-secondary" onClick={carregar}>Atualizar</button>
+        </div>
       </div>
 
       {entregas.length === 0 ? (
@@ -120,6 +134,8 @@ export function PdvDelivery() {
           ))}
         </div>
       )}
+
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
       {pixEntrega && (
         <div className={styles.overlay} onClick={() => setPixEntrega(null)}>

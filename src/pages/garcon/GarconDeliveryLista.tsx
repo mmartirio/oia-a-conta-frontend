@@ -3,20 +3,25 @@ import { useNavigate } from 'react-router-dom'
 import { entregaApi } from '../../api/entregaApi'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
+import { Pagination } from '../../components/ui/Pagination'
+import { useToast } from '../../contexts/ToastContext'
 import { formatCurrency, formatDateTime } from '../../utils/formatters'
 import type { Entrega } from '../../types'
 import styles from './GarconDeliveryLista.module.css'
 
-type StatusAtivo = 'AGUARDANDO' | 'ACEITA' | 'PRONTO_PARA_ENTREGA' | 'SAIU_PARA_ENTREGA'
+type StatusAtivo = 'AGUARDANDO' | 'CONFIRMADA' | 'ACEITA' | 'PRONTO_PARA_ENTREGA' | 'SAIU_PARA_ENTREGA'
 
 const COLUNAS: { statuses: StatusAtivo[]; label: string; cor: string }[] = [
-  { statuses: ['AGUARDANDO'],                                label: 'Novo Pedido', cor: '#6366f1' },
+  { statuses: ['AGUARDANDO'],                                label: 'Aguardando confirmação', cor: '#ef4444' },
+  { statuses: ['CONFIRMADA'],                                label: 'Novo Pedido', cor: '#6366f1' },
   { statuses: ['ACEITA'],                                    label: 'Produção',    cor: '#f59e0b' },
   { statuses: ['PRONTO_PARA_ENTREGA', 'SAIU_PARA_ENTREGA'], label: 'Entrega',     cor: '#22c55e' },
 ]
 
-const ACOES: Record<StatusAtivo, { label: string; fn: (id: number) => Promise<unknown> }> = {
-  AGUARDANDO:           { label: 'Aceitar',  fn: (id) => entregaApi.aceitar(id) },
+// AGUARDANDO não entra aqui — tem UI própria (confirmar/rejeitar com motivo)
+const ACOES: Partial<Record<StatusAtivo, { label: string; fn: (id: number) => Promise<unknown> }>> = {
+  CONFIRMADA:           { label: 'Aceitar',  fn: (id) => entregaApi.aceitar(id) },
   ACEITA:               { label: 'Pronto',   fn: (id) => entregaApi.prontoParaEntrega(id) },
   PRONTO_PARA_ENTREGA:  { label: 'Saiu',     fn: (id) => entregaApi.saiu(id) },
   SAIU_PARA_ENTREGA:    { label: 'Entregue', fn: (id) => entregaApi.entregar(id) },
@@ -29,14 +34,19 @@ export function GarconDeliveryLista() {
   const [loading,     setLoading]     = useState(true)
   const [atualizando, setAtualizando] = useState<number | null>(null)
   const [verEntregues, setVerEntregues] = useState(false)
+  const [confirmCancelar, setConfirmCancelar] = useState<number | null>(null)
+  const [page, setPage] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
   const prevIdsRef = useRef<Set<number>>(new Set())
+  const toast = useToast()
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (paginaAlvo = page) => {
     try {
-      const r = await entregaApi.listar()
-      setEntregas(r.data)
+      const r = await entregaApi.listar(paginaAlvo)
+      setEntregas(r.data.content)
+      setTotalPages(r.data.totalPages)
       const novosIds = new Set(
-        r.data.filter((e: Entrega) => e.status === 'AGUARDANDO').map((e: Entrega) => e.id)
+        r.data.content.filter((e: Entrega) => e.status === 'AGUARDANDO').map((e: Entrega) => e.id)
       )
       const temNovo = [...novosIds].some(id => !prevIdsRef.current.has(id))
       if (temNovo && prevIdsRef.current.size > 0) {
@@ -47,29 +57,53 @@ export function GarconDeliveryLista() {
     } finally {
       setLoading(false)
     }
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page])
 
   useEffect(() => {
-    load()
-    const t = setInterval(load, 15000)
+    load(page)
+    const t = setInterval(() => load(page), 15000)
     return () => clearInterval(t)
-  }, [load])
+  }, [load, page])
 
   const avancar = async (id: number, status: StatusAtivo) => {
+    const acao = ACOES[status]
+    if (!acao) return
     setAtualizando(id)
-    try { await ACOES[status].fn(id); load() }
+    try { await acao.fn(id); load() }
     catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } }).response?.data?.message
-      alert(msg ?? 'Erro')
+      toast.error(msg ?? 'Erro')
     } finally { setAtualizando(null) }
   }
 
-  const cancelar = async (id: number) => {
-    if (!confirm('Cancelar esta entrega?')) return
+  const confirmarPedido = async (id: number) => {
+    setAtualizando(id)
+    try { await entregaApi.confirmar(id); load() }
+    catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } }).response?.data?.message
+      toast.error(msg ?? 'Erro ao confirmar pedido')
+    } finally { setAtualizando(null) }
+  }
+
+  const rejeitarPedido = async (id: number) => {
+    const motivo = window.prompt('Motivo da recusa (o cliente vai receber essa mensagem):')
+    if (!motivo || !motivo.trim()) return
+    setAtualizando(id)
+    try { await entregaApi.rejeitar(id, motivo.trim()); load() }
+    catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } }).response?.data?.message
+      toast.error(msg ?? 'Erro ao recusar pedido')
+    } finally { setAtualizando(null) }
+  }
+
+  const cancelar = async () => {
+    if (confirmCancelar === null) return
+    const id = confirmCancelar
     setAtualizando(id)
     try { await entregaApi.cancelar(id); load() }
-    catch { alert('Erro ao cancelar') }
-    finally { setAtualizando(null) }
+    catch { toast.error('Erro ao cancelar') }
+    finally { setAtualizando(null); setConfirmCancelar(null) }
   }
 
   const ativas    = entregas.filter(e => e.status !== 'ENTREGUE' && e.status !== 'CANCELADA')
@@ -88,7 +122,7 @@ export function GarconDeliveryLista() {
           </p>
         </div>
         <div className={styles.headerActions}>
-          <Button variant="outline" size="sm" onClick={load}>Atualizar</Button>
+          <Button variant="outline" size="sm" onClick={() => load()}>Atualizar</Button>
           <Button onClick={() => navigate('/delivery/novo')}>+ Nova Entrega</Button>
         </div>
       </div>
@@ -152,23 +186,43 @@ export function GarconDeliveryLista() {
                         >
                           Maps
                         </a>
-                        {ACOES[e.status as StatusAtivo] && (
+                        {e.status === 'AGUARDANDO' ? (
+                          <>
+                            <Button
+                              size="sm"
+                              loading={atualizando === e.id}
+                              onClick={() => confirmarPedido(e.id)}
+                            >
+                              ✓ Confirmar
+                            </Button>
+                            <button
+                              className={styles.btnCancelar}
+                              onClick={() => rejeitarPedido(e.id)}
+                              disabled={atualizando === e.id}
+                              title="Recusar pedido"
+                            >
+                              ✕
+                            </button>
+                          </>
+                        ) : ACOES[e.status as StatusAtivo] && (
                           <Button
                             size="sm"
                             loading={atualizando === e.id}
                             onClick={() => avancar(e.id, e.status as StatusAtivo)}
                           >
-                            {ACOES[e.status as StatusAtivo].label}
+                            {ACOES[e.status as StatusAtivo]!.label}
                           </Button>
                         )}
-                        <button
-                          className={styles.btnCancelar}
-                          onClick={() => cancelar(e.id)}
-                          disabled={atualizando === e.id}
-                          title="Cancelar entrega"
-                        >
-                          ✕
-                        </button>
+                        {e.status !== 'AGUARDANDO' && (
+                          <button
+                            className={styles.btnCancelar}
+                            onClick={() => setConfirmCancelar(e.id)}
+                            disabled={atualizando === e.id}
+                            title="Cancelar entrega"
+                          >
+                            ✕
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -204,6 +258,19 @@ export function GarconDeliveryLista() {
           )}
         </div>
       )}
+
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+
+      <ConfirmDialog
+        isOpen={confirmCancelar !== null}
+        title="Cancelar entrega"
+        message="Cancelar esta entrega?"
+        confirmLabel="Cancelar entrega"
+        danger
+        loading={confirmCancelar !== null && atualizando === confirmCancelar}
+        onConfirm={cancelar}
+        onCancel={() => setConfirmCancelar(null)}
+      />
     </div>
   )
 }

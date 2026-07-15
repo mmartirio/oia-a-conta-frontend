@@ -5,6 +5,8 @@ import { Input } from '../../components/ui/Input'
 import { Modal } from '../../components/ui/Modal'
 import { Badge } from '../../components/ui/Badge'
 import { Card } from '../../components/ui/Card'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
+import { useToast } from '../../contexts/ToastContext'
 import { STATUS_MESA_LABEL } from '../../utils/formatters'
 import type { Mesa } from '../../types'
 import styles from './AdminMesas.module.css'
@@ -19,6 +21,9 @@ export function AdminMesas() {
   const [form, setForm] = useState<MesaForm>({ numero: '', capacidade: '4' })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [confirmDelete, setConfirmDelete] = useState<Mesa | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  const toast = useToast()
 
   const load = () => {
     mesaApi.listar().then(r => setMesas(r.data)).finally(() => setLoading(false))
@@ -61,14 +66,18 @@ export function AdminMesas() {
     }
   }
 
-  const handleDelete = async (m: Mesa) => {
-    if (!confirm(`Excluir Mesa ${m.numero}?`)) return
+  const handleDelete = async () => {
+    if (!confirmDelete) return
+    setDeleting(true)
     try {
-      await mesaApi.excluir(m.id)
+      await mesaApi.excluir(confirmDelete.id)
       load()
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } }).response?.data?.message
-      alert(msg ?? 'Erro ao excluir')
+      toast.error(msg ?? 'Erro ao excluir')
+    } finally {
+      setDeleting(false)
+      setConfirmDelete(null)
     }
   }
 
@@ -106,7 +115,7 @@ export function AdminMesas() {
                   variant="danger"
                   size="sm"
                   disabled={m.status !== 'DISPONIVEL'}
-                  onClick={() => handleDelete(m)}
+                  onClick={() => setConfirmDelete(m)}
                 >
                   Excluir
                 </Button>
@@ -150,6 +159,17 @@ export function AdminMesas() {
           />
         </form>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={!!confirmDelete}
+        title="Excluir mesa"
+        message={`Excluir Mesa ${confirmDelete?.numero}?`}
+        confirmLabel="Excluir"
+        danger
+        loading={deleting}
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </div>
   )
 }

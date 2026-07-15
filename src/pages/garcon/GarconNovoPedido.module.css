@@ -8,6 +8,9 @@
 }
 
 .back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
   background: none;
   border: none;
   font-size: 1rem;

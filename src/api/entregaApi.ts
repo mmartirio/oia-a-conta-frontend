@@ -1,15 +1,26 @@
 import api from './axios'
-import type { Entrega, EntregaRequest } from '../types'
+import type { Entrega, EntregaRequest, Page } from '../types'
 
 export const entregaApi = {
   criar: (data: EntregaRequest) =>
     api.post<Entrega>('/api/entregas', data),
 
-  listar: () =>
-    api.get<Entrega[]>('/api/entregas'),
+  // Paginação real — a tela consome Page<Entrega> (content/totalElements/totalPages)
+  // e renderiza os controles de <Pagination>.
+  listar: (page = 0) =>
+    api.get<Page<Entrega>>('/api/entregas', { params: { page } }),
 
-  listarAguardando: () =>
-    api.get<Entrega[]>('/api/entregas/aguardando'),
+  listarAguardando: (page = 0) =>
+    api.get<Page<Entrega>>('/api/entregas/aguardando', { params: { page } }),
+
+  listarConfirmadas: (page = 0) =>
+    api.get<Page<Entrega>>('/api/entregas/confirmadas', { params: { page } }),
+
+  confirmar: (id: number) =>
+    api.put<Entrega>(`/api/entregas/${id}/confirmar`),
+
+  rejeitar: (id: number, motivo: string) =>
+    api.put<Entrega>(`/api/entregas/${id}/rejeitar`, { motivo }),
 
   aceitar: (id: number) =>
     api.put<Entrega>(`/api/entregas/${id}/aceitar`),
@@ -29,6 +40,12 @@ export const entregaApi = {
   confirmarPagamento: (id: number) =>
     api.put<Entrega>(`/api/entregas/${id}/confirmar-pagamento`),
 
-  listarPendentesPagamento: () =>
-    api.get<Entrega[]>('/api/entregas/pendentes-pagamento'),
+  listarPendentesPagamento: (page = 0) =>
+    api.get<Page<Entrega>>('/api/entregas/pendentes-pagamento', { params: { page } }),
+
+  listarEmRota: () =>
+    api.get<Entrega[]>('/api/entregas/em-rota'),
+
+  atualizarLocalizacao: (id: number, latitude: number, longitude: number) =>
+    api.put<void>(`/api/entregas/${id}/localizacao`, { latitude, longitude }),
 }

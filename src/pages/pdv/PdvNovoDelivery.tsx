@@ -9,7 +9,7 @@ import { Card } from '../../components/ui/Card'
 import { useToast } from '../../contexts/ToastContext'
 import { formatCurrency } from '../../utils/formatters'
 import type { Categoria, MetodoPagamento, Produto } from '../../types'
-import styles from './GarconDelivery.module.css'
+import styles from './PdvNovoDelivery.module.css'
 
 interface CartItem {
   produtoId: number
@@ -18,7 +18,8 @@ interface CartItem {
   quantidade: number
 }
 
-const METODOS: MetodoPagamento[] = ['DINHEIRO', 'PIX', 'CARTAO_CREDITO', 'CARTAO_DEBITO']
+// Delivery criado pelo caixa: sem PIX (quem recebe é o entregador, que repassa ao caixa na volta)
+const METODOS: MetodoPagamento[] = ['DINHEIRO', 'CARTAO_CREDITO', 'CARTAO_DEBITO']
 const METODO_LABEL: Record<MetodoPagamento, string> = {
   DINHEIRO: 'Dinheiro',
   PIX: 'PIX',
@@ -26,7 +27,7 @@ const METODO_LABEL: Record<MetodoPagamento, string> = {
   CARTAO_DEBITO: 'Débito',
 }
 
-export function GarconDelivery() {
+export function PdvNovoDelivery() {
   const navigate = useNavigate()
 
   const [categorias, setCategorias] = useState<Categoria[]>([])
@@ -99,8 +100,9 @@ export function GarconDelivery() {
           precoUnitario: i.preco,
           quantidade: i.quantidade,
         })),
+        origemPdv: true,
       })
-      navigate(`/delivery`, { replace: true })
+      navigate('/pdv/delivery', { replace: true })
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } }).response?.data?.message
       toast.error(msg ?? 'Erro ao criar entrega')
@@ -112,8 +114,8 @@ export function GarconDelivery() {
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <button className={styles.back} onClick={() => navigate(`/delivery`)}><FiArrowLeft size={16} /> Voltar</button>
-        <h1 className={styles.title}>Novo Delivery</h1>
+        <button className={styles.back} onClick={() => navigate('/pdv/delivery')}><FiArrowLeft size={16} /> Voltar</button>
+        <h1 className={styles.title}>Novo Delivery (PDV)</h1>
       </div>
 
       {/* Dados do cliente */}
@@ -160,9 +162,9 @@ export function GarconDelivery() {
         </div>
       </Card>
 
-      {/* Pagamento */}
+      {/* Pagamento — sem PIX: quem recebe é o entregador, que repassa ao caixa na volta */}
       <Card className={styles.section}>
-        <h3 className={styles.sectionTitle}>Pagamento</h3>
+        <h3 className={styles.sectionTitle}>Pagamento (na entrega)</h3>
         <div className={styles.metodos}>
           {METODOS.map(m => (
             <label key={m} className={`${styles.metodoOption} ${metodo === m ? styles.metodoSelected : ''}`}>

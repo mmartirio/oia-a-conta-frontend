@@ -19,7 +19,7 @@
 .endereco { font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 0.5rem; }
 
 .itens { list-style: none; padding: 0; margin: 0 0 0.5rem; font-size: 0.875rem; display: flex; flex-direction: column; gap: 0.125rem; }
-.obs { font-size: 0.8125rem; color: var(--color-text-secondary); font-style: italic; margin: 0 0 0.5rem; }
+.obs { display: flex; align-items: center; gap: 0.3rem; font-size: 0.8125rem; color: var(--color-text-secondary); font-style: italic; margin: 0 0 0.5rem; }
 
 .cardFooter { display: flex; align-items: center; justify-content: space-between; padding-top: 0.625rem; border-top: 1px solid var(--color-border); flex-wrap: wrap; gap: 0.5rem; }
 .total { font-size: 1.125rem; font-weight: 800; color: var(--color-text); }

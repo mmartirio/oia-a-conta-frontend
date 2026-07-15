@@ -6,6 +6,7 @@ import { Badge } from '../../components/ui/Badge'
 import { Modal } from '../../components/ui/Modal'
 import { Card } from '../../components/ui/Card'
 import { formatCurrency, formatTime, STATUS_PEDIDO_LABEL, METODO_PAGAMENTO_LABEL } from '../../utils/formatters'
+import { useToast } from '../../contexts/ToastContext'
 import type { Comanda, MetodoPagamento, Pedido } from '../../types'
 import styles from './GarconComanda.module.css'
 
@@ -26,6 +27,7 @@ export function GarconComanda() {
   const [fecharModal, setFecharModal] = useState(false)
   const [metodo, setMetodo] = useState<MetodoPagamento>('DINHEIRO')
   const [fechando, setFechando] = useState(false)
+  const toast = useToast()
 
   const load = () => {
     if (!id) return
@@ -44,7 +46,7 @@ export function GarconComanda() {
       navigate('/garcon', { replace: true })
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } }).response?.data?.message
-      alert(msg ?? 'Erro ao fechar comanda')
+      toast.error(msg ?? 'Erro ao fechar comanda')
     } finally {
       setFechando(false)
     }
