@@ -3,7 +3,10 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { WebSocketProvider } from './contexts/WebSocketContext'
 import { NotificationProvider } from './contexts/NotificationContext'
+import { ToastProvider } from './contexts/ToastContext'
 import { PrivateRoute } from './components/PrivateRoute'
+import { RequirePermission } from './components/RequirePermission'
+import { primeiraRotaPermitida } from './constants/permissoes'
 import type { Role } from './types'
 
 const ROLE_HOME: Record<Role, string> = {
@@ -16,7 +19,15 @@ const ROLE_HOME: Record<Role, string> = {
 function SmartRedirect() {
   const { user, loading } = useAuth()
   if (loading) return null
-  if (user) return <Navigate to={ROLE_HOME[user.role] ?? '/login'} replace />
+  if (user) {
+    // ADMIN com grupo restrito pode não ter acesso ao Dashboard (rota padrão)
+    // — manda pra primeira rota do sidebar que o grupo permite. SUPER_ADMIN
+    // não usa esse sidebar (vai pro console /gestor), fica de fora.
+    const destino = user.role === 'ADMIN'
+      ? primeiraRotaPermitida(user.permissoes)
+      : (ROLE_HOME[user.role] ?? '/login')
+    return <Navigate to={destino} replace />
+  }
   return <Navigate to="/login" replace />
 }
 
@@ -25,9 +36,6 @@ import { AdminLayout } from './components/layouts/AdminLayout'
 import { GarconLayout } from './components/layouts/GarconLayout'
 import { CozinhaLayout } from './components/layouts/CozinhaLayout'
 import { GestorLayout } from './components/layouts/GestorLayout'
-import { SuperAdminLayout } from './components/layouts/SuperAdminLayout'
-import { PdvLayout } from './components/layouts/PdvLayout'
-import { EntregadorLayout } from './components/layouts/EntregadorLayout'
 
 // Páginas públicas
 import { Login } from './pages/Login'
@@ -59,6 +67,8 @@ import { CozinhaPedidos } from './pages/cozinha/CozinhaPedidos'
 // PDV
 import { PdvSalao } from './pages/pdv/PdvSalao'
 import { PdvDelivery } from './pages/pdv/PdvDelivery'
+import { PdvNovaVenda } from './pages/pdv/PdvNovaVenda'
+import { PdvNovoDelivery } from './pages/pdv/PdvNovoDelivery'
 
 // Entregador
 import { EntregadorPainel } from './pages/entregador/EntregadorPainel'
@@ -67,18 +77,13 @@ import { EntregadorPainel } from './pages/entregador/EntregadorPainel'
 import { GestorDashboard } from './pages/gestor/GestorDashboard'
 import { GestorPlanos } from './pages/gestor/GestorPlanos'
 import { GestorEmpresas } from './pages/gestor/GestorEmpresas'
+import { GestorEmpresaDetalhe } from './pages/gestor/GestorEmpresaDetalhe'
 import { GestorCobrancas } from './pages/gestor/GestorCobrancas'
 import { GestorRelatorios } from './pages/gestor/GestorRelatorios'
-
-// Super Admin
-import { SuperAdminDashboard } from './pages/super-admin/SuperAdminDashboard'
-import { SuperAdminPlanos } from './pages/super-admin/SuperAdminPlanos'
-import { SuperAdminEmpresas } from './pages/super-admin/SuperAdminEmpresas'
-import { SuperAdminEmpresaDetalhe } from './pages/super-admin/SuperAdminEmpresaDetalhe'
-import { SuperAdminPagamentos } from './pages/super-admin/SuperAdminPagamentos'
-import { SuperAdminTickets } from './pages/super-admin/SuperAdminTickets'
-import { SuperAdminTicketDetalhe } from './pages/super-admin/SuperAdminTicketDetalhe'
-import { SuperAdminFinanceiro } from './pages/super-admin/SuperAdminFinanceiro'
+import { GestorPagamentos } from './pages/gestor/GestorPagamentos'
+import { GestorTickets } from './pages/gestor/GestorTickets'
+import { GestorTicketDetalhe } from './pages/gestor/GestorTicketDetalhe'
+import { GestorFinanceiro } from './pages/gestor/GestorFinanceiro'
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ''
 
@@ -88,6 +93,7 @@ export function App() {
       <AuthProvider>
         <WebSocketProvider>
           <NotificationProvider>
+            <ToastProvider>
             <BrowserRouter>
               <Routes>
                 {/* Públicas */}
@@ -102,44 +108,69 @@ export function App() {
                     <Route path="/gestor" element={<GestorDashboard />} />
                     <Route path="/gestor/planos" element={<GestorPlanos />} />
                     <Route path="/gestor/empresas" element={<GestorEmpresas />} />
+                    <Route path="/gestor/empresas/:id" element={<GestorEmpresaDetalhe />} />
                     <Route path="/gestor/cobrancas" element={<GestorCobrancas />} />
+                    <Route path="/gestor/pagamentos" element={<GestorPagamentos />} />
+                    <Route path="/gestor/tickets" element={<GestorTickets />} />
+                    <Route path="/gestor/tickets/:id" element={<GestorTicketDetalhe />} />
+                    <Route path="/gestor/financeiro" element={<GestorFinanceiro />} />
                     <Route path="/gestor/relatorios" element={<GestorRelatorios />} />
-                  </Route>
-                  <Route element={<SuperAdminLayout />}>
-                    <Route path="/super-admin" element={<SuperAdminDashboard />} />
-                    <Route path="/super-admin/planos" element={<SuperAdminPlanos />} />
-                    <Route path="/super-admin/empresas" element={<SuperAdminEmpresas />} />
-                    <Route path="/super-admin/empresas/:id" element={<SuperAdminEmpresaDetalhe />} />
-                    <Route path="/super-admin/pagamentos" element={<SuperAdminPagamentos />} />
-                    <Route path="/super-admin/tickets" element={<SuperAdminTickets />} />
-                    <Route path="/super-admin/tickets/:id" element={<SuperAdminTicketDetalhe />} />
-                    <Route path="/super-admin/financeiro" element={<SuperAdminFinanceiro />} />
                   </Route>
                 </Route>
 
                 {/* Admin do restaurante — sidebar sempre visível (modo solo incluso) */}
                 <Route element={<PrivateRoute allowedRoles={['ADMIN', 'SUPER_ADMIN']} />}>
                   <Route element={<AdminLayout />}>
-                    <Route path="/admin" element={<AdminDashboard />} />
-                    <Route path="/admin/mesas" element={<AdminMesas />} />
-                    <Route path="/admin/cardapio" element={<AdminCardapio />} />
-                    <Route path="/admin/usuarios" element={<AdminUsuarios />} />
-                    <Route path="/admin/financeiro" element={<AdminFinanceiro />} />
+                    <Route element={<RequirePermission permission="DASHBOARD" />}>
+                      <Route path="/admin" element={<AdminDashboard />} />
+                    </Route>
+                    <Route element={<RequirePermission permission="MESAS" />}>
+                      <Route path="/admin/mesas" element={<AdminMesas />} />
+                    </Route>
+                    <Route element={<RequirePermission permission="CARDAPIO" />}>
+                      <Route path="/admin/cardapio" element={<AdminCardapio />} />
+                    </Route>
+                    <Route element={<RequirePermission permission="USUARIOS" />}>
+                      <Route path="/admin/usuarios" element={<AdminUsuarios />} />
+                    </Route>
+                    <Route element={<RequirePermission permission="FINANCEIRO" />}>
+                      <Route path="/admin/financeiro" element={<AdminFinanceiro />} />
+                    </Route>
                     <Route path="/admin/assinatura" element={<AdminAssinatura />} />
-                    <Route path="/admin/configuracoes" element={<AdminConfiguracoes />} />
-                    <Route path="/admin/suporte" element={<AdminSuporte />} />
-                    <Route path="/admin/whatsapp" element={<AdminWhatsapp />} />
+                    <Route element={<RequirePermission permission={['CONFIG_STATUS_LOJA', 'CONFIG_ALERTA_PEDIDO', 'CONFIG_DADOS_EMPRESA', 'CONFIG_PIX', 'CONFIG_COMISSOES', 'CONFIG_LOGO', 'CONFIG_CORES', 'CONFIG_BACKGROUND', 'CONFIG_HORARIOS', 'CONFIG_PAUSAS', 'CONFIG_TAXAS_MAQUININHA']} />}>
+                      <Route path="/admin/configuracoes" element={<AdminConfiguracoes />} />
+                    </Route>
+                    <Route element={<RequirePermission permission="SUPORTE" />}>
+                      <Route path="/admin/suporte" element={<AdminSuporte />} />
+                    </Route>
+                    <Route element={<RequirePermission permission={['WHATSAPP_CONEXAO', 'WHATSAPP_MENSAGENS', 'WHATSAPP_CONVERSAS']} />}>
+                      <Route path="/admin/whatsapp" element={<AdminWhatsapp />} />
+                    </Route>
                     {/* Modo solo: admin acessa todos os painéis com sidebar */}
-                    <Route path="/cozinha" element={<CozinhaPedidos />} />
-                    <Route path="/garcon" element={<GarconMesas />} />
-                    <Route path="/garcon/comandas" element={<GarconComandas />} />
-                    <Route path="/garcon/comanda/:id" element={<GarconComanda />} />
-                    <Route path="/garcon/comanda/:id/novo-pedido" element={<GarconNovoPedido />} />
-                    <Route path="/delivery" element={<GarconDeliveryLista />} />
-                    <Route path="/delivery/novo" element={<GarconDelivery />} />
-                    <Route path="/pdv" element={<PdvSalao />} />
-                    <Route path="/pdv/delivery" element={<PdvDelivery />} />
-                    <Route path="/entregador" element={<EntregadorPainel />} />
+                    <Route element={<RequirePermission permission="COZINHA" />}>
+                      <Route path="/cozinha" element={<CozinhaPedidos />} />
+                    </Route>
+                    <Route element={<RequirePermission permission="GARCOM" />}>
+                      <Route path="/garcon" element={<GarconMesas />} />
+                    </Route>
+                    <Route element={<RequirePermission permission="COMANDA" />}>
+                      <Route path="/garcon/comandas" element={<GarconComandas />} />
+                      <Route path="/garcon/comanda/:id" element={<GarconComanda />} />
+                      <Route path="/garcon/comanda/:id/novo-pedido" element={<GarconNovoPedido />} />
+                    </Route>
+                    <Route element={<RequirePermission permission="DELIVERY" />}>
+                      <Route path="/delivery" element={<GarconDeliveryLista />} />
+                      <Route path="/delivery/novo" element={<GarconDelivery />} />
+                    </Route>
+                    <Route element={<RequirePermission permission="CAIXA_PDV" />}>
+                      <Route path="/pdv" element={<PdvSalao />} />
+                      <Route path="/pdv/nova-venda" element={<PdvNovaVenda />} />
+                      <Route path="/pdv/delivery" element={<PdvDelivery />} />
+                      <Route path="/pdv/delivery/novo" element={<PdvNovoDelivery />} />
+                    </Route>
+                    <Route element={<RequirePermission permission="ENTREGADOR" />}>
+                      <Route path="/entregador" element={<EntregadorPainel />} />
+                    </Route>
                   </Route>
                 </Route>
 
@@ -160,13 +191,6 @@ export function App() {
                   </Route>
                 </Route>
 
-                {/* PDV (role específico — ADMIN já tem no bloco acima) */}
-                <Route element={<PrivateRoute allowedRoles={['GARCON']} />}>
-                  <Route element={<EntregadorLayout />}>
-                    <Route path="/entregador" element={<EntregadorPainel />} />
-                  </Route>
-                </Route>
-
                 {/* Fallback */}
                 <Route path="/sem-acesso" element={
                   <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1rem' }}>
@@ -177,6 +201,7 @@ export function App() {
                 <Route path="*" element={<Navigate to="/login" replace />} />
               </Routes>
             </BrowserRouter>
+            </ToastProvider>
           </NotificationProvider>
         </WebSocketProvider>
       </AuthProvider>
