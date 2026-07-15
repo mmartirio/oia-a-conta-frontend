@@ -20,6 +20,22 @@
 .cardValue { font-size: 1.75rem; font-weight: 800; color: var(--color-text); }
 .cardSub { font-size: 0.8125rem; color: var(--color-text-secondary); margin-top: 0.25rem; }
 
+.valorPositivo { color: var(--color-success); }
+.valorNegativo { color: var(--color-danger); }
+
+.comparativo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-full);
+}
+.comparativoUp { color: color-mix(in srgb, var(--color-success) 70%, black); background: color-mix(in srgb, var(--color-success) 15%, white); }
+.comparativoDown { color: color-mix(in srgb, var(--color-danger) 70%, black); background: color-mix(in srgb, var(--color-danger) 15%, white); }
+
 .section { margin-bottom: 1.75rem; }
 .sectionTitle { font-size: 1rem; font-weight: 700; margin: 0 0 0.875rem; color: var(--color-text); }
 
@@ -36,3 +52,25 @@
 .roleCozinheiro { background: #fdf4ff; color: #7e22ce; }
 
 .empty { color: var(--color-text-secondary); padding: 1.5rem 0; text-align: center; font-size: 0.9375rem; }
+
+.despesaForm {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.875rem;
+  align-items: end;
+}
+
+.despesaFormBtn { height: 42px; }
+
+.btnExcluirDespesa {
+  background: transparent;
+  border: none;
+  color: var(--color-danger);
+  cursor: pointer;
+  padding: 0.375rem;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  transition: background 0.15s;
+}
+.btnExcluirDespesa:hover { background: color-mix(in srgb, var(--color-danger) 12%, white); }
