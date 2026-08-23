@@ -1,5 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
+import { FiHeadphones, FiInbox, FiMessageSquare, FiPlus, FiSend, FiUser, FiX } from 'react-icons/fi'
 import { billingApi, type Ticket, type MensagemTicket } from '../../api/billingApi'
+import { Button } from '../../components/ui/Button'
 import styles from './AdminSuporte.module.css'
 
 const STATUS_LABEL: Record<string, string> = {
@@ -81,10 +83,13 @@ export function AdminSuporte() {
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <h1 className={styles.title}>Suporte</h1>
-        <button className="btn btn-primary" onClick={() => setShowForm(s => !s)}>
-          {showForm ? 'Cancelar' : '+ Abrir ticket'}
-        </button>
+        <div>
+          <h1 className={styles.title}>Suporte</h1>
+          <p className={styles.subtitle}>Abra um chamado e converse diretamente com nossa equipe.</p>
+        </div>
+        <Button variant={showForm ? 'outline' : 'primary'} onClick={() => setShowForm(s => !s)}>
+          {showForm ? <><FiX size={16} /> Cancelar</> : <><FiPlus size={16} /> Abrir ticket</>}
+        </Button>
       </div>
 
       {/* Formulário novo ticket */}
@@ -120,9 +125,9 @@ export function AdminSuporte() {
             </select>
           </div>
           <div className={styles.formActions}>
-            <button className="btn btn-primary" onClick={criarTicket} disabled={criando || !novoTitulo.trim() || !novaDesc.trim()}>
-              {criando ? 'Abrindo...' : 'Abrir ticket'}
-            </button>
+            <Button onClick={criarTicket} loading={criando} disabled={!novoTitulo.trim() || !novaDesc.trim()}>
+              Abrir ticket
+            </Button>
           </div>
         </div>
       )}
@@ -134,7 +139,7 @@ export function AdminSuporte() {
             <p className={styles.empty}>Carregando...</p>
           ) : tickets.length === 0 ? (
             <div className={styles.listaVazia}>
-              <span>🎫</span>
+              <FiInbox size={32} />
               <p>Nenhum ticket aberto.</p>
               <p>Clique em "Abrir ticket" para solicitar suporte.</p>
             </div>
@@ -192,18 +197,26 @@ export function AdminSuporte() {
               {(ticketAtivo.mensagens ?? []).length === 0 ? (
                 <p className={styles.semMensagens}>Nenhuma resposta ainda. Aguarde o contato do suporte.</p>
               ) : (
-                (ticketAtivo.mensagens ?? []).map((m: MensagemTicket) => (
-                  <div
-                    key={m.id}
-                    className={`${styles.mensagem} ${m.remetenteTipo === 'CLIENTE' ? styles.mensagemCliente : styles.mensagemSuporte}`}
-                  >
-                    <div className={styles.mensagemHeader}>
-                      <span className={styles.mensagemRemetente}>{m.remetenteNome}</span>
-                      <span className={styles.mensagemData}>{fmtData(m.createdAt)}</span>
+                (ticketAtivo.mensagens ?? []).map((m: MensagemTicket) => {
+                  const daSuporte = m.remetenteTipo !== 'CLIENTE'
+                  return (
+                    <div
+                      key={m.id}
+                      className={`${styles.mensagemRow} ${daSuporte ? styles.mensagemRowSuporte : styles.mensagemRowCliente}`}
+                    >
+                      <span className={`${styles.mensagemAvatar} ${daSuporte ? styles.avatarSuporte : styles.avatarCliente}`}>
+                        {daSuporte ? <FiHeadphones size={13} /> : <FiUser size={13} />}
+                      </span>
+                      <div className={`${styles.mensagem} ${daSuporte ? styles.mensagemSuporte : styles.mensagemCliente}`}>
+                        <div className={styles.mensagemHeader}>
+                          <span className={styles.mensagemRemetente}>{m.remetenteNome}</span>
+                          <span className={styles.mensagemData}>{fmtData(m.createdAt)}</span>
+                        </div>
+                        <p className={styles.mensagemTexto}>{m.mensagem}</p>
+                      </div>
                     </div>
-                    <p className={styles.mensagemTexto}>{m.mensagem}</p>
-                  </div>
-                ))
+                  )
+                })
               )}
             </div>
 
@@ -212,19 +225,20 @@ export function AdminSuporte() {
               <div className={styles.replyWrap}>
                 <textarea
                   className={styles.replyInput}
-                  rows={3}
+                  rows={2}
                   placeholder="Adicione uma mensagem..."
                   value={novaMensagem}
                   onChange={e => setNovaMensagem(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) enviarMensagem() }}
                 />
-                <button
-                  className="btn btn-primary"
+                <Button
                   onClick={enviarMensagem}
-                  disabled={enviando || !novaMensagem.trim()}
+                  loading={enviando}
+                  disabled={!novaMensagem.trim()}
+                  className={styles.replyBtn}
                 >
-                  {enviando ? 'Enviando...' : 'Enviar'}
-                </button>
+                  <FiSend size={15} /> Enviar
+                </Button>
               </div>
             )}
             {(ticketAtivo.status === 'RESOLVIDO' || ticketAtivo.status === 'FECHADO') && (
@@ -233,7 +247,7 @@ export function AdminSuporte() {
           </div>
         ) : (
           <div className={styles.semSelecao}>
-            <span>💬</span>
+            <FiMessageSquare size={32} />
             <p>Selecione um ticket para ver os detalhes</p>
           </div>
         )}

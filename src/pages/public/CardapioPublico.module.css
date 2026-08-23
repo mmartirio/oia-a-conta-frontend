@@ -39,15 +39,7 @@
   pointer-events: none;
 }
 
-/* ── Header ─────────────────────────────────────────────────────────────── */
-/* Header + banner de fechado ficam juntos num único bloco sticky, para o
-   banner nunca ficar escondido atrás do header ao rolar a tela. */
-.headerStickyWrap {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
+/* ── Header (checkout bar) ─────────────────────────────────────────────── */
 .header {
   background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
   color: var(--titulo-cor, #fff);
@@ -60,45 +52,140 @@
   box-shadow: 0 4px 14px rgba(0,0,0,0.12);
 }
 
-.headerCentro {
-  flex-direction: column;
-  text-align: center;
-}
-
-.headerLogo {
-  height: 150px;
-  width: auto;
-  flex-shrink: 0;
-}
-
-@media (min-width: 900px) {
-  .headerLogo { height: 170px; }
-  .headerTitle { font-size: 3.6rem; }
-  .headerSub { font-size: 0.9rem; }
-}
-
-@media (max-width: 380px) {
-  .header {
-    padding: 1rem 0.75rem;
-    gap: 0.625rem;
-  }
-  .headerLogo { height: 110px; }
-  .headerTitle { font-size: 2.3rem; }
-}
-
 .headerTitle {
-  font-size: 2.8rem;
+  font-size: 1.6rem;
   font-weight: 800;
   line-height: 1.1;
 }
 
-.headerSub {
-  font-size: 0.8rem;
-  opacity: 0.8;
-  margin-top: 0.15rem;
+@media (min-width: 900px) {
+  .headerTitle { font-size: 2.2rem; }
+}
+
+@media (max-width: 899px) {
+  .page { width: 100%; }
+  .header { padding: 0.875rem 1rem; gap: 0.75rem; }
+  .headerTitle { font-size: 1.5rem; }
+}
+
+@media (max-width: 380px) {
+  .header { padding: 0.75rem 0.75rem; gap: 0.5rem; }
+  .headerTitle { font-size: 1.2rem; }
+}
+
+/* ── Cover + avatar (estilo iFood) ──────────────────────────────────────── */
+.cover {
+  position: relative;
+  width: 100%;
+  height: 130px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  border-bottom: 3px solid var(--accent);
+}
+
+.avatarWrap {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translate(-50%, 50%);
+}
+
+.avatar {
+  display: block;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--card);
+  border: 4px solid var(--card);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+}
+
+.identity {
+  background: var(--card);
+  text-align: center;
+  padding: 3rem 1rem 1rem;
+}
+
+.identityName {
+  font-size: 1.4rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--titulo-cor, var(--text));
+}
+
+.identitySub {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-top: 0.2rem;
+}
+
+.statusRow {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.6rem;
+}
+
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.statusPillAberto {
+  background: color-mix(in srgb, var(--success) 15%, white);
+  color: color-mix(in srgb, var(--success) 70%, black);
+}
+
+.statusPillFechado {
+  background: color-mix(in srgb, var(--danger) 12%, white);
+  color: var(--danger);
+}
+
+@media (min-width: 900px) {
+  .cover { height: 170px; }
+  .avatar { width: 108px; height: 108px; }
+  .identityName { font-size: 1.9rem; }
+  .identitySub { font-size: 0.95rem; }
+}
+
+/* Bloco de identidade sticky: fica visível junto às abas de categoria
+   enquanto o cliente rola a lista de produtos. */
+.stickyNav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--card);
 }
 
 /* ── Banner de fechado (pausa de funcionamento ativa) ──────────────────── */
+.promocaoBanner {
+  background: color-mix(in srgb, var(--primary) 12%, white);
+  color: var(--primary);
+  border-bottom: 2px solid var(--primary);
+  padding: 0.625rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.promocaoSelo {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--radius-full, 999px);
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
 .fechadoBanner {
   background: color-mix(in srgb, var(--danger) 12%, white);
   color: var(--danger);
@@ -152,15 +239,65 @@
 }
 
 /* ── Repetir pedido ─────────────────────────────────────────────────────── */
+/* 3 divs lado a lado: imagem | texto (título+resumo) | botão. A div da
+   imagem estica (align-self: stretch) e usa margem negativa igual ao
+   padding do card pra sangrar até as bordas, ocupando a altura inteira do
+   container. */
 .repetirCard {
   background: var(--card);
   border: 1.5px solid var(--primary);
   border-radius: var(--radius);
   padding: 1rem;
-  margin: 0.75rem 0 0;
+  margin: 0.75rem 0.85rem 0;
+  align-self: flex-start;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0.75rem;
+  width: fit-content;
+  max-width: calc(100% - 1.7rem);
+  overflow: hidden;
+  box-shadow: 0 6px 18px rgba(2,6,23,0.08);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.repetirCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(2,6,23,0.12);
+}
+
+@media (min-width: 900px) {
+  .repetirCard { margin-left: 1rem; margin-right: 1rem; max-width: calc(100% - 2rem); }
+}
+
+.repetirImagem {
+  flex-shrink: 0;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: -1rem 0 -1rem -1rem;
+  padding: 0.5rem 1rem;
+  background: color-mix(in srgb, var(--primary) 12%, white);
+}
+
+.repetirIcone {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+@media (min-width: 900px) {
+  .repetirIcone { width: 65px; height: 65px; }
+}
+
+.repetirTexto {
+  flex: 1 1 auto;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  justify-content: center;
+  gap: 0.3rem;
 }
 
 .repetirTitulo {
@@ -170,27 +307,48 @@
 }
 
 .repetirResumo {
+  min-width: 0;
   font-size: 0.85rem;
   color: var(--muted);
   line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.repetirBotaoWrap {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
 }
 
 .btnRepetir {
-  align-self: flex-start;
+  flex-shrink: 0;
   background: var(--primary);
   color: #fff;
   border: none;
   border-radius: 8px;
   padding: 0.5rem 1rem;
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: 0.95rem;
+  font-weight: 700;
   cursor: pointer;
+  text-align: center;
+}
+
+/* Mobile: texto do botão fica só "Repetir" (sem "pedido") pra caber melhor
+   na tela; mesmo assim deixa encolher/quebrar em vez de estourar a largura.
+   O resumo do pedido também quebra em vez de truncar com reticências. */
+@media (max-width: 899px) {
+  .repetirBotaoWrap { flex-shrink: 1; min-width: 0; }
+  .btnRepetir { flex-shrink: 1; min-width: 0; white-space: normal; }
+  .btnRepetirExtra { display: none; }
+  .repetirResumo { white-space: normal; overflow: visible; text-overflow: clip; }
 }
 
 /* ── Produtos ────────────────────────────────────────────────────────────── */
 .produtos {
   flex: 1;
-  padding: 0.75rem 0 6rem;
+  padding: 0.75rem 0.85rem 6rem;
   display: flex;
   flex-direction: column;
   gap: 1.75rem;
@@ -200,7 +358,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  scroll-margin-top: 130px;
+  scroll-margin-top: 90px;
 }
 
 .categoriaSection + .categoriaSection {
@@ -209,9 +367,16 @@
 }
 
 .categoriaHeading {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--text);
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--titulo-cor, var(--text));
+  line-height: 1.2;
+  padding-left: 0.85rem;
+  border-left: 5px solid var(--primary);
+}
+
+@media (min-width: 900px) {
+  .categoriaHeading { font-size: 1.5rem; }
 }
 
 .produtosGrid {
@@ -220,17 +385,18 @@
   gap: 0.75rem;
 }
 
-/* Em janelas grandes vira um grid de 2 colunas centralizado, com um gap
-   generoso entre as colunas para separá-las visualmente. */
+/* Em telas largas os cards ficam alinhados em colunas de largura fixa;
+   quando não cabem mais colunas na largura do container, quebram pra
+   linha de baixo automaticamente (auto-fill + minmax). */
 @media (min-width: 900px) {
-  .produtos { padding: 1.5rem 0 6rem; }
+  .produtos { padding: 1.5rem 1rem 6rem; }
   .produtosGrid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 340px));
-    justify-content: center;
-    column-gap: clamp(2rem, 4vw, 4rem);
-    row-gap: 1rem;
-    align-items: start;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1.25rem;
+    align-items: stretch;
+    max-width: 1200px;
+    margin: 0 auto;
   }
 }
 
@@ -240,57 +406,175 @@
 
 .produtoCard {
   background: var(--card);
-  border-radius: var(--radius);
-  padding: 1rem;
+  border-radius: 14px;
+  padding: 0.65rem;
   display: flex;
-  align-items: flex-end;
-  gap: 1rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  box-shadow: 0 6px 18px rgba(2,6,23,0.08);
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.produtoCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(2,6,23,0.12);
 }
 
 @media (max-width: 380px) {
-  .produtoCard { padding: 0.75rem; gap: 0.75rem; }
+  .produtoCard { padding: 0.55rem; gap: 0.6rem; }
+}
+
+@media (min-width: 900px) {
+  .produtoCard { border-radius: 16px; padding: 0.9rem; gap: 1rem; }
+}
+
+/* Imagem à direita com botão de adicionar flutuando no canto — assinatura
+   visual do iFood, em vez do bloco de ações separado à parte. No mobile a
+   imagem fica menor pra o card não ocupar tanta altura da tela. */
+.produtoImgWrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 72px;
+  height: 72px;
 }
 
 .produtoThumb {
-  width: 64px;
-  height: 64px;
-  border-radius: calc(var(--radius) - 4px);
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
   object-fit: cover;
-  flex-shrink: 0;
-  align-self: center;
+  display: block;
+  background: color-mix(in srgb, var(--border) 50%, white);
 }
 
 @media (max-width: 380px) {
-  .produtoThumb { width: 52px; height: 52px; }
+  .produtoImgWrap { width: 60px; height: 60px; }
+}
+
+@media (min-width: 900px) {
+  .produtoImgWrap { width: 96px; height: 96px; }
+}
+
+.produtoAcoesFloat {
+  position: absolute;
+  right: -8px;
+  bottom: -8px;
+}
+
+.btnAddFloat {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--primary);
+  background: color-mix(in srgb, var(--muted) 12%, white);
+  color: var(--primary);
+  font-size: 1.1rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 10px rgba(2,6,23,0.18);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.btnAddFloat:hover,
+.btnAddFloat:focus-visible {
+  transform: translateY(-2px) scale(1.06);
+  box-shadow: 0 8px 18px rgba(2,6,23,0.28);
+}
+
+.qtdControlsFloat {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: color-mix(in srgb, var(--muted) 12%, white);
+  border: 1.5px solid var(--primary);
+  border-radius: 999px;
+  padding: 0.15rem 0.4rem;
+  box-shadow: 0 3px 10px rgba(2,6,23,0.18);
+}
+
+.btnQtdSm {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--primary);
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qtdNumSm {
+  font-weight: 700;
+  font-size: 0.8rem;
+  min-width: 0.9rem;
+  text-align: center;
+}
+
+/* Fallback para produtos sem imagem: ações inline à direita, como antes. */
+.produtoAcoesInline {
+  flex-shrink: 0;
 }
 
 .produtoInfo {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 0.25rem;
+  min-width: 0;
 }
 
 .produtoNome {
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--titulo-cor, var(--text));
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .produtoDesc {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: var(--muted);
-  line-height: 1.4;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .produtoPreco {
-  font-size: 1rem;
-  font-weight: 700;
+  align-self: flex-start;
+  font-size: 0.98rem;
+  font-weight: 800;
   color: var(--primary);
-  margin-top: 0.25rem;
+  margin-top: 0.15rem;
+  background: color-mix(in srgb, var(--primary) 10%, white);
+  padding: 0.15rem 0.4rem;
+  border-radius: 8px;
+}
+
+@media (min-width: 900px) {
+  .produtoNome { font-size: 1.05rem; }
+  .produtoDesc { font-size: 0.9rem; line-height: 1.4; }
+  .produtoPreco { font-size: 1.05rem; margin-top: 0.25rem; padding: 0.18rem 0.45rem; }
 }
 
 .produtoAcoes {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
   flex-shrink: 0;
 }
 
@@ -298,23 +582,34 @@
   background: var(--primary);
   color: #fff;
   border: none;
-  border-radius: 8px;
-  padding: 0.45rem 0.9rem;
-  font-size: 0.85rem;
-  font-weight: 600;
+  border-radius: 12px;
+  padding: 0.6rem 0.85rem;
+  font-size: 0.95rem;
+  font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--primary) 35%, transparent);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.btnAdd:hover,
+.btnAdd:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--primary) 45%, transparent);
 }
 
 .qtdControls {
   display: flex;
   align-items: center;
   gap: 0.6rem;
+  background: color-mix(in srgb, var(--muted) 12%, white);
+  border-radius: 999px;
+  padding: 0.25rem 0.5rem;
 }
 
 .btnQtd {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   border: 1.5px solid var(--primary);
   background: transparent;
@@ -338,13 +633,13 @@
 /* ── Cart bar ────────────────────────────────────────────────────────────── */
 .cartBar {
   position: fixed;
-  bottom: 0;
+  bottom: 0.75rem;
   left: 50%;
   transform: translateX(-50%);
-  width: 80%;
-  padding: 0.75rem 1rem;
-  background: linear-gradient(to top, var(--bg) 80%, transparent);
-  z-index: 20;
+  width: min(560px, calc(100% - 1.5rem));
+  padding: 0;
+  background: transparent;
+  z-index: 40;
 }
 
 .btnCart {
@@ -352,15 +647,22 @@
   background: var(--primary);
   color: #fff;
   border: none;
-  border-radius: var(--radius);
-  padding: 0.9rem 1.25rem;
-  font-size: 1rem;
+  border-radius: 14px;
+  padding: 0.9rem 1.1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 4px 16px color-mix(in srgb, var(--primary) 35%, transparent);
+  gap: 0.6rem;
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--primary) 35%, transparent);
+}
+
+.cartBarLeft {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
 }
 
 .cartBadge {

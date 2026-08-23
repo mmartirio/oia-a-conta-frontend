@@ -5,8 +5,11 @@ export const authApi = {
   login: (email: string, senha: string) =>
     api.post<AuthResponse>('/api/auth/login', { email, senha }),
 
-  loginGoogle: (email: string, nome: string) =>
-    api.post<AuthResponse>('/api/auth/google', { email, nome }),
+  // Envia o ID token bruto do Google — o backend verifica assinatura e
+  // audience antes de qualquer decisão de login (nunca confia em email/nome
+  // decodificado no cliente, que pode ser forjado).
+  loginGoogle: (credential: string) =>
+    api.post<AuthResponse>('/api/auth/google', { credential }),
 
   registroIniciar: (data: {
     restauranteNome: string

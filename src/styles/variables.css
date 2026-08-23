@@ -10,6 +10,12 @@
   --color-danger: #C4351F;
   --color-info: #2C6E8C;
 
+  /* Cor de "selecionado" (sidebar + botões de ação) — separada de
+     --color-primary porque só troca o estado ativo/preenchido, não a
+     identidade laranja do restante da marca. */
+  --color-primary-selected: #3498db;
+  --color-primary-selected-dark: #2980b9;
+
   /* Status colors */
   --color-enviado: #3498db;
   --color-preparando: #f39c12;

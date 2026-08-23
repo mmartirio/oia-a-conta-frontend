@@ -41,89 +41,91 @@
   margin-bottom: 1.5rem;
 }
 
-.planoCard {
-  background: var(--color-surface);
-  border-radius: var(--radius-xl);
-  padding: 1.75rem;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  border: 2px solid transparent;
-  transition: border-color 0.2s, box-shadow 0.2s;
+.voltarSite {
+  display: inline-block;
+  color: rgba(255,255,255,0.85);
+  font-size: 0.875rem;
+  text-decoration: none;
+  margin-bottom: 1.25rem;
 }
 
-.planoCard:hover {
-  border-color: var(--color-primary);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-}
-
-.destaque {
-  border-color: var(--color-primary);
-  box-shadow: 0 8px 32px rgba(var(--color-primary-rgb), 0.25);
-}
-
-.badge {
-  position: absolute;
-  top: -12px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--color-primary);
+.voltarSite:hover {
   color: #fff;
+  text-decoration: underline;
+}
+
+.formCard {
+  max-width: 560px;
+}
+
+/* ── Indicador de progresso do wizard ──────────────────── */
+
+.progresso {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  margin: 0 0 1.5rem;
+}
+
+.progressoItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: rgba(255,255,255,0.55);
+}
+
+.progressoItemAtivo {
+  color: #fff;
+}
+
+.progressoNumero {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
   font-size: 0.75rem;
   font-weight: 700;
-  padding: 0.25rem 0.75rem;
-  border-radius: 999px;
-  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.planoNome {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--color-text);
-  margin: 0;
+.progressoItemAtivo .progressoNumero {
+  background: #fff;
+  color: var(--color-primary);
+  border-color: #fff;
 }
 
-.planoDesc {
-  font-size: 0.875rem;
-  color: var(--color-text-secondary);
-  margin: 0;
-  min-height: 2.5rem;
+/* Variante usada dentro do card branco (etapas 2 e 3) — o padrão acima
+   (branco sobre o gradiente) ficaria invisível em fundo claro. */
+.progressoClaro .progressoItem {
+  color: var(--color-text-muted, #94a3b8);
 }
 
-.planoPreco {
-  display: flex;
-  align-items: baseline;
-  gap: 0.25rem;
-}
-
-.precoValor {
-  font-size: 1.75rem;
-  font-weight: 800;
+.progressoClaro .progressoItemAtivo {
   color: var(--color-primary);
 }
 
-.precoLabel {
-  font-size: 0.875rem;
-  color: var(--color-text-secondary);
+.progressoClaro .progressoItemAtivo .progressoNumero {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
 }
 
-.funcList {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  font-size: 0.85rem;
-  color: var(--color-text-secondary);
-  display: flex;
-  flex-direction: column;
-  gap: 0.375rem;
-  flex: 1;
+.progressoLabel {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
-.funcList li::before {
-  content: '✓ ';
-  color: var(--color-success);
-  font-weight: 700;
+.progressoLinha {
+  width: 24px;
+  height: 1.5px;
+  background: currentColor;
+  opacity: 0.5;
+  margin: 0 0.25rem;
 }
 
 .footerLink {
@@ -299,4 +301,11 @@
 
 .voltarLink:hover {
   color: var(--color-primary, #f97316);
+}
+
+.trustNote {
+  text-align: center;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  margin: -0.25rem 0 0.25rem;
 }

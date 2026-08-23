@@ -1,12 +1,17 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { FiTrash2, FiPlus, FiX } from 'react-icons/fi'
 import { configuracaoApi } from '../../api/configuracaoApi'
 import { pausaApi, type Pausa } from '../../api/pausaApi'
 import { restauranteApi } from '../../api/restauranteApi'
+import { billingApi } from '../../api/billingApi'
 import { horarioApi } from '../../api/horarioApi'
 import { useToast } from '../../contexts/ToastContext'
 import { useAuth } from '../../contexts/AuthContext'
+import { useNotification } from '../../contexts/NotificationContext'
 import { temAcesso } from '../../constants/permissoes'
+import { formatCNPJ, formatPhone } from '../../utils/formatters'
+import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Textarea } from '../../components/ui/Textarea'
@@ -15,37 +20,38 @@ import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { Switch } from '../../components/ui/Switch'
 import { Tabs } from '../../components/ui/Tabs'
 import { QrCodeLink } from '../../components/ui/QrCodeLink'
-import { removerFundoBranco } from '../../utils/imageProcessing'
+import { comprimirImagem, removerFundoBranco, extrairPaletaCores } from '../../utils/imageProcessing'
 import { playAlertaPedidoCliente, OPCOES_ALERTA_PEDIDO, type TipoAlertaPedido } from '../../utils/audio'
 import type { DiaSemana, HorarioFuncionamento } from '../../types'
-
-function lerComoDataUri(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result as string)
-    reader.onerror = () => reject(new Error('Não foi possível ler o arquivo'))
-    reader.readAsDataURL(file)
-  })
-}
 import styles from './AdminConfiguracoes.module.css'
 
-type AbaConfiguracao = 'geral' | 'pagamento' | 'cardapio-publico' | 'horarios' | 'pausas' | 'maquininha'
+type AbaConfiguracao = 'geral' | 'pagamento' | 'cardapio-publico' | 'horarios' | 'pausas' | 'frete'
 
 const ABAS: { id: AbaConfiguracao; label: string; permissoes: string[] }[] = [
   { id: 'geral', label: 'Geral', permissoes: ['CONFIG_STATUS_LOJA', 'CONFIG_ALERTA_PEDIDO', 'CONFIG_DADOS_EMPRESA'] },
   { id: 'pagamento', label: 'Pagamento & Comissões', permissoes: ['CONFIG_PIX', 'CONFIG_COMISSOES'] },
-  { id: 'maquininha', label: 'Taxas da Maquininha', permissoes: ['CONFIG_TAXAS_MAQUININHA'] },
-  { id: 'cardapio-publico', label: 'Cardápio Público', permissoes: ['CONFIG_DADOS_EMPRESA', 'CONFIG_LOGO', 'CONFIG_CORES', 'CONFIG_BACKGROUND'] },
+  { id: 'frete', label: 'Frete', permissoes: ['CONFIG_FRETE'] },
+  { id: 'cardapio-publico', label: 'Link do Cardápio', permissoes: ['CONFIG_DADOS_EMPRESA', 'CONFIG_LOGO', 'CONFIG_CORES', 'CONFIG_BACKGROUND'] },
   { id: 'horarios', label: 'Horário de Funcionamento', permissoes: ['CONFIG_HORARIOS'] },
   { id: 'pausas', label: 'Pausas de Funcionamento', permissoes: ['CONFIG_PAUSAS'] },
 ]
+
+// Sugestão de frete pra quem ainda não configurou — valores típicos de apps
+// de entrega no Brasil pra distâncias urbanas curtas/médias. Não vem de
+// nenhuma integração com o iFood ou concorrente (eles não expõem isso
+// publicamente); é só um ponto de partida razoável que o admin pode aceitar
+// ou ajustar.
+const FRETE_SUGESTAO_TAXA_BASE = 5
+const FRETE_SUGESTAO_VALOR_KM = 1.5
 
 const COR_PRIMARIA_PADRAO = '#CF4622'
 const COR_SECUNDARIA_PADRAO = '#F68E05'
 const COR_ACCENT_PADRAO = '#012F54'
 const COR_TEXTO_PADRAO = '#FFFFFF'
 
-const LOGO_MAX_BYTES = 1.5 * 1024 * 1024
+// Margem de segurança abaixo do limite validado no backend
+// (LOGO_MAX_CHARS = 2.100.000 em RestauranteService, usado pra logo e fundo).
+const LOGO_MAX_CARACTERES = 1_900_000
 
 function formatDataHora(iso: string) {
   return new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
@@ -78,10 +84,16 @@ function diasVazios(): Record<DiaSemana, IntervaloEdit[]> {
 
 export function AdminConfiguracoes() {
   const { user } = useAuth()
+  const { atualizarPreferenciaNotificacaoFalada } = useNotification()
   const temPermissao = (chave: string) => temAcesso(user?.permissoes, chave)
   const abasPermitidas = ABAS.filter(a => a.permissoes.some(temPermissao))
 
-  const [aba, setAba] = useState<AbaConfiguracao>(abasPermitidas[0]?.id ?? 'geral')
+  const [searchParams] = useSearchParams()
+  const abaInicialUrl = searchParams.get('aba') as AbaConfiguracao | null
+  const abaInicial = abasPermitidas.some(a => a.id === abaInicialUrl)
+    ? (abaInicialUrl as AbaConfiguracao)
+    : (abasPermitidas[0]?.id ?? 'geral')
+  const [aba, setAba] = useState<AbaConfiguracao>(abaInicial)
   const [pixChave, setPixChave] = useState('')
   const [comissaoGarcon, setComissaoGarcon] = useState('')
   const [comissaoEntregador, setComissaoEntregador] = useState('')
@@ -93,12 +105,15 @@ export function AdminConfiguracoes() {
   const [comissoesSalvas, setComissoesSalvas] = useState(false)
   const toast = useToast()
 
-  // ── Taxas da Maquininha ──
-  const [taxaDebito, setTaxaDebito] = useState('0')
-  const [taxaCreditoVista, setTaxaCreditoVista] = useState('0')
-  const [taxaCreditoParcelado, setTaxaCreditoParcelado] = useState('0')
-  const [salvandoTaxas, setSalvandoTaxas] = useState(false)
-  const [taxasSalvas, setTaxasSalvas] = useState(false)
+  // ── Frete (taxa base + valor por km) ──
+  const [freteTaxaBase, setFreteTaxaBase] = useState('0')
+  const [freteValorPorKm, setFreteValorPorKm] = useState('0')
+  const [salvandoFrete, setSalvandoFrete] = useState(false)
+  const [freteSalvo, setFreteSalvo] = useState(false)
+  // true só enquanto os valores em tela forem exatamente os que a sugestão
+  // preencheu — qualquer edição manual depois de aceitar a sugestão derruba
+  // a indicação, porque o valor deixou de ser "só o que o sistema sugeriu".
+  const [freteSugestaoAplicada, setFreteSugestaoAplicada] = useState(false)
 
   const [pausas, setPausas] = useState<Pausa[]>([])
   const [pausaTitulo, setPausaTitulo] = useState('')
@@ -120,6 +135,8 @@ export function AdminConfiguracoes() {
   const [salvandoStatusLoja, setSalvandoStatusLoja] = useState(false)
   const [alertaPedidoSom, setAlertaPedidoSom] = useState<TipoAlertaPedido>('SOM_1')
   const [salvandoAlertaSom, setSalvandoAlertaSom] = useState(false)
+  const [notificacaoWhatsappFalada, setNotificacaoWhatsappFalada] = useState(false)
+  const [salvandoNotificacaoWhatsappFalada, setSalvandoNotificacaoWhatsappFalada] = useState(false)
 
   // ── Dados da Empresa ──
   const [loadingEmpresa, setLoadingEmpresa] = useState(true)
@@ -145,6 +162,10 @@ export function AdminConfiguracoes() {
   const [salvandoLogo, setSalvandoLogo] = useState(false)
   const [removerFundoLogo, setRemoverFundoLogo] = useState(true)
   const [salvandoCores, setSalvandoCores] = useState(false)
+  // true só enquanto as cores em tela forem exatamente as extraídas da
+  // última logo enviada — qualquer edição manual (ou remoção da logo) derruba
+  // a indicação, mesmo padrão do "sugerido pelo sistema" do frete.
+  const [coresExtraidasDaLogo, setCoresExtraidasDaLogo] = useState(false)
 
   // ── Cardápio Público: imagem de fundo ──
   const [backgroundBase64, setBackgroundBase64] = useState<string | null>(null)
@@ -171,9 +192,9 @@ export function AdminConfiguracoes() {
         setFechadoManualmente(r.data.fechadoManualmente ?? false)
         setMotivoFechamentoManual(r.data.motivoFechamentoManual ?? null)
         setAlertaPedidoSom((r.data.alertaPedidoSom as TipoAlertaPedido) || 'SOM_1')
-        setTaxaDebito(String(r.data.taxaDebito ?? 0))
-        setTaxaCreditoVista(String(r.data.taxaCreditoVista ?? 0))
-        setTaxaCreditoParcelado(String(r.data.taxaCreditoParcelado ?? 0))
+        setNotificacaoWhatsappFalada(r.data.notificacaoWhatsappFalada ?? false)
+        setFreteTaxaBase(String(r.data.freteTaxaBase ?? 0))
+        setFreteValorPorKm(String(r.data.freteValorPorKm ?? 0))
       })
       .finally(() => setLoading(false))
     carregarPausas()
@@ -189,7 +210,6 @@ export function AdminConfiguracoes() {
         setEmpresaEnderecoCidade(r.data.enderecoCidade ?? '')
         setEmpresaEnderecoComplemento(r.data.enderecoComplemento ?? '')
         setEmpresaSlug(r.data.slug ?? '')
-        setEmpresaPlano(r.data.plano ?? '')
         setLogoBase64(r.data.logoBase64 ?? null)
         setCorPrimaria(r.data.corPrimaria || COR_PRIMARIA_PADRAO)
         setCorSecundaria(r.data.corSecundaria || COR_SECUNDARIA_PADRAO)
@@ -200,6 +220,13 @@ export function AdminConfiguracoes() {
       })
       .catch(() => {})
       .finally(() => setLoadingEmpresa(false))
+
+    // O plano exibido aqui precisa vir do contrato real (billing-service) —
+    // o campo Restaurante.plano do auth-service é legado, sempre "BASICO"
+    // desde o cadastro, nunca atualizado quando o plano muda.
+    billingApi.meuContrato()
+      .then(r => setEmpresaPlano(r.data.plano.nome))
+      .catch(() => setEmpresaPlano(''))
 
     horarioApi.listar()
       .then(r => {
@@ -300,21 +327,20 @@ export function AdminConfiguracoes() {
     }
   }
 
-  const handleSalvarTaxas = async () => {
-    setSalvandoTaxas(true)
-    setTaxasSalvas(false)
+  const handleSalvarFrete = async () => {
+    setSalvandoFrete(true)
+    setFreteSalvo(false)
     try {
-      await configuracaoApi.atualizarTaxasMaquininha({
-        taxaDebito: Number(taxaDebito),
-        taxaCreditoVista: Number(taxaCreditoVista),
-        taxaCreditoParcelado: Number(taxaCreditoParcelado),
+      await configuracaoApi.atualizarFrete({
+        freteTaxaBase: Number(freteTaxaBase),
+        freteValorPorKm: Number(freteValorPorKm),
       })
-      setTaxasSalvas(true)
-      setTimeout(() => setTaxasSalvas(false), 3000)
+      setFreteSalvo(true)
+      setTimeout(() => setFreteSalvo(false), 3000)
     } catch {
-      toast.error('Erro ao salvar as taxas da maquininha')
+      toast.error('Erro ao salvar o frete')
     } finally {
-      setSalvandoTaxas(false)
+      setSalvandoFrete(false)
     }
   }
 
@@ -344,6 +370,23 @@ export function AdminConfiguracoes() {
       toast.error('Erro ao salvar o alerta sonoro')
     } finally {
       setSalvandoAlertaSom(false)
+    }
+  }
+
+  const handleToggleNotificacaoWhatsappFalada = async (ligado: boolean) => {
+    const anterior = notificacaoWhatsappFalada
+    setNotificacaoWhatsappFalada(ligado)
+    setSalvandoNotificacaoWhatsappFalada(true)
+    try {
+      await configuracaoApi.atualizarNotificacaoWhatsappFalada(ligado)
+      // Sem isso, a sessão já conectada continuava usando o valor antigo
+      // (só recarregado no próximo reconnect do WebSocket) até um F5.
+      atualizarPreferenciaNotificacaoFalada(ligado)
+    } catch {
+      setNotificacaoWhatsappFalada(anterior)
+      toast.error('Erro ao salvar a preferência de notificação')
+    } finally {
+      setSalvandoNotificacaoWhatsappFalada(false)
     }
   }
 
@@ -418,16 +461,28 @@ export function AdminConfiguracoes() {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
-    if (file.size > LOGO_MAX_BYTES) {
-      toast.error('Imagem muito grande. Envie um arquivo de até 1,5MB.')
-      return
-    }
     setSalvandoLogo(true)
     try {
-      const dataUri = removerFundoLogo ? await removerFundoBranco(file) : await lerComoDataUri(file)
+      const dataUri = removerFundoLogo
+        ? await removerFundoBranco(file, 1200)
+        : await comprimirImagem(file, { maxCaracteres: LOGO_MAX_CARACTERES, maxDimensao: 1200 })
       const r = await restauranteApi.atualizarLogo(dataUri)
       setLogoBase64(r.data.logoBase64 ?? null)
       toast.success('Logo atualizada com sucesso')
+
+      // Cores do cardápio acompanham a logo automaticamente — best-effort,
+      // não deve derrubar o sucesso do upload se a extração falhar.
+      try {
+        const paleta = await extrairPaletaCores(dataUri)
+        const rCores = await restauranteApi.atualizarCores(paleta)
+        setCorPrimaria(rCores.data.corPrimaria || COR_PRIMARIA_PADRAO)
+        setCorSecundaria(rCores.data.corSecundaria || COR_SECUNDARIA_PADRAO)
+        setCorAccent(rCores.data.corAccent || COR_ACCENT_PADRAO)
+        setCorTexto(rCores.data.corTexto || COR_TEXTO_PADRAO)
+        setCoresExtraidasDaLogo(true)
+      } catch {
+        // segue sem atualizar as cores — a logo já foi salva normalmente
+      }
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } }).response?.data?.message
       toast.error(msg ?? 'Erro ao enviar a logo')
@@ -442,6 +497,26 @@ export function AdminConfiguracoes() {
       const r = await restauranteApi.atualizarLogo(null)
       setLogoBase64(r.data.logoBase64 ?? null)
       toast.success('Logo removida')
+
+      // Sem logo, volta pras cores padrão (mesma lógica de "enquanto não
+      // tiver logo, usa as cores padrão ou a edição manual").
+      if (coresExtraidasDaLogo) {
+        try {
+          const rCores = await restauranteApi.atualizarCores({
+            corPrimaria: COR_PRIMARIA_PADRAO,
+            corSecundaria: COR_SECUNDARIA_PADRAO,
+            corAccent: COR_ACCENT_PADRAO,
+            corTexto: COR_TEXTO_PADRAO,
+          })
+          setCorPrimaria(rCores.data.corPrimaria || COR_PRIMARIA_PADRAO)
+          setCorSecundaria(rCores.data.corSecundaria || COR_SECUNDARIA_PADRAO)
+          setCorAccent(rCores.data.corAccent || COR_ACCENT_PADRAO)
+          setCorTexto(rCores.data.corTexto || COR_TEXTO_PADRAO)
+        } catch {
+          // segue com as cores como estavam — a logo já foi removida normalmente
+        }
+        setCoresExtraidasDaLogo(false)
+      }
     } catch {
       toast.error('Erro ao remover a logo')
     } finally {
@@ -475,34 +550,27 @@ export function AdminConfiguracoes() {
     setCorSecundaria(COR_SECUNDARIA_PADRAO)
     setCorAccent(COR_ACCENT_PADRAO)
     setCorTexto(COR_TEXTO_PADRAO)
+    setCoresExtraidasDaLogo(false)
   }
 
   // ── Cardápio Público: imagem de fundo ──
-  const handleUploadBackground = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUploadBackground = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
-    if (file.size > LOGO_MAX_BYTES) {
-      toast.error('Imagem muito grande. Envie um arquivo de até 1,5MB.')
-      return
+    setSalvandoBackground(true)
+    try {
+      const dataUri = await comprimirImagem(file, { maxCaracteres: LOGO_MAX_CARACTERES, maxDimensao: 1920 })
+      const r = await restauranteApi.atualizarBackground(dataUri)
+      setBackgroundBase64(r.data.backgroundBase64 ?? null)
+      setBackgroundOpacidade(r.data.backgroundOpacidade ?? 15)
+      toast.success('Imagem de fundo atualizada com sucesso')
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } }).response?.data?.message
+      toast.error(msg ?? 'Erro ao enviar a imagem de fundo')
+    } finally {
+      setSalvandoBackground(false)
     }
-    const reader = new FileReader()
-    reader.onload = async () => {
-      const dataUri = reader.result as string
-      setSalvandoBackground(true)
-      try {
-        const r = await restauranteApi.atualizarBackground(dataUri)
-        setBackgroundBase64(r.data.backgroundBase64 ?? null)
-        setBackgroundOpacidade(r.data.backgroundOpacidade ?? 15)
-        toast.success('Imagem de fundo atualizada com sucesso')
-      } catch (err: unknown) {
-        const msg = (err as { response?: { data?: { message?: string } } }).response?.data?.message
-        toast.error(msg ?? 'Erro ao enviar a imagem de fundo')
-      } finally {
-        setSalvandoBackground(false)
-      }
-    }
-    reader.readAsDataURL(file)
   }
 
   const handleRemoverBackground = async () => {
@@ -645,6 +713,25 @@ export function AdminConfiguracoes() {
       </div>
       )}
 
+      {/* ── Notificação falada do WhatsApp ── */}
+      {temPermissao('CONFIG_ALERTA_PEDIDO') && (
+      <div className={styles.statusSection}>
+        <h2 className={styles.pausasTitle}>Notificação de Mensagem do WhatsApp</h2>
+        <div className={styles.statusRow}>
+          <Switch
+            checked={notificacaoWhatsappFalada}
+            onChange={handleToggleNotificacaoWhatsappFalada}
+            disabled={salvandoNotificacaoWhatsappFalada}
+            label={notificacaoWhatsappFalada ? 'Notificação falada' : 'Notificação padrão'}
+          />
+          <p className={styles.hint}>
+            Quando ligado, mensagens novas do WhatsApp tocam a notificação falada em vez do som
+            padrão de notificação.
+          </p>
+        </div>
+      </div>
+      )}
+
       {/* ── Dados da Empresa ── */}
       {temPermissao('CONFIG_DADOS_EMPRESA') && (
       <div className={styles.empresaSection}>
@@ -662,10 +749,10 @@ export function AdminConfiguracoes() {
                 <Input label="Nome" value={empresaNome} onChange={e => setEmpresaNome(e.target.value)} placeholder="Nome do restaurante" />
               </div>
               <div className={styles.field}>
-                <Input label="CNPJ" value={empresaCnpj} onChange={e => setEmpresaCnpj(e.target.value)} placeholder="00.000.000/0000-00" />
+                <Input label="CNPJ" value={empresaCnpj} onChange={e => setEmpresaCnpj(formatCNPJ(e.target.value))} placeholder="00.000.000/0000-00" maxLength={18} />
               </div>
               <div className={styles.field}>
-                <Input label="Telefone" value={empresaTelefone} onChange={e => setEmpresaTelefone(e.target.value)} placeholder="(00) 00000-0000" />
+                <Input label="Telefone" value={empresaTelefone} onChange={e => setEmpresaTelefone(formatPhone(e.target.value))} placeholder="(00) 00000-0000" maxLength={15} />
               </div>
             </div>
 
@@ -772,56 +859,64 @@ export function AdminConfiguracoes() {
       </div>
       )}
 
-      {aba === 'maquininha' && (
+      {aba === 'frete' && (
       <div className={styles.form}>
         <div className={styles.group}>
-          <label className={styles.label}>Taxas da Maquininha</label>
+          <label className={styles.label}>Frete por Distância</label>
           <span className={styles.hint}>
-            Percentual cobrado pela operadora de cartão em cada forma de pagamento — usado só como
-            referência no caixa (não altera o valor cobrado do cliente).
+            Valor cobrado do cliente no delivery, calculado automaticamente pela distância até o
+            endereço de entrega: taxa base + valor por km rodado.
           </span>
+          {Number(freteTaxaBase) === 0 && Number(freteValorPorKm) === 0 && (
+            <div className={styles.freteSugestao}>
+              <span>
+                Ainda não configurado. Sugestão baseada em valores típicos de apps de entrega:{' '}
+                <strong>R$ {FRETE_SUGESTAO_TAXA_BASE.toFixed(2)} + R$ {FRETE_SUGESTAO_VALOR_KM.toFixed(2)}/km</strong>.
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setFreteTaxaBase(String(FRETE_SUGESTAO_TAXA_BASE))
+                  setFreteValorPorKm(String(FRETE_SUGESTAO_VALOR_KM))
+                  setFreteSugestaoAplicada(true)
+                }}
+              >
+                Usar sugestão
+              </Button>
+            </div>
+          )}
+          {freteSugestaoAplicada && (
+            <Badge variant="info" size="sm">Valores sugeridos pelo sistema</Badge>
+          )}
           <div className={styles.comissoesGrid}>
             <div className={styles.comissaoItem}>
-              <label className={styles.hint}>Débito</label>
+              <label className={styles.hint}>Taxa base (R$)</label>
               <input
                 className={styles.input}
                 type="number"
                 min="0"
-                max="100"
                 step="0.01"
-                value={taxaDebito}
-                onChange={e => setTaxaDebito(e.target.value)}
+                value={freteTaxaBase}
+                onChange={e => { setFreteTaxaBase(e.target.value); setFreteSugestaoAplicada(false) }}
               />
             </div>
             <div className={styles.comissaoItem}>
-              <label className={styles.hint}>Crédito à vista</label>
+              <label className={styles.hint}>Valor por km (R$)</label>
               <input
                 className={styles.input}
                 type="number"
                 min="0"
-                max="100"
                 step="0.01"
-                value={taxaCreditoVista}
-                onChange={e => setTaxaCreditoVista(e.target.value)}
-              />
-            </div>
-            <div className={styles.comissaoItem}>
-              <label className={styles.hint}>Crédito parcelado</label>
-              <input
-                className={styles.input}
-                type="number"
-                min="0"
-                max="100"
-                step="0.01"
-                value={taxaCreditoParcelado}
-                onChange={e => setTaxaCreditoParcelado(e.target.value)}
+                value={freteValorPorKm}
+                onChange={e => { setFreteValorPorKm(e.target.value); setFreteSugestaoAplicada(false) }}
               />
             </div>
           </div>
         </div>
         <div className={styles.actions}>
-          <Button loading={salvandoTaxas} onClick={handleSalvarTaxas}>Salvar Taxas</Button>
-          {taxasSalvas && <span className={styles.success}>Salvo com sucesso!</span>}
+          <Button loading={salvandoFrete} onClick={handleSalvarFrete}>Salvar Frete</Button>
+          {freteSalvo && <span className={styles.success}>Salvo com sucesso!</span>}
         </div>
       </div>
       )}
@@ -875,11 +970,6 @@ export function AdminConfiguracoes() {
             <QrCodeLink value={`${window.location.origin}/cardapio/${empresaSlug}`} fileName={`qrcode-${empresaSlug}.png`} />
           )}
         </div>
-        <div className={styles.actions}>
-          <Button loading={salvandoEmpresa} onClick={handleSalvarEmpresa} disabled={!empresaNome.trim()}>
-            Salvar Link
-          </Button>
-        </div>
       </div>
       )}
 
@@ -931,9 +1021,12 @@ export function AdminConfiguracoes() {
       <div className={styles.empresaSection}>
         <h2 className={styles.pausasTitle}>Cores do Cardápio</h2>
         <p className={styles.hint}>
-          Se a logo do restaurante tiver cores parecidas com as do cabeçalho, ela pode "sumir" contra o
-          fundo — ajuste as cores abaixo para dar contraste.
+          Ao enviar uma logo, as cores abaixo são extraídas dela automaticamente. Sem logo, usa as
+          cores padrão — em ambos os casos você pode ajustar manualmente.
         </p>
+        {coresExtraidasDaLogo && (
+          <Badge variant="info" size="sm">Cores extraídas da logo</Badge>
+        )}
 
         <div
           className={styles.corPreviewHeader}
@@ -948,24 +1041,24 @@ export function AdminConfiguracoes() {
         <div className={styles.coresGrid}>
           <div className={styles.corItem}>
             <label className={styles.hint}>Cor primária</label>
-            <input type="color" className={styles.corInput} value={corPrimaria} onChange={e => setCorPrimaria(e.target.value)} />
+            <input type="color" className={styles.corInput} value={corPrimaria} onChange={e => { setCorPrimaria(e.target.value); setCoresExtraidasDaLogo(false) }} />
           </div>
           <div className={styles.corItem}>
             <label className={styles.hint}>Cor secundária</label>
-            <input type="color" className={styles.corInput} value={corSecundaria} onChange={e => setCorSecundaria(e.target.value)} />
+            <input type="color" className={styles.corInput} value={corSecundaria} onChange={e => { setCorSecundaria(e.target.value); setCoresExtraidasDaLogo(false) }} />
           </div>
           <div className={styles.corItem}>
             <label className={styles.hint}>Cor de destaque</label>
-            <input type="color" className={styles.corInput} value={corAccent} onChange={e => setCorAccent(e.target.value)} />
+            <input type="color" className={styles.corInput} value={corAccent} onChange={e => { setCorAccent(e.target.value); setCoresExtraidasDaLogo(false) }} />
           </div>
           <div className={styles.corItem}>
             <label className={styles.hint}>Cor do texto do título</label>
-            <input type="color" className={styles.corInput} value={corTexto} onChange={e => setCorTexto(e.target.value)} />
+            <input type="color" className={styles.corInput} value={corTexto} onChange={e => { setCorTexto(e.target.value); setCoresExtraidasDaLogo(false) }} />
           </div>
         </div>
 
         <div className={styles.actions}>
-          <Button loading={salvandoCores} onClick={handleSalvarCores}>
+          <Button loading={salvandoCores} onClick={() => { handleSalvarCores(); setCoresExtraidasDaLogo(false) }}>
             Salvar Cores
           </Button>
           <Button variant="ghost" onClick={handleRestaurarCoresPadrao} disabled={salvandoCores}>

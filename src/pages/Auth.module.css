@@ -74,6 +74,25 @@
   text-align: left;
 }
 
+.senhaInputRow { position: relative; }
+
+.btnMostrarSenha {
+  position: absolute;
+  top: 50%;
+  right: 0.625rem;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0.25rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+.btnMostrarSenha:hover { color: var(--color-text); }
+
 .alert {
   background: color-mix(in srgb, var(--color-danger) 15%, white);
   color: color-mix(in srgb, var(--color-danger) 70%, black);

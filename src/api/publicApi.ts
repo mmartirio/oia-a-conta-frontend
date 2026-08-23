@@ -33,11 +33,39 @@ export interface CategoriaPublico {
   produtos: ProdutoPublico[]
 }
 
-export interface ItemPedido {
+export interface ComboItemPublico {
   produtoId: number
+  produtoNome: string
+  quantidade: number
+  valorAlocado: number
+}
+
+export interface ComboPublico {
+  id: number
+  nome: string
+  descricao?: string
+  preco: number
+  imagemBase64: string | null
+  ativo: boolean
+  itens: ComboItemPublico[]
+}
+
+export interface CardapioPublicoData {
+  categorias: CategoriaPublico[]
+  combos: ComboPublico[]
+  promocaoAtiva: boolean
+  promocaoDescricao?: string
+  promocaoValorDesconto?: number
+  promocaoTipoDesconto?: 'PERCENTUAL' | 'FIXO'
+}
+
+export interface ItemPedido {
+  produtoId?: number
   produtoNome: string
   precoUnitario: number
   quantidade: number
+  comboId?: number
+  comboQuantidade?: number
 }
 
 export const publicApi = {
@@ -45,7 +73,7 @@ export const publicApi = {
     api.get<RestaurantePublico>(`/api/auth/publico/restaurante/${slug}`),
 
   getCardapio: (restauranteId: number) =>
-    api.get<CategoriaPublico[]>(`/api/catalog/publico/${restauranteId}/cardapio`),
+    api.get<CardapioPublicoData>(`/api/catalog/publico/${restauranteId}/cardapio`),
 
   fazerPedido: (restauranteId: number, data: {
     clienteNome: string

@@ -148,6 +148,87 @@
 
 .prodActions { display: flex; gap: 0.5rem; margin-top: 0.25rem; }
 
+.toolbarRight { display: flex; align-items: center; gap: 0.75rem; }
+
+.viewToggle {
+  display: flex;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.viewToggleBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.viewToggleBtn:not(:first-child) { border-left: 1.5px solid var(--color-border); }
+
+.viewToggleBtn:hover { color: var(--color-text); }
+
+.viewToggleBtnActive {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.viewToggleBtnActive:hover { color: #fff; }
+
+/* Produtos — visualização em lista */
+.prodList { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.prodListRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.prodListThumb {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.prodListThumbPlaceholder {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  border: 1px dashed var(--color-border);
+  flex-shrink: 0;
+}
+
+.prodListNome {
+  flex: 1 1 160px;
+  min-width: 0;
+  font-weight: 700;
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prodListCat {
+  flex: 0 0 auto;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.prodListPreco {
+  flex: 0 0 auto;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
 /* Categorias */
 .catList { display: flex; flex-direction: column; gap: 0.625rem; }
 
@@ -159,6 +240,32 @@
 }
 
 .catNome { flex: 1; font-weight: 600; color: var(--color-text); }
+
+.catOrdemBtns { display: flex; flex-direction: column; gap: 2px; }
+
+.catOrdemBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.catOrdemBtn:hover:not(:disabled) {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.catOrdemBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
 
 .catActions { display: flex; gap: 0.5rem; }
 

@@ -1,16 +1,15 @@
 import { useState, FormEvent, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google'
-import { jwtDecode } from 'jwt-decode'
+import { FiEye, FiEyeOff } from 'react-icons/fi'
 import { useAuth } from '../contexts/AuthContext'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
+import inputStyles from '../components/ui/Input.module.css'
 import { primeiraRotaPermitida } from '../constants/permissoes'
 import type { Role, Usuario } from '../types'
 import styles from './Auth.module.css'
 import logo from '../assets/logo/OIA A CONTA - LOGO.png'
-
-interface GooglePayload { email: string; name: string }
 
 function redirectByRole(usuario: Usuario, navigate: ReturnType<typeof useNavigate>) {
   // ADMIN com grupo restrito pode não ter acesso ao Dashboard (rota padrão)
@@ -34,6 +33,7 @@ export function Login() {
   const { login, loginGoogle, user, loading: authLoading } = useAuth()
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
+  const [mostrarSenha, setMostrarSenha] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -59,11 +59,20 @@ export function Login() {
 
   const handleGoogle = async (credentialResponse: CredentialResponse) => {
     if (!credentialResponse.credential) return
+    setError('')
     try {
-      const { email: gEmail, name } = jwtDecode<GooglePayload>(credentialResponse.credential)
-      const user = await loginGoogle(gEmail, name)
+      // Manda o ID token bruto — o backend verifica a assinatura contra o
+      // Google e devolve 404 se não houver restaurante cadastrado pra esse
+      // e-mail (ver AuthService.loginComGoogle) — nesse caso, manda direto
+      // pro cadastro já com os dados do Google, em vez de só mostrar um erro.
+      const user = await loginGoogle(credentialResponse.credential)
       redirectByRole(user, navigate)
     } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } }).response?.status
+      if (status === 404) {
+        navigate('/registro', { state: { googleCredential: credentialResponse.credential } })
+        return
+      }
       const msg = (err as { response?: { data?: { message?: string } } })
         .response?.data?.message
       setError(msg ?? 'Falha ao entrar com Google')
@@ -97,15 +106,31 @@ export function Login() {
             required
             autoComplete="email"
           />
-          <Input
-            label="Senha"
-            type="password"
-            id="senha"
-            value={senha}
-            onChange={e => setSenha(e.target.value)}
-            required
-            autoComplete="current-password"
-          />
+          <div className={inputStyles.wrapper}>
+            <label className={inputStyles.label} htmlFor="senha">Senha</label>
+            <div className={styles.senhaInputRow}>
+              <input
+                id="senha"
+                type={mostrarSenha ? 'text' : 'password'}
+                className={inputStyles.input}
+                style={{ paddingRight: '2.25rem' }}
+                value={senha}
+                onChange={e => setSenha(e.target.value)}
+                required
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                className={styles.btnMostrarSenha}
+                onClick={() => setMostrarSenha(v => !v)}
+                tabIndex={-1}
+                aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
+                title={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
+              >
+                {mostrarSenha ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+              </button>
+            </div>
+          </div>
           <Button type="submit" loading={loading} fullWidth size="lg">
             Entrar
           </Button>

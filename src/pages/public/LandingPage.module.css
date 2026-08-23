@@ -1,0 +1,270 @@
+.page {
+  min-height: 100vh;
+  background: var(--color-bg);
+  color: var(--color-text);
+  overflow-x: hidden;
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.875rem 2rem;
+  background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.headerLogo {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+}
+
+.nav {
+  display: flex;
+  gap: 1.5rem;
+  flex: 1;
+}
+
+.nav a {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.nav a:hover { color: var(--color-primary); }
+
+.headerActions {
+  display: flex;
+  gap: 0.625rem;
+}
+
+@media (max-width: 640px) {
+  .nav { display: none; }
+  .header { padding: 0.75rem 1rem; }
+}
+
+/* ── Hero ───────────────────────────────────────────────── */
+
+.hero {
+  position: relative;
+  background: var(--gradient-sol);
+  padding: 5rem 1.5rem 6rem;
+  text-align: center;
+  overflow: hidden;
+}
+
+.heroBlobA, .heroBlobB {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.heroBlobA {
+  width: 320px;
+  height: 320px;
+  background: #fff;
+  top: -120px;
+  left: -80px;
+}
+
+.heroBlobB {
+  width: 260px;
+  height: 260px;
+  background: var(--color-accent);
+  bottom: -100px;
+  right: -60px;
+}
+
+.heroContent {
+  position: relative;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.heroTitle {
+  font-size: clamp(2rem, 4.5vw, 3rem);
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 1rem;
+  line-height: 1.15;
+}
+
+.heroSubtitle {
+  font-size: 1.125rem;
+  color: rgba(255,255,255,0.9);
+  margin: 0 0 2rem;
+  line-height: 1.6;
+}
+
+.heroActions {
+  display: flex;
+  gap: 0.875rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btnGhostHero {
+  color: #fff !important;
+  border-color: #fff !important;
+}
+
+.btnGhostHero:hover {
+  background: var(--color-primary) !important;
+  color: #fff !important;
+  border-color: var(--color-primary) !important;
+}
+
+.btnPrimaryHero:hover {
+  background: #fff !important;
+  color: var(--color-primary) !important;
+}
+
+/* ── Seções gerais ──────────────────────────────────────── */
+
+.section, .sectionAlt {
+  padding: 4rem 1.5rem;
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+.sectionAlt {
+  background: var(--color-surface);
+  max-width: 100%;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.sectionAlt > * {
+  max-width: 1080px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.sectionTitle {
+  font-size: 1.75rem;
+  font-weight: 800;
+  text-align: center;
+  margin: 0 0 0.5rem;
+}
+
+.sectionSubtitle {
+  text-align: center;
+  color: var(--color-text-secondary);
+  margin: 0 0 2.5rem;
+}
+
+/* ── Recursos ───────────────────────────────────────────── */
+
+.recursosGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.25rem;
+  margin-top: 2.5rem;
+}
+
+.recursoCard {
+  text-align: left;
+}
+
+.recursoIcon {
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 12%, white);
+  padding: 1rem;
+  border-radius: var(--radius-lg);
+  margin-bottom: 1.125rem;
+  stroke-width: 1.5;
+}
+
+.recursoTitulo {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  margin: 0 0 0.375rem;
+}
+
+.recursoDesc {
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── Planos ─────────────────────────────────────────────── */
+
+.planosGrid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.25rem;
+}
+
+.planoCardWrap {
+  width: 100%;
+  max-width: 300px;
+}
+
+.loading {
+  text-align: center;
+  color: var(--color-text-secondary);
+  padding: 1rem;
+}
+
+/* ── CTA final ──────────────────────────────────────────── */
+
+.ctaFinal {
+  padding: 4rem 1.5rem;
+  text-align: center;
+  background: var(--color-bg);
+}
+
+.ctaTitle {
+  font-size: 1.625rem;
+  font-weight: 800;
+  margin: 0 0 1.5rem;
+}
+
+/* ── Footer ─────────────────────────────────────────────── */
+
+.footer {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1.5rem 2rem;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+.footerLogo {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+  opacity: 0.85;
+}
+
+.footerLinks {
+  display: flex;
+  gap: 1.25rem;
+}
+
+.footerLinks a {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+}
+
+.footerLinks a:hover {
+  color: var(--color-primary);
+}

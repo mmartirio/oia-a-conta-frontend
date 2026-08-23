@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, FormEvent } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, useLocation, useSearchParams, Link } from 'react-router-dom'
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google'
 import { jwtDecode } from 'jwt-decode'
 import { useAuth } from '../contexts/AuthContext'
@@ -7,9 +7,32 @@ import { authApi } from '../api/authApi'
 import { billingApi, type Plano } from '../api/billingApi'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
+import { PlanoCard } from '../components/PlanoCard'
 import logo from '../assets/logo/OIA A CONTA - LOGO.png'
 import styles from './Auth.module.css'
 import reg from './Registro.module.css'
+
+const STEP_LABEL: Record<Step, string> = {
+  plano: 'Plano',
+  form: 'Dados',
+  verificacao: 'Confirmação',
+}
+const STEP_ORDER: Step[] = ['plano', 'form', 'verificacao']
+
+function ProgressoWizard({ atual, claro }: { atual: Step; claro?: boolean }) {
+  const idxAtual = STEP_ORDER.indexOf(atual)
+  return (
+    <div className={`${reg.progresso} ${claro ? reg.progressoClaro : ''}`}>
+      {STEP_ORDER.map((s, i) => (
+        <div key={s} className={`${reg.progressoItem} ${i <= idxAtual ? reg.progressoItemAtivo : ''}`}>
+          <span className={reg.progressoNumero}>{i + 1}</span>
+          <span className={reg.progressoLabel}>{STEP_LABEL[s]}</span>
+          {i < STEP_ORDER.length - 1 && <span className={reg.progressoLinha} />}
+        </div>
+      ))}
+    </div>
+  )
+}
 
 interface GooglePayload {
   email: string
@@ -24,14 +47,12 @@ function gerarSenha(): string {
     .join('')
 }
 
-function parseFuncionalidades(f: string): string[] {
-  return f ? f.split(',').map(s => s.trim()).filter(Boolean) : []
-}
-
 type Step = 'plano' | 'form' | 'verificacao'
 
 export function Registro() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const [searchParams] = useSearchParams()
   const { verificarEmail } = useAuth()
 
   const [step, setStep] = useState<Step>('plano')
@@ -60,9 +81,24 @@ export function Registro() {
 
   useEffect(() => {
     billingApi.listarPlanos()
-      .then(r => setPlanos(r.data.filter(p => p.ativo)))
+      .then(r => {
+        const ativos = r.data.filter(p => p.ativo)
+        setPlanos(ativos)
+        // Veio da landing page com um plano específico em mente (?planoId=X)
+        // — pula a etapa de escolha e cai direto no formulário com o plano
+        // já selecionado.
+        const planoId = searchParams.get('planoId')
+        if (planoId) {
+          const preSelecionado = ativos.find(p => String(p.id) === planoId)
+          if (preSelecionado) {
+            setPlanoSelecionado(preSelecionado)
+            setStep('form')
+          }
+        }
+      })
       .catch(() => setPlanos([]))
       .finally(() => setLoadingPlanos(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -96,6 +132,18 @@ export function Registro() {
       setError('Não foi possível ler os dados do Google.')
     }
   }
+
+  // Chegou aqui redirecionado pela tela de Login — tentou entrar com Google
+  // mas não tem cadastro (AuthService.loginComGoogle devolve 404 nesse
+  // caso). Reaproveita o credential do Google pra pré-preencher, em vez de
+  // pedir pra logar com o Google de novo aqui.
+  useEffect(() => {
+    const credential = (location.state as { googleCredential?: string } | null)?.googleCredential
+    if (!credential) return
+    handleGoogle({ credential })
+    setError('Não encontramos uma conta para esse e-mail — complete seu cadastro abaixo.')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -192,6 +240,8 @@ export function Registro() {
             <strong>{emailPendente}</strong>
           </p>
 
+          <ProgressoWizard atual={step} claro />
+
           {error && <div className={styles.alert}>{error}</div>}
 
           <form onSubmit={handleVerificar} className={styles.form}>
@@ -252,11 +302,14 @@ export function Registro() {
     return (
       <div className={styles.page}>
         <div className={reg.wrapper}>
+          <Link to="/" className={reg.voltarSite}>← Voltar para o site</Link>
           <div className={reg.header}>
             <img src={logo} alt="Oia a Conta" className={reg.logo} />
             <h1 className={reg.title}>Escolha seu plano</h1>
             <p className={reg.subtitle}>Escolha o plano ideal para o seu restaurante</p>
           </div>
+
+          <ProgressoWizard atual={step} />
 
           {loadingPlanos ? (
             <p className={reg.loading}>Carregando planos...</p>
@@ -264,37 +317,17 @@ export function Registro() {
             <p className={reg.loading}>Nenhum plano disponível no momento.</p>
           ) : (
             <div className={reg.planosGrid}>
-              {planos.map(p => {
-                const funcs = parseFuncionalidades(p.funcionalidades)
-                return (
-                  <div key={p.id} className={`${reg.planoCard} ${p.destaque ? reg.destaque : ''}`}>
-                    {p.destaque && <span className={reg.badge}>Mais popular</span>}
-                    <h2 className={reg.planoNome}>{p.nome}</h2>
-                    <p className={reg.planoDesc}>{p.descricao}</p>
-                    <div className={reg.planoPreco}>
-                      <span className={reg.precoValor}>
-                        {p.precoMensal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                      </span>
-                      <span className={reg.precoLabel}>/mês</span>
-                    </div>
-                    <ul className={reg.funcList}>
-                      {p.periodoTeste && p.diasTeste > 0 && (
-                        <li><strong>{p.diasTeste} dias grátis</strong></li>
-                      )}
-                      <li>Até {p.limiteUsuarios} usuários</li>
-                      <li>Até {p.limiteMesas} mesas</li>
-                      {funcs.map(f => <li key={f}>{f}</li>)}
-                    </ul>
-                    <Button
-                      fullWidth
-                      variant={p.destaque ? 'primary' : 'outline'}
-                      onClick={() => selecionarPlano(p)}
-                    >
-                      Selecionar
-                    </Button>
-                  </div>
-                )
-              })}
+              {planos.map(p => (
+                <PlanoCard key={p.id} plano={p}>
+                  <Button
+                    fullWidth
+                    variant={p.destaque ? 'primary' : 'outline'}
+                    onClick={() => selecionarPlano(p)}
+                  >
+                    Selecionar
+                  </Button>
+                </PlanoCard>
+              ))}
             </div>
           )}
 
@@ -309,10 +342,12 @@ export function Registro() {
   // ── Etapa 2: formulário de cadastro ──────────────────────────────────────
   return (
     <div className={styles.page}>
-      <div className={styles.card}>
+      <div className={`${styles.card} ${reg.formCard}`}>
         <div className={styles.logo}>
           <img src={logo} alt="Oia a Conta" />
         </div>
+
+        <ProgressoWizard atual={step} claro />
 
         {planoSelecionado && (
           <div className={reg.planoBadgeSelected}>
@@ -426,13 +461,15 @@ export function Registro() {
                   Este contrato aplica-se a este e a qualquer plano contratado na plataforma.
                 </p>
                 <ul className={reg.contratoLista}>
+                  <li><strong>Objeto:</strong> Prestação de serviço de software como serviço (SaaS) para gestão de restaurante — mesas, comandas, cozinha, caixa, delivery e integrações — conforme as funcionalidades do plano contratado.</li>
                   {planoSelecionado.periodoTeste && planoSelecionado.diasTeste > 0 && (
                     <li><strong>Período de teste:</strong> {planoSelecionado.diasTeste} dias gratuitos a partir da ativação, conforme art. 49 do CDC (Lei 8.078/90).</li>
                   )}
-                  <li><strong>Sem fidelidade:</strong> Não há prazo mínimo de permanência. O cancelamento pode ser solicitado a qualquer momento, sem multa ou encargo.</li>
+                  <li><strong>Sem fidelidade:</strong> Não há prazo mínimo de permanência. O cancelamento pode ser solicitado a qualquer momento, sem multa ou encargo, diretamente pelo painel ou pelo suporte.</li>
                   <li><strong>Cobrança:</strong> Mensal recorrente via PIX, com vencimento todo dia correspondente à data de ativação. O acesso é suspenso automaticamente em caso de inadimplência após 3 dias úteis.</li>
+                  <li><strong>Cancelamento após pagamento:</strong> Se o cancelamento for solicitado depois da cobrança do período vigente já ter sido paga, o acesso permanece ativo até o fim desse período, sem cobranças futuras e sem reembolso proporcional do valor já pago — ressalvado o direito de arrependimento de 7 dias descrito abaixo, quando aplicável.</li>
                   <li><strong>Troca de plano:</strong> O Contratante pode migrar para outro plano disponível a qualquer momento, com ajuste de cobrança proporcional no próximo vencimento.</li>
-                  <li><strong>Dados pessoais (LGPD – Lei 13.709/20):</strong> Os dados fornecidos serão usados exclusivamente para prestação do serviço, faturamento e comunicações relacionadas. Não compartilhamos dados com terceiros para fins comerciais. Você pode solicitar acesso, correção ou exclusão dos seus dados a qualquer momento pelo suporte.</li>
+                  <li><strong>Dados pessoais e base legal (LGPD – Lei 13.709/18):</strong> O tratamento dos dados fornecidos tem como base legal a <strong>execução deste contrato</strong> (art. 7º, V, LGPD) — necessários para prestar o serviço, emitir cobranças e dar suporte — e o <strong>cumprimento de obrigação legal ou regulatória</strong> (art. 7º, II) para dados fiscais/contábeis exigidos por lei. Não compartilhamos dados com terceiros para fins comerciais. Você pode solicitar acesso, correção, portabilidade ou exclusão dos seus dados a qualquer momento pelo suporte, nos termos dos arts. 17 a 22 da LGPD.</li>
                   <li><strong>Direito de arrependimento:</strong> Nos primeiros 7 dias após a contratação, o consumidor pode cancelar sem custo, conforme art. 49 do CDC.</li>
                   <li><strong>Foro:</strong> Fica eleito o foro da comarca do Contratante para dirimir eventuais conflitos.</li>
                 </ul>
@@ -447,6 +484,8 @@ export function Registro() {
               </label>
             </>
           )}
+
+          <p className={reg.trustNote}>🔒 Seus dados estão protegidos · cancele quando quiser</p>
 
           <Button type="submit" loading={loading} fullWidth size="lg" disabled={!aceitouTermos}>
             Cadastrar e verificar e-mail
