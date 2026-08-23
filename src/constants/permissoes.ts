@@ -19,6 +19,9 @@ export const PERMISSAO_CONTAINERS: PermissaoContainer[] = [
   { chave: 'DELIVERY', label: 'Delivery' },
   { chave: 'ENTREGADOR', label: 'Entregador' },
   { chave: 'USUARIOS', label: 'Usuários' },
+  { chave: 'CLIENTES', label: 'Clientes' },
+  { chave: 'ESTOQUE', label: 'Estoque' },
+  { chave: 'MARKETING', label: 'Marketing' },
   { chave: 'FINANCEIRO', label: 'Financeiro' },
   {
     chave: 'WHATSAPP', label: 'WhatsApp',
@@ -28,6 +31,7 @@ export const PERMISSAO_CONTAINERS: PermissaoContainer[] = [
       { chave: 'WHATSAPP_CONVERSAS', label: 'Conversas' },
     ],
   },
+  { chave: 'IFOOD_CONEXAO', label: 'iFood' },
   { chave: 'SUPORTE', label: 'Suporte' },
   {
     chave: 'CONFIGURACOES', label: 'Configurações',
@@ -42,7 +46,7 @@ export const PERMISSAO_CONTAINERS: PermissaoContainer[] = [
       { chave: 'CONFIG_BACKGROUND', label: 'Imagem de Fundo' },
       { chave: 'CONFIG_HORARIOS', label: 'Horário de Funcionamento' },
       { chave: 'CONFIG_PAUSAS', label: 'Pausas de Funcionamento' },
-      { chave: 'CONFIG_TAXAS_MAQUININHA', label: 'Taxas da Maquininha' },
+      { chave: 'CONFIG_FRETE', label: 'Frete' },
     ],
   },
 ]
@@ -73,10 +77,14 @@ export const NAV_ROUTES: { path: string; permission: string | string[] }[] = [
   { path: '/delivery', permission: 'DELIVERY' },
   { path: '/entregador', permission: 'ENTREGADOR' },
   { path: '/admin/usuarios', permission: 'USUARIOS' },
+  { path: '/admin/clientes', permission: 'CLIENTES' },
+  { path: '/admin/estoque', permission: 'ESTOQUE' },
+  { path: '/admin/marketing', permission: 'MARKETING' },
   { path: '/admin/financeiro', permission: 'FINANCEIRO' },
   { path: '/admin/whatsapp', permission: ['WHATSAPP_CONEXAO', 'WHATSAPP_MENSAGENS', 'WHATSAPP_CONVERSAS'] },
+  { path: '/admin/ifood', permission: 'IFOOD_CONEXAO' },
   { path: '/admin/suporte', permission: 'SUPORTE' },
-  { path: '/admin/configuracoes', permission: ['CONFIG_STATUS_LOJA', 'CONFIG_ALERTA_PEDIDO', 'CONFIG_DADOS_EMPRESA', 'CONFIG_PIX', 'CONFIG_COMISSOES', 'CONFIG_LOGO', 'CONFIG_CORES', 'CONFIG_BACKGROUND', 'CONFIG_HORARIOS', 'CONFIG_PAUSAS', 'CONFIG_TAXAS_MAQUININHA'] },
+  { path: '/admin/configuracoes', permission: ['CONFIG_STATUS_LOJA', 'CONFIG_ALERTA_PEDIDO', 'CONFIG_DADOS_EMPRESA', 'CONFIG_PIX', 'CONFIG_COMISSOES', 'CONFIG_LOGO', 'CONFIG_CORES', 'CONFIG_BACKGROUND', 'CONFIG_HORARIOS', 'CONFIG_PAUSAS', 'CONFIG_FRETE'] },
 ]
 
 // Primeira rota do sidebar que o usuário tem permissão de acessar — usada

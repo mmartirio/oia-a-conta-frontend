@@ -1,19 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
-import { FiTruck } from 'react-icons/fi'
 import type { LeafletEvent } from 'leaflet'
 import { entregaApi } from '../api/entregaApi'
 import { restauranteApi } from '../api/restauranteApi'
 import { useAuth } from '../contexts/AuthContext'
 import { useWebSocket } from '../contexts/WebSocketContext'
 import { useToast } from '../contexts/ToastContext'
-import { EmptyState } from './ui/EmptyState'
 import { formatRelativeTime } from '../utils/formatters'
+import { geocodificarEndereco, type Coordenada } from '../utils/geocoding'
 import type { Entrega } from '../types'
 import styles from './EntregaMapa.module.css'
 
@@ -25,12 +24,49 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 })
 
+// Centro geográfico do Brasil — usado como fallback pra mapa sempre aparecer
+// mesmo antes de o endereço do restaurante ser configurado/geocodificado.
+const CENTRO_PADRAO: Coordenada = { lat: -14.235004, lng: -51.92528 }
+
 const iconeRestaurante = L.divIcon({
   className: styles.iconeRestaurante,
   html: '🏠',
   iconSize: [30, 30],
   iconAnchor: [15, 15],
 })
+
+const iconeEntregador = L.divIcon({
+  className: styles.iconeEntregador,
+  html: '🏍️',
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+})
+
+const RAIO_VISAO_RESTAURANTE_KM = 30
+
+// MapContainer só aplica `center`/`zoom` na primeira renderização — pra
+// reenquadrar o mapa sempre que o endereço do restaurante mudar (geocodificado
+// ou arrastado), precisamos chamar fitBounds imperativamente via useMap().
+// fitBounds também calcula o zoom certo pro tamanho atual do container, o que
+// um zoom fixo não conseguiria (a distância coberta por um zoom varia com a
+// latitude e com o tamanho da tela).
+function AjustarVisaoRestaurante({ centro }: { centro: Coordenada }) {
+  const map = useMap()
+  useEffect(() => {
+    // O container do mapa (.heroMapa) tem a altura definida por flex e só
+    // assume o tamanho final depois do primeiro paint — se o Leaflet calcular
+    // o fitBounds com o tamanho desatualizado, o zoom sai errado. invalidateSize
+    // força reler as dimensões atuais antes de ajustar os limites.
+    map.invalidateSize()
+    const latDelta = RAIO_VISAO_RESTAURANTE_KM / 111
+    const lngDelta = RAIO_VISAO_RESTAURANTE_KM / (111 * Math.cos((centro.lat * Math.PI) / 180))
+    map.fitBounds([
+      [centro.lat - latDelta, centro.lng - lngDelta],
+      [centro.lat + latDelta, centro.lng + lngDelta],
+    ])
+  }, [centro.lat, centro.lng, map])
+  return null
+}
 
 interface EventoLocalizacao {
   restauranteId: number
@@ -39,35 +75,6 @@ interface EventoLocalizacao {
   latitude: number
   longitude: number
   atualizadoEm: string
-}
-
-interface Coordenada {
-  lat: number
-  lng: number
-}
-
-// Nominatim (OpenStreetMap) é gratuito e não exige API key — compatível com
-// o Leaflet que já usamos, sem depender de billing do Google Maps. Guarda o
-// resultado em sessionStorage pra não geocodificar o mesmo endereço de novo
-// a cada vez que o dashboard é aberto (respeita o uso razoável da API pública).
-async function geocodificarEnderecoRestaurante(endereco: string): Promise<Coordenada | null> {
-  const chaveCache = `geocode:${endereco}`
-  const emCache = sessionStorage.getItem(chaveCache)
-  if (emCache) {
-    try { return JSON.parse(emCache) } catch { /* ignora cache inválido */ }
-  }
-
-  try {
-    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(endereco)}`
-    const resp = await fetch(url)
-    const dados = await resp.json()
-    if (!Array.isArray(dados) || dados.length === 0) return null
-    const coordenada: Coordenada = { lat: parseFloat(dados[0].lat), lng: parseFloat(dados[0].lon) }
-    sessionStorage.setItem(chaveCache, JSON.stringify(coordenada))
-    return coordenada
-  } catch {
-    return null
-  }
 }
 
 export function EntregaMapa() {
@@ -111,7 +118,7 @@ export function EntregaMapa() {
       const endereco = [d.enderecoRua, d.enderecoNumero, d.enderecoBairro, d.enderecoCidade]
         .filter(Boolean).join(', ')
       if (!endereco) return
-      geocodificarEnderecoRestaurante(endereco).then(setLocalizacaoRestaurante)
+      geocodificarEndereco(endereco).then(setLocalizacaoRestaurante)
     }).catch(() => {})
   }, [])
 
@@ -148,23 +155,16 @@ export function EntregaMapa() {
 
   if (loading) return null
 
-  // Sem entregador em rota — mostra o mapa centrado no endereço do restaurante, se disponível.
+  // Sem entregador em rota — o mapa continua à vista, centrado no endereço do
+  // restaurante quando disponível, ou num centro padrão até ele ser configurado.
   if (comLocalizacao.length === 0) {
-    if (!localizacaoRestaurante) {
-      return (
-        <EmptyState
-          icon={FiTruck}
-          title="Nenhuma entrega em rota"
-          description="Quando um entregador sair para entrega, a localização aparece aqui em tempo real."
-        />
-      )
-    }
+    const centro = localizacaoRestaurante ?? CENTRO_PADRAO
 
     return (
       <div className={styles.mapaWrap}>
         <MapContainer
-          center={[localizacaoRestaurante.lat, localizacaoRestaurante.lng]}
-          zoom={15}
+          center={[centro.lat, centro.lng]}
+          zoom={localizacaoRestaurante ? 15 : 4}
           className={styles.mapa}
           scrollWheelZoom={false}
         >
@@ -172,8 +172,9 @@ export function EntregaMapa() {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
+          {localizacaoRestaurante && <AjustarVisaoRestaurante centro={localizacaoRestaurante} />}
           <Marker
-            position={[localizacaoRestaurante.lat, localizacaoRestaurante.lng]}
+            position={[centro.lat, centro.lng]}
             icon={iconeRestaurante}
             draggable
             eventHandlers={{ dragend: handleArrastarMarcadorRestaurante }}
@@ -186,7 +187,9 @@ export function EntregaMapa() {
                   ? 'Salvando localização...'
                   : localizacaoManual
                     ? 'Localização ajustada manualmente.'
-                    : 'Endereço estimado automaticamente.'}
+                    : localizacaoRestaurante
+                      ? 'Endereço estimado automaticamente.'
+                      : 'Arraste o marcador até o endereço do restaurante.'}
                 {' '}Arraste o marcador se o local estiver errado.
               </span>
             </Popup>
@@ -209,7 +212,7 @@ export function EntregaMapa() {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         {comLocalizacao.map(e => (
-          <Marker key={e.id} position={[e.latitude!, e.longitude!]}>
+          <Marker key={e.id} position={[e.latitude!, e.longitude!]} icon={iconeEntregador}>
             <Popup>
               <strong>{e.entregadorNome ?? 'Entregador'}</strong><br />
               Entrega #{e.id} — {e.clienteNome}<br />

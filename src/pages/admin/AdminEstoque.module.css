@@ -1,0 +1,79 @@
+.page { max-width: 1100px; }
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.list { display: flex; flex-direction: column; gap: 0.625rem; }
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.rowMain { flex: 1; min-width: 160px; display: flex; flex-direction: column; gap: 0.125rem; }
+
+.rowNome { font-weight: 700; color: var(--color-text); }
+
+.rowSaldo { font-size: 0.8125rem; color: var(--color-text-secondary); }
+
+.rowActions { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+
+.minimoField { display: flex; align-items: center; gap: 0.375rem; }
+
+.minimoInput {
+  width: 64px;
+  padding: 0.375rem 0.5rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+
+.minimoLabel { font-size: 0.75rem; color: var(--color-text-secondary); }
+
+.empty { color: var(--color-text-secondary); text-align: center; padding: 2rem; }
+
+.form { display: flex; flex-direction: column; gap: 1rem; }
+
+.formError {
+  background: #fee2e2;
+  color: #991b1b;
+  border-radius: var(--radius-md);
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+}
+
+.historico { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.historicoRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+}
+
+.historicoInfo { display: flex; flex-direction: column; gap: 0.125rem; }
+
+.historicoMotivo { color: var(--color-text-secondary); font-size: 0.8125rem; }
+
+.historicoData { color: var(--color-text-secondary); font-size: 0.75rem; }

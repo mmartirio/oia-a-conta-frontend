@@ -28,7 +28,7 @@ function SmartRedirect() {
       : (ROLE_HOME[user.role] ?? '/login')
     return <Navigate to={destino} replace />
   }
-  return <Navigate to="/login" replace />
+  return <LandingPage />
 }
 
 // Layouts
@@ -41,17 +41,22 @@ import { GestorLayout } from './components/layouts/GestorLayout'
 import { Login } from './pages/Login'
 import { Registro } from './pages/Registro'
 import { CardapioPublico } from './pages/public/CardapioPublico'
+import { LandingPage } from './pages/public/LandingPage'
 
 // Admin
 import { AdminDashboard } from './pages/admin/AdminDashboard'
 import { AdminMesas } from './pages/admin/AdminMesas'
 import { AdminCardapio } from './pages/admin/AdminCardapio'
 import { AdminUsuarios } from './pages/admin/AdminUsuarios'
+import { AdminClientes } from './pages/admin/AdminClientes'
+import { AdminEstoque } from './pages/admin/AdminEstoque'
+import { AdminMarketing } from './pages/admin/AdminMarketing'
 import { AdminFinanceiro } from './pages/admin/AdminFinanceiro'
 import { AdminAssinatura } from './pages/admin/AdminAssinatura'
 import { AdminConfiguracoes } from './pages/admin/AdminConfiguracoes'
 import { AdminSuporte } from './pages/admin/AdminSuporte'
 import { AdminWhatsapp } from './pages/admin/AdminWhatsapp'
+import { AdminIfood } from './pages/admin/AdminIfood'
 
 // Garçom
 import { GarconMesas } from './pages/garcon/GarconMesas'
@@ -66,9 +71,6 @@ import { CozinhaPedidos } from './pages/cozinha/CozinhaPedidos'
 
 // PDV
 import { PdvSalao } from './pages/pdv/PdvSalao'
-import { PdvDelivery } from './pages/pdv/PdvDelivery'
-import { PdvNovaVenda } from './pages/pdv/PdvNovaVenda'
-import { PdvNovoDelivery } from './pages/pdv/PdvNovoDelivery'
 
 // Entregador
 import { EntregadorPainel } from './pages/entregador/EntregadorPainel'
@@ -84,6 +86,7 @@ import { GestorPagamentos } from './pages/gestor/GestorPagamentos'
 import { GestorTickets } from './pages/gestor/GestorTickets'
 import { GestorTicketDetalhe } from './pages/gestor/GestorTicketDetalhe'
 import { GestorFinanceiro } from './pages/gestor/GestorFinanceiro'
+import { GestorLogs } from './pages/gestor/GestorLogs'
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ''
 
@@ -114,6 +117,7 @@ export function App() {
                     <Route path="/gestor/tickets" element={<GestorTickets />} />
                     <Route path="/gestor/tickets/:id" element={<GestorTicketDetalhe />} />
                     <Route path="/gestor/financeiro" element={<GestorFinanceiro />} />
+                    <Route path="/gestor/logs" element={<GestorLogs />} />
                     <Route path="/gestor/relatorios" element={<GestorRelatorios />} />
                   </Route>
                 </Route>
@@ -133,11 +137,20 @@ export function App() {
                     <Route element={<RequirePermission permission="USUARIOS" />}>
                       <Route path="/admin/usuarios" element={<AdminUsuarios />} />
                     </Route>
+                    <Route element={<RequirePermission permission="CLIENTES" />}>
+                      <Route path="/admin/clientes" element={<AdminClientes />} />
+                    </Route>
+                    <Route element={<RequirePermission permission="ESTOQUE" />}>
+                      <Route path="/admin/estoque" element={<AdminEstoque />} />
+                    </Route>
+                    <Route element={<RequirePermission permission="MARKETING" />}>
+                      <Route path="/admin/marketing" element={<AdminMarketing />} />
+                    </Route>
                     <Route element={<RequirePermission permission="FINANCEIRO" />}>
                       <Route path="/admin/financeiro" element={<AdminFinanceiro />} />
                     </Route>
                     <Route path="/admin/assinatura" element={<AdminAssinatura />} />
-                    <Route element={<RequirePermission permission={['CONFIG_STATUS_LOJA', 'CONFIG_ALERTA_PEDIDO', 'CONFIG_DADOS_EMPRESA', 'CONFIG_PIX', 'CONFIG_COMISSOES', 'CONFIG_LOGO', 'CONFIG_CORES', 'CONFIG_BACKGROUND', 'CONFIG_HORARIOS', 'CONFIG_PAUSAS', 'CONFIG_TAXAS_MAQUININHA']} />}>
+                    <Route element={<RequirePermission permission={['CONFIG_STATUS_LOJA', 'CONFIG_ALERTA_PEDIDO', 'CONFIG_DADOS_EMPRESA', 'CONFIG_PIX', 'CONFIG_COMISSOES', 'CONFIG_LOGO', 'CONFIG_CORES', 'CONFIG_BACKGROUND', 'CONFIG_HORARIOS', 'CONFIG_PAUSAS', 'CONFIG_FRETE']} />}>
                       <Route path="/admin/configuracoes" element={<AdminConfiguracoes />} />
                     </Route>
                     <Route element={<RequirePermission permission="SUPORTE" />}>
@@ -145,6 +158,9 @@ export function App() {
                     </Route>
                     <Route element={<RequirePermission permission={['WHATSAPP_CONEXAO', 'WHATSAPP_MENSAGENS', 'WHATSAPP_CONVERSAS']} />}>
                       <Route path="/admin/whatsapp" element={<AdminWhatsapp />} />
+                    </Route>
+                    <Route element={<RequirePermission permission="IFOOD_CONEXAO" />}>
+                      <Route path="/admin/ifood" element={<AdminIfood />} />
                     </Route>
                     {/* Modo solo: admin acessa todos os painéis com sidebar */}
                     <Route element={<RequirePermission permission="COZINHA" />}>
@@ -163,10 +179,13 @@ export function App() {
                       <Route path="/delivery/novo" element={<GarconDelivery />} />
                     </Route>
                     <Route element={<RequirePermission permission="CAIXA_PDV" />}>
+                      {/* Todo o PDV é uma única tela (PdvSalao): fila de pagamento
+                          (mesas + delivery) e nova venda (balcão/delivery) alternam
+                          por aba, sem navegar entre páginas — ver PdvSalao.tsx. */}
                       <Route path="/pdv" element={<PdvSalao />} />
-                      <Route path="/pdv/nova-venda" element={<PdvNovaVenda />} />
-                      <Route path="/pdv/delivery" element={<PdvDelivery />} />
-                      <Route path="/pdv/delivery/novo" element={<PdvNovoDelivery />} />
+                      <Route path="/pdv/nova-venda" element={<Navigate to="/pdv" replace />} />
+                      <Route path="/pdv/delivery" element={<Navigate to="/pdv" replace />} />
+                      <Route path="/pdv/delivery/novo" element={<Navigate to="/pdv" replace />} />
                     </Route>
                     <Route element={<RequirePermission permission="ENTREGADOR" />}>
                       <Route path="/entregador" element={<EntregadorPainel />} />
