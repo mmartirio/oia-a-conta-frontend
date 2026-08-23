@@ -6,22 +6,24 @@ import { Button } from '../../components/ui/Button'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { Pagination } from '../../components/ui/Pagination'
 import { useToast } from '../../contexts/ToastContext'
+import { useNotification } from '../../contexts/NotificationContext'
 import { formatCurrency, formatDateTime } from '../../utils/formatters'
 import type { Entrega } from '../../types'
 import styles from './GarconDeliveryLista.module.css'
 
 type StatusAtivo = 'AGUARDANDO' | 'CONFIRMADA' | 'ACEITA' | 'PRONTO_PARA_ENTREGA' | 'SAIU_PARA_ENTREGA'
 
+// CONFIRMADA agrupada junto com ACEITA em "Produção" — não existe mais um
+// estágio manual de "aceitar" separado, mas entregas antigas (dado legado)
+// podem ainda estar paradas em CONFIRMADA, então continuam aparecendo aqui.
 const COLUNAS: { statuses: StatusAtivo[]; label: string; cor: string }[] = [
   { statuses: ['AGUARDANDO'],                                label: 'Aguardando confirmação', cor: '#ef4444' },
-  { statuses: ['CONFIRMADA'],                                label: 'Novo Pedido', cor: '#6366f1' },
-  { statuses: ['ACEITA'],                                    label: 'Produção',    cor: '#f59e0b' },
+  { statuses: ['CONFIRMADA', 'ACEITA'],                      label: 'Produção',    cor: '#f59e0b' },
   { statuses: ['PRONTO_PARA_ENTREGA', 'SAIU_PARA_ENTREGA'], label: 'Entrega',     cor: '#22c55e' },
 ]
 
 // AGUARDANDO não entra aqui — tem UI própria (confirmar/rejeitar com motivo)
 const ACOES: Partial<Record<StatusAtivo, { label: string; fn: (id: number) => Promise<unknown> }>> = {
-  CONFIRMADA:           { label: 'Aceitar',  fn: (id) => entregaApi.aceitar(id) },
   ACEITA:               { label: 'Pronto',   fn: (id) => entregaApi.prontoParaEntrega(id) },
   PRONTO_PARA_ENTREGA:  { label: 'Saiu',     fn: (id) => entregaApi.saiu(id) },
   SAIU_PARA_ENTREGA:    { label: 'Entregue', fn: (id) => entregaApi.entregar(id) },
@@ -34,11 +36,14 @@ export function GarconDeliveryLista() {
   const [loading,     setLoading]     = useState(true)
   const [atualizando, setAtualizando] = useState<number | null>(null)
   const [verEntregues, setVerEntregues] = useState(false)
+  const [verCancelados, setVerCancelados] = useState(false)
   const [confirmCancelar, setConfirmCancelar] = useState<number | null>(null)
+  const [imprimindo, setImprimindo] = useState<Entrega | null>(null)
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const prevIdsRef = useRef<Set<number>>(new Set())
   const toast = useToast()
+  const { confirmarPedidoPendente, rejeitarPedidoPendente } = useNotification()
 
   const load = useCallback(async (paginaAlvo = page) => {
     try {
@@ -77,9 +82,14 @@ export function GarconDeliveryLista() {
     } finally { setAtualizando(null) }
   }
 
+  // Usa os métodos do NotificationContext (não entregaApi.confirmar/rejeitar
+  // direto) — é o que mantém o alerta sonoro global em sincronia. Confirmar
+  // por aqui sem passar pelo contexto deixava o pedido preso na lista de
+  // "pendentes" da notificação (que só se atualiza via WebSocket em pedido
+  // novo, não em mudança de status), e o alerta ficava tocando sem parar.
   const confirmarPedido = async (id: number) => {
     setAtualizando(id)
-    try { await entregaApi.confirmar(id); load() }
+    try { await confirmarPedidoPendente(id); load() }
     catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } }).response?.data?.message
       toast.error(msg ?? 'Erro ao confirmar pedido')
@@ -90,11 +100,19 @@ export function GarconDeliveryLista() {
     const motivo = window.prompt('Motivo da recusa (o cliente vai receber essa mensagem):')
     if (!motivo || !motivo.trim()) return
     setAtualizando(id)
-    try { await entregaApi.rejeitar(id, motivo.trim()); load() }
+    try { await rejeitarPedidoPendente(id, motivo.trim()); load() }
     catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } }).response?.data?.message
       toast.error(msg ?? 'Erro ao recusar pedido')
     } finally { setAtualizando(null) }
+  }
+
+  // Precisa do pequeno delay pra garantir que o React já renderizou o
+  // bloco .reciboImpressao com os dados dessa entrega antes do print()
+  // abrir o diálogo (o state ainda não commitou no DOM no mesmo tick).
+  const imprimirComanda = (e: Entrega) => {
+    setImprimindo(e)
+    setTimeout(() => window.print(), 50)
   }
 
   const cancelar = async () => {
@@ -106,9 +124,10 @@ export function GarconDeliveryLista() {
     finally { setAtualizando(null); setConfirmCancelar(null) }
   }
 
-  const ativas    = entregas.filter(e => e.status !== 'ENTREGUE' && e.status !== 'CANCELADA')
-  const entregues = entregas.filter(e => e.status === 'ENTREGUE')
-  const total     = ativas.reduce((s, e) => s + e.total, 0)
+  const ativas     = entregas.filter(e => e.status !== 'ENTREGUE' && e.status !== 'CANCELADA')
+  const entregues  = entregas.filter(e => e.status === 'ENTREGUE')
+  const cancelados = entregas.filter(e => e.status === 'CANCELADA')
+  const total      = ativas.reduce((s, e) => s + e.total, 0)
 
   if (loading) return <p style={{ padding: '2rem', color: 'var(--color-text-secondary)' }}>Carregando...</p>
 
@@ -186,6 +205,13 @@ export function GarconDeliveryLista() {
                         >
                           Maps
                         </a>
+                        <button
+                          className={styles.btnImprimir}
+                          onClick={() => imprimirComanda(e)}
+                          title="Imprimir comanda de entrega"
+                        >
+                          🖨️
+                        </button>
                         {e.status === 'AGUARDANDO' ? (
                           <>
                             <Button
@@ -233,8 +259,9 @@ export function GarconDeliveryLista() {
         })}
       </div>
 
+      <div className={styles.historicoWrap}>
       {entregues.length > 0 && (
-        <div className={styles.entreguesSection}>
+        <div className={`${styles.entreguesSection} ${cancelados.length > 0 ? styles.entreguesSectionColada : ''}`}>
           <button
             className={styles.entreguesToggle}
             onClick={() => setVerEntregues(v => !v)}
@@ -259,7 +286,40 @@ export function GarconDeliveryLista() {
         </div>
       )}
 
-      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+      {cancelados.length > 0 && (
+        <div className={`${styles.entreguesSection} ${entregues.length > 0 ? styles.entreguesSectionSegunda : ''}`}>
+          <button
+            className={styles.entreguesToggle}
+            onClick={() => setVerCancelados(v => !v)}
+          >
+            {verCancelados ? '▲' : '▼'} Cancelados ({cancelados.length})
+          </button>
+          {verCancelados && (
+            <div className={styles.entreguesList}>
+              {cancelados.map(e => (
+                <div key={e.id} className={styles.entregueRow}>
+                  <span className={styles.entregueId}>#{e.id}</span>
+                  <span className={styles.entregueCliente}>{e.clienteNome}</span>
+                  <span className={styles.entregueEndereco}>
+                    {e.enderecoRua}{e.enderecoNumero ? `, ${e.enderecoNumero}` : ''}
+                    {e.motivoRejeicao && ` — ${e.motivoRejeicao}`}
+                  </span>
+                  <Badge variant="danger" size="sm">Cancelada</Badge>
+                  <span className={styles.entregueTotal}>{formatCurrency(e.total)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      </div>
+
+      {/* A paginação recarrega a lista inteira de entregas (ativas + concluídas
+          + canceladas) — sem as seções de histórico abertas, trocar de página
+          só arrisca sumir com pedidos ativos do quadro sem nenhum ganho visível. */}
+      {(verEntregues || verCancelados) && (
+        <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+      )}
 
       <ConfirmDialog
         isOpen={confirmCancelar !== null}
@@ -271,6 +331,46 @@ export function GarconDeliveryLista() {
         onConfirm={cancelar}
         onCancel={() => setConfirmCancelar(null)}
       />
+
+      {/* Comanda de entrega — escondida na tela, só some a visibilidade em
+          @media print (ver GarconDeliveryLista.module.css), mesma técnica
+          do recibo de caixa em PdvSalao. */}
+      {imprimindo && (
+        <div className={styles.reciboImpressao}>
+          <p className={styles.reciboCentro}>*** PEDIDO DELIVERY #{imprimindo.id} ***</p>
+          <p className={styles.reciboLinhaDivisoria}>--------------------------------</p>
+          <p>Cliente: {imprimindo.clienteNome}</p>
+          {imprimindo.clienteTelefone && <p>Telefone: {imprimindo.clienteTelefone}</p>}
+          <p>
+            Endereço: {imprimindo.enderecoRua}
+            {imprimindo.enderecoNumero ? `, ${imprimindo.enderecoNumero}` : ''}
+            {imprimindo.enderecoComplemento ? ` — ${imprimindo.enderecoComplemento}` : ''}
+            {imprimindo.enderecoBairro ? ` — ${imprimindo.enderecoBairro}` : ''}
+            {imprimindo.enderecoCidade ? `, ${imprimindo.enderecoCidade}` : ''}
+          </p>
+          <p className={styles.reciboLinhaDivisoria}>--------------------------------</p>
+          {imprimindo.itens.map(item => (
+            <div key={item.id} className={styles.reciboLinha}>
+              <span>{item.quantidade}x {item.produtoNome}</span>
+              <span>{formatCurrency(item.precoUnitario * item.quantidade)}</span>
+            </div>
+          ))}
+          {!!imprimindo.valorFrete && (
+            <div className={styles.reciboLinha}>
+              <span>Frete</span>
+              <span>{formatCurrency(imprimindo.valorFrete)}</span>
+            </div>
+          )}
+          <p className={styles.reciboLinhaDivisoria}>--------------------------------</p>
+          <div className={styles.reciboLinha} style={{ fontWeight: 700 }}>
+            <span>TOTAL</span>
+            <span>{formatCurrency(imprimindo.total)}</span>
+          </div>
+          <p className={styles.reciboLinhaDivisoria}>--------------------------------</p>
+          <p className={styles.reciboCentro}>Obrigado pela preferência!</p>
+          <p className={styles.reciboCentro}>Volte sempre :)</p>
+        </div>
+      )}
     </div>
   )
 }

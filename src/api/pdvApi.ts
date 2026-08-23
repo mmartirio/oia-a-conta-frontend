@@ -19,10 +19,20 @@ export const pdvApi = {
     api.get<RestauranteConfig>('/api/configuracoes'),
 
   criarVenda: (data: {
-    itens: { produtoId: number; produtoNome: string; quantidade: number; precoUnitario: number; observacao?: string }[]
+    itens: {
+      produtoId?: number
+      produtoNome?: string
+      quantidade: number
+      precoUnitario?: number
+      observacao?: string
+      comboId?: number
+      comboQuantidade?: number
+    }[]
     metodoPagamento: MetodoPagamento
     parcelas?: number
     observacao?: string
+    clienteId?: number
+    cupomCodigo?: string
   }) =>
     api.post<Comanda>('/api/pdv/vendas', data),
 }

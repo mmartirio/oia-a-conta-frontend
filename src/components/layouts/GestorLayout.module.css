@@ -4,6 +4,11 @@
   background: #f1f5f9;
 }
 
+.mobileTopBar { display: none; }
+.hamburgerBtn { display: none; }
+.closeBtn { display: none; }
+.overlay { display: none; }
+
 .sidebar {
   width: 220px;
   flex-shrink: 0;
@@ -109,4 +114,87 @@
   flex: 1;
   overflow: auto;
   padding: 2rem 2.5rem;
+}
+
+/* ── Mobile: sidebar vira um menu hamburguer em drawer ── */
+@media (max-width: 900px) {
+  .layout { flex-direction: column; min-height: 100dvh; }
+
+  .mobileTopBar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 1rem;
+    background: #0f172a;
+    color: #f8fafc;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+
+  .hamburgerBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: #f8fafc;
+    cursor: pointer;
+    padding: 0.25rem;
+    flex-shrink: 0;
+  }
+
+  .mobileTopBarLogo { height: 28px; width: auto; object-fit: contain; }
+  .mobileTopBarSpacer { flex: 1; }
+
+  .overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 90;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 260px;
+    max-width: 82vw;
+    height: 100dvh;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    z-index: 100;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.35);
+  }
+
+  .sidebarOpen { transform: translateX(0); }
+
+  .closeBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    background: rgba(255,255,255,0.12);
+    border: none;
+    color: #f8fafc;
+    border-radius: 999px;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    z-index: 3;
+  }
+
+  .brand { padding-right: 3rem; }
+
+  .main { padding: 1.25rem; }
+}
+
+@media (max-width: 480px) {
+  .main { padding: 1rem; }
+  .mobileTopBarLogo { height: 24px; }
 }

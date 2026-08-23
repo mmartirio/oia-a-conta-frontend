@@ -4,6 +4,56 @@
 .headerActions { display: flex; align-items: center; gap: 0.625rem; }
 .title { font-size: 1.5rem; font-weight: 800; color: var(--color-text); margin: 0; }
 
+.abas {
+  display: inline-flex;
+  gap: 0.25rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0.25rem;
+  margin-bottom: 1.25rem;
+}
+.abaBtn {
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm, 6px);
+  padding: 0.5rem 1.125rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+.abaBtnAtiva { background: var(--color-primary); color: #fff; }
+
+.footerActions { display: flex; align-items: center; gap: 0.5rem; }
+
+/* ── Recibo de impressão térmica ─────────────────────────────────────────
+   Escondido na tela; só some a visibilidade quando @media print entra em
+   ação, isolando esse bloco do resto da página (técnica padrão pra imprimir
+   só uma parte específica com window.print(), sem lib nenhuma). */
+.reciboImpressao { display: none; }
+
+.reciboCentro { text-align: center; font-weight: 700; margin-bottom: 0.5rem; }
+.reciboLinha { display: flex; justify-content: space-between; gap: 0.5rem; }
+.reciboLinhaDivisoria { margin: 0.375rem 0; }
+
+@media print {
+  body * { visibility: hidden; }
+  .reciboImpressao, .reciboImpressao * { visibility: visible; }
+  .reciboImpressao {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 78mm;
+    padding: 3mm;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    line-height: 1.4;
+    color: #000;
+  }
+}
+
 .caixaBanner {
   display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;
   padding: 0.875rem 1.125rem; border-radius: var(--radius-lg); margin-bottom: 1.25rem;
@@ -22,75 +72,112 @@
 .trocoValor { margin-top: 0.5rem; font-size: 1.0625rem; font-weight: 800; color: var(--color-success, #16a34a); }
 .trocoFaltando { margin-top: 0.5rem; font-size: 1.0625rem; font-weight: 800; color: var(--color-danger, #dc2626); }
 
-.lista { display: flex; flex-direction: column; gap: 0.875rem; }
+.lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
 .empty { color: var(--color-text-secondary); text-align: center; padding: 3rem; font-size: 1rem; }
 
-.card {}
-.cardHeader { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
-.mesa { font-weight: 800; font-size: 1.0625rem; }
-.garcon { font-size: 0.875rem; color: var(--color-text-secondary); }
+/* Ticket da fila de pagamento (comanda de garçom ou delivery) */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.125rem;
+}
+.cardHeader { display: flex; align-items: center; gap: 0.625rem; margin-bottom: 0.375rem; flex-wrap: wrap; }
+.codigo { font-weight: 800; font-size: 0.9375rem; color: var(--color-text-secondary); font-family: monospace; }
+.tipoBadge {
+  font-size: 0.75rem; font-weight: 700; padding: 0.125rem 0.5rem; border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent); color: var(--color-primary);
+}
+.tipoBadgeDelivery { background: color-mix(in srgb, #2563eb 12%, transparent); color: #2563eb; }
 .cardTime { font-size: 0.8125rem; color: var(--color-text-secondary); margin-left: auto; }
+
+.agente { font-size: 0.9375rem; font-weight: 600; color: var(--color-text); }
+.cliente { font-size: 0.8125rem; color: var(--color-text-secondary); margin-top: 0.125rem; }
 
 .cardFooter { display: flex; align-items: center; justify-content: space-between; margin-top: 0.75rem; padding-top: 0.625rem; border-top: 1px solid var(--color-border); }
 .total { font-size: 1.25rem; font-weight: 800; color: var(--color-text); }
 
-/* Modal — visual de caixa registradora: chassi escuro + visor LCD pro total */
+/* Modal de pagamento / abrir-fechar caixa */
 .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 1rem; }
 .modal {
-  background: linear-gradient(180deg, #3a3f44 0%, #2b2f33 100%);
-  border-radius: 18px;
-  padding: 1.25rem;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
   width: 100%;
   max-width: 440px;
-  box-shadow: 0 24px 48px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08);
-  border: 1px solid #1c1f22;
+  box-shadow: 0 24px 48px rgba(0,0,0,0.25);
+  border: 1px solid var(--color-border);
 }
 .modalTitle {
-  font-size: 1.0625rem; font-weight: 800; margin: 0 0 0.75rem; color: #e8eaed;
-  text-transform: uppercase; letter-spacing: 0.04em; text-align: center;
+  font-size: 1.125rem; font-weight: 800; margin: 0 0 0.75rem; color: var(--color-text);
+  text-align: center;
 }
 .modalTotal {
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 2.25rem;
-  font-weight: 700;
-  color: #baffc9;
-  background: #0d1f14;
-  text-shadow: 0 0 8px rgba(102,255,153,0.55);
-  border: 1px solid #0a170f;
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-  text-align: right;
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  text-align: center;
   margin-bottom: 1.25rem;
-  box-shadow: inset 0 2px 6px rgba(0,0,0,0.6);
 }
 
 .metodosGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.625rem; margin-bottom: 1rem; }
 .metodoBtn {
   padding: 0.9rem 0.5rem;
-  border: none;
-  border-radius: 10px;
-  background: linear-gradient(180deg, #5b6169 0%, #464b52 100%);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
   cursor: pointer; font-size: 0.9375rem; font-weight: 700;
-  color: #e8eaed;
-  box-shadow: 0 3px 0 #24272b, 0 4px 8px rgba(0,0,0,0.35);
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  color: var(--color-text);
+  transition: border-color 0.15s, background 0.15s;
 }
-.metodoBtn:hover { transform: translateY(1px); box-shadow: 0 2px 0 #24272b, 0 3px 6px rgba(0,0,0,0.35); }
-.metodoBtn:active { transform: translateY(3px); box-shadow: 0 0 0 #24272b; }
+.metodoBtn:hover { border-color: var(--color-primary); }
 .metodoSelecionado {
-  background: linear-gradient(180deg, #ff8a3d 0%, #e8631a 100%) !important;
-  color: #2b1200 !important;
-  box-shadow: 0 3px 0 #a8460c, 0 4px 8px rgba(0,0,0,0.4) !important;
+  border-color: var(--color-primary) !important;
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-bg)) !important;
+  color: var(--color-primary);
 }
 
-.pixBox { background: #10241a; border: 1.5px solid #1f4a33; border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1rem; }
-.pixLabel { font-size: 0.8125rem; color: #7fe0a8; font-weight: 600; margin-bottom: 0.375rem; }
-.pixChave { font-family: monospace; font-size: 1rem; word-break: break-all; color: #baffc9; }
-.pixCopy { margin-top: 0.5rem; font-size: 0.8125rem; background: #1f8a4c; color: #fff; border: none; border-radius: var(--radius-sm); padding: 0.375rem 0.75rem; cursor: pointer; font-weight: 700; }
+.pixBox { background: #f0fdf4; border: 1.5px solid #86efac; border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1rem; }
+.pixLabel { font-size: 0.8125rem; color: #166534; font-weight: 600; margin-bottom: 0.375rem; }
+.pixChave { font-family: monospace; font-size: 1rem; word-break: break-all; color: #166534; }
+.pixCopy { margin-top: 0.5rem; font-size: 0.8125rem; background: #166534; color: #fff; border: none; border-radius: var(--radius-sm); padding: 0.375rem 0.75rem; cursor: pointer; }
 
 .parcelasWrap { margin-bottom: 1rem; }
-.parcelasLabel { font-size: 0.875rem; font-weight: 700; margin-bottom: 0.375rem; display: block; color: #c9cdd1; }
-.parcelasSelect { width: 100%; padding: 0.5rem; border: 1.5px solid #55595e; border-radius: var(--radius-md); font-size: 0.9375rem; background: #1c1f22; color: #e8eaed; }
+.resumoCaixa {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 0.875rem;
+  margin-bottom: 1rem;
+}
+.resumoCaixaLinha {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  padding: 0.2rem 0;
+}
+.resumoCaixaTotal {
+  font-weight: 800;
+  border-top: 1px solid var(--color-border);
+  margin-top: 0.375rem;
+  padding-top: 0.5rem;
+}
+
+.caixaFalta, .caixaSobra {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  border-radius: var(--radius-md);
+  padding: 0.625rem 0.75rem;
+  margin: 0.75rem 0;
+}
+.caixaFalta { background: color-mix(in srgb, var(--color-danger) 10%, white); color: color-mix(in srgb, var(--color-danger) 70%, black); }
+.caixaSobra { background: color-mix(in srgb, var(--color-warning) 12%, white); color: color-mix(in srgb, var(--color-warning) 65%, black); }
+
+.parcelasLabel { font-size: 0.875rem; font-weight: 600; margin-bottom: 0.375rem; display: block; }
+.parcelasSelect { width: 100%; padding: 0.5rem; border: 1.5px solid var(--color-border); border-radius: var(--radius-md); font-size: 0.9375rem; background: var(--color-bg); color: var(--color-text); }
 
 .modalActions { display: flex; gap: 0.625rem; justify-content: flex-end; }
-.modalActions button { border-radius: 10px !important; font-weight: 700 !important; }

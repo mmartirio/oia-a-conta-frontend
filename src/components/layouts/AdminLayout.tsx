@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
-  FiGrid, FiCoffee, FiClipboard, FiHexagon,
-  FiShoppingCart, FiTruck, FiHeadphones, FiSettings, FiUsers,
-  FiBookOpen, FiLayout, FiDollarSign, FiPackage,
+  FiGrid, FiCoffee, FiClipboard, FiHexagon, FiPackage,
+  FiShoppingCart, FiShoppingBag, FiHeadphones, FiSettings, FiUsers, FiUser,
+  FiBookOpen, FiLayout, FiDollarSign, FiMenu, FiX, FiArchive, FiTag,
 } from 'react-icons/fi'
+import { MdDeliveryDining } from 'react-icons/md'
 import { useAuth } from '../../contexts/AuthContext'
 import { useNotification } from '../../contexts/NotificationContext'
 import { NotificationAlert } from '../NotificationAlert'
@@ -43,10 +44,14 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/garcon/comandas',     label: 'Comanda',     Icon: FiClipboard, permission: 'COMANDA' },
   { to: '/garcon',              label: 'Garçom',      Icon: FiHexagon, permission: 'GARCOM' },
   { to: '/delivery',            label: 'Delivery',    Icon: FiPackage, permission: 'DELIVERY' },
-  { to: '/entregador',          label: 'Entregador',  Icon: FiTruck, permission: 'ENTREGADOR' },
+  { to: '/entregador',          label: 'Entregador',  Icon: MdDeliveryDining, permission: 'ENTREGADOR' },
   { to: '/admin/usuarios',      label: 'Usuários',    Icon: FiUsers, permission: 'USUARIOS' },
+  { to: '/admin/clientes',      label: 'Clientes',    Icon: FiUser, permission: 'CLIENTES' },
+  { to: '/admin/estoque',       label: 'Estoque',     Icon: FiArchive, permission: 'ESTOQUE' },
+  { to: '/admin/marketing',     label: 'Marketing',   Icon: FiTag, permission: 'MARKETING' },
   { to: '/admin/financeiro',    label: 'Financeiro',  Icon: FiDollarSign, permission: 'FINANCEIRO' },
   { to: '/admin/whatsapp',      label: 'WhatsApp',    Icon: WhatsAppIcon, permission: 'WHATSAPP_CONEXAO' },
+  { to: '/admin/ifood',         label: 'iFood',       Icon: FiShoppingBag, permission: 'IFOOD_CONEXAO' },
 ]
 
 const NAV_BOTTOM: NavItem[] = [
@@ -71,6 +76,8 @@ export function AdminLayout() {
   const { user, logout } = useAuth()
   const { conversasWhatsappNaoLidas } = useNotification()
   const [statusLoja, setStatusLoja] = useState<PausaStatus | null>(null)
+  const [menuAberto, setMenuAberto] = useState(false)
+  const location = useLocation()
 
   useEffect(() => {
     const restauranteId = user?.restauranteId
@@ -84,9 +91,35 @@ export function AdminLayout() {
     return () => clearInterval(interval)
   }, [user?.restauranteId])
 
+  // Fecha o menu mobile automaticamente ao navegar para outra rota
+  useEffect(() => { setMenuAberto(false) }, [location.pathname])
+
   return (
     <div className={styles.layout}>
-      <aside className={styles.sidebar}>
+      <header className={styles.mobileTopBar}>
+        <button
+          className={styles.hamburgerBtn}
+          onClick={() => setMenuAberto(true)}
+          aria-label="Abrir menu"
+        >
+          <FiMenu size={22} />
+        </button>
+        <span className={styles.mobileTopBarSpacer} />
+      </header>
+
+      {menuAberto && (
+        <div className={styles.overlay} onClick={() => setMenuAberto(false)} />
+      )}
+
+      <aside className={`${styles.sidebar} ${menuAberto ? styles.sidebarOpen : ''}`}>
+        <button
+          className={styles.closeBtn}
+          onClick={() => setMenuAberto(false)}
+          aria-label="Fechar menu"
+        >
+          <FiX size={22} />
+        </button>
+
         <div className={styles.brand}>
           <img src={logo} alt="Oia a Conta" className={styles.brandLogo} />
           <div className={styles.brandText}>

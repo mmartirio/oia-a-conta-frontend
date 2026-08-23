@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { FiBookOpen, FiLayout, FiMessageCircle, FiUsers, FiTruck } from 'react-icons/fi'
+import { FiBookOpen, FiLayout, FiMessageCircle, FiUsers, FiLink, FiPackage } from 'react-icons/fi'
 import { mesaApi } from '../../api/mesaApi'
 import { comandaApi } from '../../api/comandaApi'
 import { pedidoApi } from '../../api/pedidoApi'
@@ -30,17 +30,19 @@ export function AdminDashboard() {
     { to: '/admin/mesas', label: 'Mesas', description: 'Gerencie ocupação e disponibilidade', icon: FiLayout },
     { to: '/admin/usuarios', label: 'Usuários', description: 'Controle acessos e perfis', icon: FiUsers },
     { to: '/admin/whatsapp', label: 'WhatsApp', description: 'Ative mensagens automáticas', icon: FiMessageCircle },
-    { to: '/delivery', label: 'Delivery', description: 'Acompanhe pedidos de entrega', icon: FiTruck },
+    { to: '/delivery', label: 'Delivery', description: 'Acompanhe pedidos de entrega', icon: FiPackage },
+    { to: '/admin/configuracoes?aba=cardapio-publico', label: 'Link do Cardápio', description: 'Compartilhe o link ou QR code com os clientes', icon: FiLink },
   ]
 
   return (
     <div className={styles.page}>
+      <div>
+        <p className={styles.heroEyebrow}>Resumo diário</p>
+        <h1 className={styles.pageTitle}>Bem-vindo ao painel</h1>
+      </div>
+
       <div className={styles.hero}>
         <div className={styles.heroEsquerda}>
-          <div>
-            <p className={styles.heroEyebrow}>Resumo diário</p>
-            <h1 className={styles.pageTitle}>Bem-vindo ao painel</h1>
-          </div>
 
           <div className={styles.quickActions}>
             {quickActions.map(({ to, label, description, icon: Icon }) => (
@@ -61,43 +63,43 @@ export function AdminDashboard() {
         </div>
       </div>
       <div className={styles.statsGrid}>
-        <Card>
+        <Card padding="sm" className={styles.statCard}>
           <p className={styles.statLabel}>Total de Mesas</p>
           <p className={styles.statValue}>{mesas.length}</p>
         </Card>
-        <Card>
+        <Card padding="sm" className={styles.statCard}>
           <p className={styles.statLabel}>Mesas Ocupadas</p>
           <p className={`${styles.statValue} ${styles.statOcupado}`}>{mesasOcupadas}</p>
         </Card>
-        <Card>
+        <Card padding="sm" className={styles.statCard}>
           <p className={styles.statLabel}>Comandas Abertas</p>
           <p className={styles.statValue}>{comandas.length}</p>
         </Card>
-        <Card>
+        <Card padding="sm" className={styles.statCard}>
           <p className={styles.statLabel}>Total em Aberto</p>
           <p className={`${styles.statValue} ${styles.statMoney}`}>{formatCurrency(totalAberto)}</p>
         </Card>
-        <Card>
+        <Card padding="sm" className={styles.statCard}>
           <p className={styles.statLabel}>Total de Pedidos (hoje)</p>
           <p className={styles.statValue}>{resumoPedidos.total}</p>
         </Card>
-        <Card>
+        <Card padding="sm" className={styles.statCard}>
           <p className={styles.statLabel}>Em Produção</p>
           <p className={`${styles.statValue} ${styles.statWarning}`}>{resumoPedidos.emProducao}</p>
         </Card>
-        <Card>
+        <Card padding="sm" className={styles.statCard}>
           <p className={styles.statLabel}>Cancelados</p>
           <p className={`${styles.statValue} ${styles.statOcupado}`}>{resumoPedidos.cancelados}</p>
         </Card>
-        <Card>
+        <Card padding="sm" className={styles.statCard}>
           <p className={styles.statLabel}>Entregues</p>
           <p className={`${styles.statValue} ${styles.statMoney}`}>{resumoPedidos.entregues}</p>
         </Card>
-        <Card>
+        <Card padding="sm" className={styles.statCard}>
           <p className={styles.statLabel}>Total em Caixa</p>
           <p className={`${styles.statValue} ${styles.statMoney}`}>{formatCurrency(resumoPedidos.totalCaixa)}</p>
         </Card>
-        <Card>
+        <Card padding="sm" className={styles.statCard}>
           <p className={styles.statLabel}>Ticket Médio</p>
           <p className={styles.statValue}>{formatCurrency(resumoPedidos.ticketMedio)}</p>
         </Card>

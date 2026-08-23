@@ -1,5 +1,5 @@
 import api from './axios'
-import type { Entrega, EntregaRequest, Page } from '../types'
+import type { Entrega, EntregaRequest, FreteCalculado, Page, RotaSugerida } from '../types'
 
 export const entregaApi = {
   criar: (data: EntregaRequest) =>
@@ -22,8 +22,8 @@ export const entregaApi = {
   rejeitar: (id: number, motivo: string) =>
     api.put<Entrega>(`/api/entregas/${id}/rejeitar`, { motivo }),
 
-  aceitar: (id: number) =>
-    api.put<Entrega>(`/api/entregas/${id}/aceitar`),
+  atribuirEntregador: (id: number) =>
+    api.put<Entrega>(`/api/entregas/${id}/atribuir-entregador`),
 
   saiu: (id: number) =>
     api.put<Entrega>(`/api/entregas/${id}/saiu`),
@@ -48,4 +48,10 @@ export const entregaApi = {
 
   atualizarLocalizacao: (id: number, latitude: number, longitude: number) =>
     api.put<void>(`/api/entregas/${id}/localizacao`, { latitude, longitude }),
+
+  previsaoFrete: (enderecoLatitude: number, enderecoLongitude: number) =>
+    api.post<FreteCalculado>('/api/entregas/frete-preview', { enderecoLatitude, enderecoLongitude }),
+
+  minhaRota: (lat: number, lng: number) =>
+    api.get<RotaSugerida>('/api/entregas/minha-rota', { params: { lat, lng } }),
 }

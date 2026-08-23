@@ -35,7 +35,7 @@ export function AdminUsuarios() {
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState(false)
   const [editing, setEditing] = useState<Usuario | null>(null)
-  const [form, setForm] = useState<UserForm>({ nome: '', email: '', senha: '', role: 'GARCON', grupoId: null })
+  const [form, setForm] = useState<UserForm>({ nome: '', email: '', senha: '', role: 'ADMIN', grupoId: null })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [confirmDelete, setConfirmDelete] = useState<Usuario | null>(null)
@@ -64,7 +64,7 @@ export function AdminUsuarios() {
 
   const openCreate = () => {
     setEditing(null)
-    setForm({ nome: '', email: '', senha: '', role: 'GARCON', grupoId: null })
+    setForm({ nome: '', email: '', senha: '', role: 'ADMIN', grupoId: null })
     setError('')
     setModal(true)
   }

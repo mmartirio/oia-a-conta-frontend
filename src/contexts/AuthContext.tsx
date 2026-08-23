@@ -6,7 +6,7 @@ interface AuthContextValue {
   user: Usuario | null
   loading: boolean
   login: (email: string, senha: string) => Promise<Usuario>
-  loginGoogle: (email: string, nome: string) => Promise<Usuario>
+  loginGoogle: (credential: string) => Promise<Usuario>
   registro: (data: {
     restauranteNome: string
     adminNome: string
@@ -47,8 +47,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return data.usuario
   }
 
-  const loginGoogle = async (email: string, nome: string): Promise<Usuario> => {
-    const { data } = await authApi.loginGoogle(email, nome)
+  const loginGoogle = async (credential: string): Promise<Usuario> => {
+    const { data } = await authApi.loginGoogle(credential)
     localStorage.setItem('token', data.token)
     setUser(data.usuario)
     return data.usuario

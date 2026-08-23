@@ -1,17 +1,60 @@
-.loading { color: #94a3b8; padding: 2rem; }
+.loading { color: var(--color-text-secondary); padding: 2rem; }
+
+.page { display: flex; flex-direction: column; gap: 1rem; height: 100%; }
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.title { font-size: 1.5rem; font-weight: 800; color: var(--color-text); margin: 0; }
+
+.headerActions { display: flex; align-items: center; gap: 1rem; }
+
+.btnImprimirTodos {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.875rem;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btnImprimirTodos:hover:not(:disabled) { background: var(--color-bg); }
+.btnImprimirTodos:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.autoImprimirLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+.autoImprimirLabel input { width: 16px; height: 16px; cursor: pointer; accent-color: var(--color-primary); }
 
 .board {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
-  height: calc(100vh - 80px);
-  overflow: hidden;
+  flex: 1;
+  min-height: 0;
 }
 
 .coluna {
   display: flex;
   flex-direction: column;
-  background: var(--color-accent);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
   border-radius: var(--radius-lg);
   overflow: hidden;
   border-top: 4px solid transparent;
@@ -22,38 +65,20 @@
   align-items: center;
   justify-content: space-between;
   padding: 1rem 1.25rem;
-  background: color-mix(in srgb, var(--color-accent) 75%, black);
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  background: var(--color-bg);
+  border-bottom: 1.5px solid var(--color-border);
 }
 
-.colunaInfo {
-  background: color-mix(in srgb, var(--color-info) 22%, var(--color-accent));
-  border-top-color: var(--color-info);
-}
+.colunaInfo { border-top-color: var(--color-info); }
+.colunaInfo .colunaTitle { color: var(--color-info); }
 
-.colunaInfo .colunaHeader {
-  background: color-mix(in srgb, var(--color-info) 35%, black);
-}
+.colunaWarning { border-top-color: var(--color-warning); }
+.colunaWarning .colunaTitle { color: var(--color-warning); }
 
-.colunaWarning {
-  background: color-mix(in srgb, var(--color-warning) 22%, var(--color-accent));
-  border-top-color: var(--color-warning);
-}
+.colunaSuccess { border-top-color: var(--color-success); }
+.colunaSuccess .colunaTitle { color: var(--color-success); }
 
-.colunaWarning .colunaHeader {
-  background: color-mix(in srgb, var(--color-warning) 35%, black);
-}
-
-.colunaSuccess {
-  background: color-mix(in srgb, var(--color-success) 22%, var(--color-accent));
-  border-top-color: var(--color-success);
-}
-
-.colunaSuccess .colunaHeader {
-  background: color-mix(in srgb, var(--color-success) 35%, black);
-}
-
-.colunaTitle { font-size: 1rem; font-weight: 700; color: #f8fafc; }
+.colunaTitle { font-size: 1rem; font-weight: 700; color: var(--color-text); }
 
 .cards {
   flex: 1;
@@ -64,28 +89,42 @@
   gap: 0.625rem;
 }
 
-.empty { color: #475569; text-align: center; padding: 2rem 0; font-size: 0.9375rem; }
+.empty { color: var(--color-text-muted); text-align: center; padding: 2rem 0; font-size: 0.9375rem; }
 
 .pedidoCard {
-  background: color-mix(in srgb, var(--color-accent) 75%, black) !important;
-  border-color: rgba(255,255,255,0.1) !important;
+  background: var(--color-surface) !important;
+  border-color: var(--color-border) !important;
 }
 
 .pedidoTop {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.5rem;
   margin-bottom: 0.625rem;
 }
 
-.pedidoId { font-weight: 700; color: #f8fafc; }
-.pedidoTime { font-size: 0.8125rem; color: #94a3b8; }
+.pedidoId { font-weight: 700; color: var(--color-text); }
+.pedidoTime { font-size: 0.8125rem; color: var(--color-text-secondary); }
+
+.btnImprimir {
+  margin-left: auto;
+  width: 26px; height: 26px;
+  border: 1.5px solid var(--color-border);
+  background: transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--color-text-secondary);
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.btnImprimir:hover { background: var(--color-bg); color: var(--color-primary); }
 
 .itens { list-style: none; padding: 0; margin: 0 0 0.625rem; display: flex; flex-direction: column; gap: 0.25rem; }
 
 .item { display: flex; align-items: baseline; gap: 0.375rem; }
-.itemQtd { font-weight: 800; color: var(--color-secondary); font-size: 1rem; }
-.itemNome { color: #e2e8f0; font-size: 0.9375rem; }
+.itemQtd { font-weight: 800; color: var(--color-primary); font-size: 1rem; }
+.itemNome { color: var(--color-text); font-size: 0.9375rem; }
 
 .obs {
   display: flex;
@@ -93,7 +132,7 @@
   gap: 0.375rem;
   font-size: 0.8125rem;
   color: var(--color-secondary);
-  background: rgba(246,142,5,0.12);
+  background: color-mix(in srgb, var(--color-secondary) 12%, transparent);
   border-radius: var(--radius-sm);
   padding: 0.375rem 0.5rem;
   margin: 0 0 0.625rem;
@@ -101,7 +140,7 @@
 
 .pedidoActions { margin-top: 0.375rem; display: flex; align-items: center; gap: 0.375rem; }
 
-.aguardandoMsg { font-size: 0.875rem; color: color-mix(in srgb, var(--color-success) 55%, white); text-align: center; margin: 0; font-weight: 600; }
+.aguardandoMsg { font-size: 0.875rem; color: var(--color-success); text-align: center; margin: 0; font-weight: 600; }
 
 @media (max-width: 768px) {
   .board {
@@ -111,4 +150,32 @@
   }
 
   .coluna { max-height: 60vh; }
+}
+
+/* ── Comanda de cozinha (impressão térmica) ──────────────────────────────
+   Escondida na tela; só aparece em @media print, isolando esse bloco do
+   resto da página (mesma técnica do recibo de caixa em PdvSalao e da
+   comanda de entrega em GarconDeliveryLista). */
+.reciboImpressao { display: none; }
+
+.reciboCentro { text-align: center; font-weight: 700; margin-bottom: 0.5rem; }
+.reciboLinhaDivisoria { margin: 0.375rem 0; }
+.reciboItem { margin: 0 0 0.25rem; }
+.reciboItemObs { font-style: italic; }
+
+@media print {
+  body * { visibility: hidden; }
+  .reciboImpressao, .reciboImpressao * { visibility: visible; }
+  .reciboImpressao {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 78mm;
+    padding: 3mm;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    line-height: 1.4;
+    color: #000;
+  }
 }

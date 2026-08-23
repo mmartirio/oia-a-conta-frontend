@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts'
 import { FiArrowUp, FiArrowDown, FiTrash2 } from 'react-icons/fi'
 import { financeiroApi } from '../../api/financeiroApi'
@@ -40,11 +41,34 @@ const CHART_COLORS = {
   despesas: '#1F6FA8',
 }
 
+// Mesma paleta categórica da evolução diária, estendida pra cobrir as
+// categorias de despesa e os métodos de pagamento nos gráficos de barra/anel.
+const CATEGORIA_COLORS: Record<CategoriaDespesa, string> = {
+  ALUGUEL: '#CF4622',
+  INSUMOS: '#F68E05',
+  SALARIOS: '#1F6FA8',
+  ENERGIA: '#C9A227',
+  MANUTENCAO: '#6B4C9A',
+  OUTROS: '#8B8B8B',
+}
+
+const METODO_COLORS: Record<string, string> = {
+  DINHEIRO: '#1F6FA8',
+  PIX: '#2E9E6B',
+  CARTAO_CREDITO: '#CF4622',
+  CARTAO_DEBITO: '#C9A227',
+}
+
 function formatDataCurta(iso: string) {
   return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
 }
 
-function periodoParaDatas(p: Periodo): { inicio: string; fim: string } {
+function toLocalYMD(d: Date) {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+function periodoParaDatas(p: Periodo): { inicio: string; fim: string; inicioData: string; fimData: string } {
   const agora = new Date()
   const fim = agora.toISOString()
   const inicio = new Date(agora)
@@ -57,7 +81,7 @@ function periodoParaDatas(p: Periodo): { inicio: string; fim: string } {
   } else if (p === 'MES') {
     inicio.setDate(agora.getDate() - 30)
   }
-  return { inicio: inicio.toISOString(), fim }
+  return { inicio: inicio.toISOString(), fim, inicioData: toLocalYMD(inicio), fimData: toLocalYMD(agora) }
 }
 
 function formatMoeda(v: number) {
@@ -85,6 +109,7 @@ export function AdminFinanceiro() {
   const [evolucao, setEvolucao] = useState<EvolucaoDiaria[]>([])
   const [comparativo, setComparativo] = useState<ComparativoFinanceiro | null>(null)
   const [loading, setLoading] = useState(false)
+  const [erro, setErro] = useState('')
 
   const [despesas, setDespesas] = useState<Despesa[]>([])
   const [despesaCategoria, setDespesaCategoria] = useState<CategoriaDespesa>('OUTROS')
@@ -95,35 +120,45 @@ export function AdminFinanceiro() {
   const [confirmExcluir, setConfirmExcluir] = useState<Despesa | null>(null)
   const [excluindo, setExcluindo] = useState(false)
 
-  const [rangeAtual, setRangeAtual] = useState<{ inicio: string; fim: string } | null>(null)
+  const [rangeAtual, setRangeAtual] = useState<{ inicio: string; fim: string; inicioData: string; fimData: string } | null>(null)
 
   const buscar = async () => {
     let inicio: string
     let fim: string
+    let inicioData: string
+    let fimData: string
     if (periodo === 'CUSTOM') {
       if (!customInicio || !customFim) return
       inicio = new Date(customInicio).toISOString()
       fim = new Date(customFim + 'T23:59:59').toISOString()
+      inicioData = customInicio
+      fimData = customFim
     } else {
       const datas = periodoParaDatas(periodo)
       inicio = datas.inicio
       fim = datas.fim
+      inicioData = datas.inicioData
+      fimData = datas.fimData
     }
-    setRangeAtual({ inicio, fim })
+    setRangeAtual({ inicio, fim, inicioData, fimData })
     setLoading(true)
+    setErro('')
     try {
       const [r1, r2, r3, r4, r5] = await Promise.all([
         financeiroApi.getResumo(inicio, fim),
         financeiroApi.getComissoes(inicio, fim),
         financeiroApi.getEvolucao(inicio, fim),
         financeiroApi.getComparativo(inicio, fim),
-        despesaApi.listar(inicio, fim),
+        despesaApi.listar(inicioData, fimData),
       ])
       setResumo(r1.data)
       setComissoes(r2.data)
       setEvolucao(r3.data)
       setComparativo(r4.data)
       setDespesas(r5.data)
+    } catch {
+      setErro('Não foi possível carregar os dados financeiros. Tente novamente.')
+      toast.error('Erro ao carregar dados financeiros')
     } finally {
       setLoading(false)
     }
@@ -135,7 +170,7 @@ export function AdminFinanceiro() {
     if (!rangeAtual) return
     const [r1, r5] = await Promise.all([
       financeiroApi.getResumo(rangeAtual.inicio, rangeAtual.fim),
-      despesaApi.listar(rangeAtual.inicio, rangeAtual.fim),
+      despesaApi.listar(rangeAtual.inicioData, rangeAtual.fimData),
     ])
     setResumo(r1.data)
     setDespesas(r5.data)
@@ -185,6 +220,21 @@ export function AdminFinanceiro() {
     { value: 'CUSTOM', label: 'Personalizado' },
   ]
 
+  const despesasPorCategoria = useMemo(() => {
+    const totais = new Map<CategoriaDespesa, number>()
+    despesas.forEach(d => totais.set(d.categoria, (totais.get(d.categoria) ?? 0) + d.valor))
+    return Array.from(totais.entries())
+      .map(([categoria, valor]) => ({ categoria, label: CATEGORIA_LABEL[categoria], valor }))
+      .sort((a, b) => b.valor - a.valor)
+  }, [despesas])
+
+  const metodoPagamentoData = useMemo(() => {
+    if (!resumo) return []
+    return Object.entries(resumo.breakdownPorMetodo)
+      .map(([metodo, valor]) => ({ metodo, label: METODO_LABEL[metodo] ?? metodo, valor }))
+      .filter(d => d.valor > 0)
+  }, [resumo])
+
   return (
     <div className={styles.page}>
       <div className={styles.header}>
@@ -206,12 +256,19 @@ export function AdminFinanceiro() {
             <input type="date" className={styles.dateInput} value={customInicio} onChange={e => setCustomInicio(e.target.value)} />
             <span>até</span>
             <input type="date" className={styles.dateInput} value={customFim} onChange={e => setCustomFim(e.target.value)} />
-            <button className="btn btn-primary" style={{ fontSize: '0.875rem' }} onClick={buscar}>Buscar</button>
+            <Button size="sm" onClick={buscar}>Buscar</Button>
           </div>
         )}
       </div>
 
       {loading && <p style={{ color: 'var(--color-text-secondary)' }}>Carregando...</p>}
+
+      {erro && !loading && (
+        <div className={styles.erroBox}>
+          <p>{erro}</p>
+          <Button variant="outline" size="sm" onClick={buscar}>Tentar novamente</Button>
+        </div>
+      )}
 
       {resumo && !loading && (
         <>
@@ -317,7 +374,23 @@ export function AdminFinanceiro() {
             {despesas.length === 0 ? (
               <p className={styles.empty}>Nenhuma despesa lançada no período.</p>
             ) : (
-              <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+              <>
+                <div className="card" style={{ padding: '1.25rem', marginBottom: '1rem' }}>
+                  <ResponsiveContainer width="100%" height={240}>
+                    <BarChart data={despesasPorCategoria} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                      <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                      <YAxis tickFormatter={(v: number) => `R$${(v / 1000).toFixed(1)}k`} tick={{ fontSize: 12 }} />
+                      <Tooltip formatter={(v: number) => formatMoeda(v)} labelFormatter={(l: string) => l} />
+                      <Bar dataKey="valor" name="Despesas" radius={[4, 4, 0, 0]}>
+                        {despesasPorCategoria.map(d => (
+                          <Cell key={d.categoria} fill={CATEGORIA_COLORS[d.categoria] ?? '#8B8B8B'} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="card" style={{ padding: 0, overflow: 'auto' }}>
                 <table className={styles.table}>
                   <thead>
                     <tr>
@@ -344,32 +417,55 @@ export function AdminFinanceiro() {
                     ))}
                   </tbody>
                 </table>
-              </div>
+                </div>
+              </>
             )}
           </div>
 
           <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>Breakdown por Método de Pagamento</h2>
-            {Object.keys(resumo.breakdownPorMetodo).length === 0 ? (
+            <h2 className={styles.sectionTitle}>Total por Forma de Pagamento</h2>
+            {metodoPagamentoData.length === 0 ? (
               <p className={styles.empty}>Sem dados no período.</p>
             ) : (
-              <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                <table className={styles.table}>
-                  <thead>
-                    <tr>
-                      <th>Método</th>
-                      <th style={{ textAlign: 'right' }}>Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Object.entries(resumo.breakdownPorMetodo).map(([m, v]) => (
-                      <tr key={m} className={styles.metodoRow}>
-                        <td>{METODO_LABEL[m] ?? m}</td>
-                        <td style={{ textAlign: 'right', fontWeight: 700 }}>{formatMoeda(v)}</td>
+              <div className={styles.metodoLayout}>
+                <div className="card" style={{ padding: '1rem' }}>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <PieChart>
+                      <Pie
+                        data={metodoPagamentoData}
+                        dataKey="valor"
+                        nameKey="label"
+                        innerRadius={55}
+                        outerRadius={85}
+                        paddingAngle={2}
+                      >
+                        {metodoPagamentoData.map(d => (
+                          <Cell key={d.metodo} fill={METODO_COLORS[d.metodo] ?? '#8B8B8B'} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(v: number) => formatMoeda(v)} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="card" style={{ padding: 0, overflow: 'auto' }}>
+                  <table className={styles.table}>
+                    <thead>
+                      <tr>
+                        <th>Método</th>
+                        <th style={{ textAlign: 'right' }}>Total</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {Object.entries(resumo.breakdownPorMetodo).map(([m, v]) => (
+                        <tr key={m} className={styles.metodoRow}>
+                          <td>{METODO_LABEL[m] ?? m}</td>
+                          <td style={{ textAlign: 'right', fontWeight: 700 }}>{formatMoeda(v)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>
@@ -379,7 +475,7 @@ export function AdminFinanceiro() {
             {comissoes.length === 0 ? (
               <p className={styles.empty}>Nenhuma comissão calculada no período.</p>
             ) : (
-              <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+              <div className="card" style={{ padding: 0, overflow: 'auto' }}>
                 <table className={styles.table}>
                   <thead>
                     <tr>

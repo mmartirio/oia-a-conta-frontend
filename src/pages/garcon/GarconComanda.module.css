@@ -63,6 +63,60 @@
 
 .totalLabel { font-weight: 600; font-size: 1rem; }
 .totalValue { font-size: 1.5rem; font-weight: 800; }
+.totalBreakdown { display: flex; flex-direction: column; align-items: flex-end; gap: 0.125rem; }
+.totalDesconto { font-size: 0.8125rem; color: #86efac; }
+
+.clienteChip {
+  display: flex; align-items: center; gap: 0.5rem;
+  background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-full);
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+.clienteChipRemove { background: none; border: none; cursor: pointer; color: inherit; display: flex; align-items: center; }
+
+/* Modal cliente/desconto */
+.modalForm { display: flex; flex-direction: column; gap: 1rem; }
+
+.modalError {
+  background: #fee2e2;
+  color: #991b1b;
+  border-radius: var(--radius-md);
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+}
+
+.modalHint { font-size: 0.8125rem; color: var(--color-text-secondary); }
+
+.buscaResultadoRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+}
+
+.promoRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+}
+
+.descontoAtivoCard { margin-bottom: 1rem; }
+.descontoAtivoCard button { background: none; border: none; cursor: pointer; color: var(--color-text-secondary); display: flex; align-items: center; }
+
+.promoList { display: flex; flex-direction: column; gap: 0.5rem; }
 
 /* Modal */
 .totalResume { font-size: 1.125rem; color: var(--color-text); margin: 0 0 1rem; }

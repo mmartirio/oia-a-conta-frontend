@@ -50,7 +50,7 @@
 }
 
 .nav a:hover { background: var(--color-border); color: var(--color-text); }
-.active { background: var(--color-primary) !important; color: #fff !important; }
+.active { background: var(--color-primary-selected) !important; color: #fff !important; }
 
 .user {
   display: flex;

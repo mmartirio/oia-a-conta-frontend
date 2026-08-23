@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotification, PRAZO_ACEITE_PEDIDO_MS } from '../contexts/NotificationContext'
 import { useToast } from '../contexts/ToastContext'
@@ -20,6 +21,7 @@ export function PedidoPendenteAlerta() {
   const { user } = useAuth()
   const { pedidosPendentes, confirmarPedidoPendente, rejeitarPedidoPendente } = useNotification()
   const toast = useToast()
+  const navigate = useNavigate()
 
   const [processando, setProcessando] = useState(false)
   const [rejeitando, setRejeitando] = useState(false)
@@ -41,11 +43,21 @@ export function PedidoPendenteAlerta() {
   if (!user || (user.role !== 'ADMIN' && user.role !== 'COZINHA')) return null
   if (!pedido) return null
 
+  // Esse alerta só aparece pra ADMIN ou COZINHA (ver o early-return acima) —
+  // e COZINHA não tem rota de Delivery (só ADMIN tem — ver App.tsx). Um ADMIN
+  // de Grupo restrito também pode não ter a permissão DELIVERY liberada.
+  // Navegar sem checar isso mandava a cozinha pra tela de "Acesso Negado" em
+  // vez de abrir o Delivery de verdade.
+  const podeAcessarDelivery =
+    user?.role === 'ADMIN' &&
+    (!user?.permissoes || user.permissoes.includes('DELIVERY'))
+
   const handleConfirmar = async () => {
     setProcessando(true)
     try {
       await confirmarPedidoPendente(pedido.id)
       toast.success('Pedido aceito! Enviado para a cozinha.')
+      if (podeAcessarDelivery) navigate('/delivery')
     } catch {
       toast.error('Erro ao aceitar o pedido. Tente novamente.')
     } finally {
