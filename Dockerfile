@@ -2,8 +2,10 @@ FROM node:20-alpine AS build
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm ci
+COPY package.json yarn.lock ./
+RUN yarn config set network-timeout 600000 -g \
+  && yarn config set network-concurrency 4 -g \
+  && yarn install --frozen-lockfile
 
 COPY . .
 
@@ -15,7 +17,7 @@ ENV VITE_API_URL=$VITE_API_URL
 ENV VITE_WS_URL=$VITE_WS_URL
 ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
 
-RUN npm run build
+RUN yarn build
 
 FROM nginx:stable-alpine
 

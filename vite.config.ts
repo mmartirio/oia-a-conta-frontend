@@ -3,6 +3,11 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  define: {
+    // sockjs-client (usado no WebSocketContext) espera o objeto `global` do
+    // Node, que não existe no navegador — sem isso a conexão STOMP quebra.
+    global: 'globalThis'
+  },
   plugins: [
     react(),
     VitePWA({
@@ -39,9 +44,13 @@ export default defineConfig({
     })
   ],
   server: {
+    host: true,
+    watch: {
+      usePolling: process.env.CHOKIDAR_USEPOLLING === 'true'
+    },
     proxy: {
-      '/api': { target: 'http://localhost:8090', changeOrigin: true },
-      '/ws':  { target: 'http://localhost:8085', changeOrigin: true, ws: true }
+      '/api': { target: process.env.VITE_DEV_API_PROXY_TARGET || 'http://localhost:8090', changeOrigin: true },
+      '/ws':  { target: process.env.VITE_DEV_WS_PROXY_TARGET || 'http://localhost:8085', changeOrigin: true, ws: true }
     }
   },
   resolve: {
