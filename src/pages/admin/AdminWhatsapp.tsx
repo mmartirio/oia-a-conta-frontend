@@ -5,10 +5,17 @@ import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { Badge } from '../../components/ui/Badge'
 import { Tabs } from '../../components/ui/Tabs'
 import { Switch } from '../../components/ui/Switch'
+import { Button } from '../../components/ui/Button'
 import { useToast } from '../../contexts/ToastContext'
 import { useAuth } from '../../contexts/AuthContext'
+import { useNotification } from '../../contexts/NotificationContext'
+import { comprimirImagem } from '../../utils/imageProcessing'
 import { AdminWhatsappConversas } from './AdminWhatsappConversas'
 import styles from './AdminWhatsapp.module.css'
+import btnStyles from '../../components/ui/Button.module.css'
+
+// Margem de segurança abaixo do limite validado no backend (whatsapp_config.imagem_cardapio_base64 é TEXT, sem limite rígido, mas mantemos o mesmo teto do restante do admin).
+const IMAGEM_MAX_CARACTERES = 1_200_000
 
 type AbaWhatsapp = 'conexao' | 'mensagens' | 'conversas'
 
@@ -40,9 +47,15 @@ const NOVA_VAZIA: NovaMsg = { label: '', texto: '' }
 
 export function AdminWhatsapp() {
   const { user } = useAuth()
+  const { conversasWhatsappNaoLidas } = useNotification()
   const abasPermitidas = user?.permissoes
     ? ABAS.filter(a => user.permissoes!.includes(a.permission))
     : ABAS
+  const abasComBadge = abasPermitidas.map(a =>
+    a.id === 'conversas' && conversasWhatsappNaoLidas > 0
+      ? { ...a, badge: conversasWhatsappNaoLidas }
+      : a
+  )
   const [aba, setAba] = useState<AbaWhatsapp>(abasPermitidas[0]?.id ?? 'conexao')
   const [status, setStatus] = useState<WhatsappStatus | null>(null)
   const [mensagens, setMensagens] = useState<MensagemTemplate[]>([])
@@ -62,6 +75,8 @@ export function AdminWhatsapp() {
   const [chatbotAtivo, setChatbotAtivo] = useState(true)
   const [loadingChatbotStatus, setLoadingChatbotStatus] = useState(true)
   const [salvandoChatbotStatus, setSalvandoChatbotStatus] = useState(false)
+  const [imagemCardapio, setImagemCardapio] = useState<string>('')
+  const [salvandoImagemCardapio, setSalvandoImagemCardapio] = useState(false)
   const toast = useToast()
 
   const carregarStatus = async () => {
@@ -99,7 +114,37 @@ export function AdminWhatsapp() {
       .then(r => setChatbotAtivo(r.data.ativo))
       .catch(() => {})
       .finally(() => setLoadingChatbotStatus(false))
+    whatsappAdminApi.cardapioImagem()
+      .then(r => setImagemCardapio(r.data.imagemBase64))
+      .catch(() => {})
   }, [])
+
+  const handleUploadCardapioImagem = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setSalvandoImagemCardapio(true)
+    try {
+      const dataUri = await comprimirImagem(file, { maxCaracteres: IMAGEM_MAX_CARACTERES })
+      await whatsappAdminApi.atualizarCardapioImagem(dataUri)
+      setImagemCardapio(dataUri)
+      toast.success('Imagem do cardápio atualizada')
+    } catch {
+      toast.error('Não foi possível salvar a imagem')
+    } finally {
+      setSalvandoImagemCardapio(false)
+    }
+  }
+
+  const handleRemoverCardapioImagem = async () => {
+    setSalvandoImagemCardapio(true)
+    try {
+      await whatsappAdminApi.atualizarCardapioImagem('')
+      setImagemCardapio('')
+    } finally {
+      setSalvandoImagemCardapio(false)
+    }
+  }
 
   const handleToggleChatbot = async (ativo: boolean) => {
     setSalvandoChatbotStatus(true)
@@ -215,7 +260,7 @@ export function AdminWhatsapp() {
     <div className={styles.page}>
       <h1 className={styles.title}>WhatsApp</h1>
 
-      <Tabs tabs={abasPermitidas} activeTab={aba} onChange={id => setAba(id as AbaWhatsapp)} />
+      <Tabs tabs={abasComBadge} activeTab={aba} onChange={id => setAba(id as AbaWhatsapp)} />
 
       {aba === 'conexao' && (
       <section className={`${styles.card} ${styles.cardConexao}`}>
@@ -267,6 +312,35 @@ export function AdminWhatsapp() {
             recebidas continuam aparecendo em Conversas — o atendimento fica manual até reativar.
           </p>
         )}
+
+        <div className={styles.statusRow} style={{ alignItems: 'flex-start', marginTop: '1rem' }}>
+          <span className={styles.statusLabel}>Cardápio numerado:</span>
+          <div>
+            <p className={styles.sectionHint} style={{ margin: '0 0 0.5rem' }}>
+              Imagem enviada pelo bot quando o cliente não finaliza o pedido em 10 minutos. Desenhe a imagem
+              com os produtos numerados e cadastre o mesmo número em cada produto no Cardápio, pra o bot
+              entender quando o cliente responder só com os números.
+            </p>
+            {imagemCardapio && (
+              <img src={imagemCardapio} alt="Cardápio numerado" style={{ maxWidth: 220, borderRadius: 8, display: 'block', marginBottom: '0.5rem' }} />
+            )}
+            <label className={`${btnStyles.btn} ${btnStyles.sm} ${btnStyles.outline}`} style={{ display: 'inline-flex', cursor: salvandoImagemCardapio ? 'not-allowed' : 'pointer', opacity: salvandoImagemCardapio ? 0.5 : 1 }}>
+              {salvandoImagemCardapio ? 'Salvando...' : imagemCardapio ? 'Trocar imagem' : 'Enviar imagem'}
+              <input type="file" accept="image/*" onChange={handleUploadCardapioImagem} disabled={salvandoImagemCardapio} style={{ display: 'none' }} />
+            </label>
+            {imagemCardapio && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRemoverCardapioImagem}
+                disabled={salvandoImagemCardapio}
+                style={{ marginLeft: '0.5rem' }}
+              >
+                Remover
+              </Button>
+            )}
+          </div>
+        </div>
 
         <div className={styles.actions}>
           {status?.estado !== 'CONECTADO' && (

@@ -67,12 +67,108 @@ const SONS_PEDIDO: Record<TipoAlertaPedido, string> = {
   SOM_3: som3Url,
 }
 
+// Guarda o <audio> tocando agora pra dar pra interromper na hora (ver
+// pararAlertaPedidoCliente) — sem isso, aceitar/recusar o pedido só impedia
+// o PRÓXIMO play() (o do setInterval em NotificationContext), mas o som que
+// já estava tocando no momento do clique seguia até o fim sozinho (os
+// arquivos duram vários segundos), dando a impressão de que o alerta "não
+// parava" mesmo após decidir o pedido.
+let audioPedidoAtual: HTMLAudioElement | null = null
+
 export function playAlertaPedidoCliente(tipo: TipoAlertaPedido = 'SOM_1'): void {
   try {
+    // Se já tem um som de pedido tocando (teste anterior ou alerta em
+    // andamento), para ele antes de tocar o novo — senão os dois ficam
+    // tocando juntos, já que trocar só a referência não pausa o Audio antigo.
+    pararAlertaPedidoCliente()
     const audio = new Audio(SONS_PEDIDO[tipo] ?? SONS_PEDIDO.SOM_1)
     audio.volume = 0.8
-    void audio.play()
+    audioPedidoAtual = audio
+    audio.play().catch(err => {
+      // Causa mais comum: política de autoplay do navegador bloqueando som
+      // antes de qualquer interação do usuário na página — ver
+      // desbloquearAudioPedido(), chamada no primeiro clique/tecla do app.
+      console.warn('Não foi possível tocar o alerta de novo pedido:', err)
+    })
   } catch {
     // audio not supported
   }
+}
+
+// Interrompe imediatamente o alerta de pedido de cliente que estiver tocando
+// agora — chamada ao aceitar/recusar um pedido (ver NotificationContext),
+// pra não esperar o áudio em andamento chegar sozinho ao fim.
+export function pararAlertaPedidoCliente(): void {
+  if (!audioPedidoAtual) return
+  try {
+    audioPedidoAtual.pause()
+    audioPedidoAtual.currentTime = 0
+  } catch {
+    // audio not supported
+  }
+  audioPedidoAtual = null
+}
+
+// Notificação sonora de mensagem do WhatsApp — nova mensagem chegando (via
+// WebSocket) ou mensagens não lidas encontradas ao abrir a plataforma (ver
+// NotificationContext). Toca uma vez só, sem loop (diferente do alerta de
+// pedido, que repete até alguém decidir).
+import notificacaoWhatsappUrl from '../assets/sound/notificação-whatsapp.mp3'
+// Notificação falada — disparada manualmente por um botão (ver
+// AdminWhatsappConversas), não automática.
+import notificacaoFaladaUrl from '../assets/sound/notificação-falada.mp3'
+
+// Retorna a Promise de play() (rejeitada se o navegador bloquear por
+// autoplay) — quem chama pode usar isso pra tentar de novo no próximo gesto
+// do usuário (ver NotificationContext).
+export function playNotificacaoWhatsapp(): Promise<void> {
+  try {
+    const audio = new Audio(notificacaoWhatsappUrl)
+    audio.volume = 0.7
+    return audio.play().catch(err => {
+      console.warn('Não foi possível tocar a notificação de WhatsApp:', err)
+      throw err
+    })
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
+export function playNotificacaoFalada(): Promise<void> {
+  try {
+    const audio = new Audio(notificacaoFaladaUrl)
+    audio.volume = 0.9
+    return audio.play().catch(err => {
+      console.warn('Não foi possível tocar a notificação falada:', err)
+      throw err
+    })
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
+// Navegadores bloqueiam áudio programático até a página registrar alguma
+// interação do usuário (clique, tecla, toque). Chamada uma única vez no
+// primeiro gesto do usuário (ver NotificationContext) — toca e pausa cada
+// som na hora com volume 0 só pra "destravar" o autoplay antes que um
+// pedido de verdade precise soar.
+export function desbloquearAudioPedido(): void {
+  try {
+    const ctx = getAudioCtx()
+    if (ctx.state === 'suspended') void ctx.resume()
+  } catch {
+    // audio context not supported
+  }
+  const todosOsSons = [...Object.values(SONS_PEDIDO), notificacaoWhatsappUrl, notificacaoFaladaUrl]
+  todosOsSons.forEach(src => {
+    try {
+      const audio = new Audio(src)
+      audio.volume = 0
+      audio.play()
+        .then(() => { audio.pause(); audio.currentTime = 0 })
+        .catch(() => {})
+    } catch {
+      // audio not supported
+    }
+  })
 }

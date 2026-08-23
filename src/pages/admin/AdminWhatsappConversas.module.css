@@ -5,6 +5,32 @@
   min-height: 480px;
 }
 
+.toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.75rem;
+}
+
+.btnNotificacaoFalada {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4375rem 0.875rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.btnNotificacaoFalada:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
 .loadingBox { display: flex; align-items: center; justify-content: center; padding: 2.5rem 0; }
 
 /* ── Coluna esquerda: lista de conversas ── */
@@ -39,6 +65,7 @@
 .itemAtivo:hover { background: color-mix(in srgb, var(--color-primary) 14%, white); }
 
 .direcaoIcon {
+  position: relative;
   flex-shrink: 0;
   width: 26px;
   height: 26px;
@@ -57,11 +84,14 @@
 .itemHora { flex-shrink: 0; font-size: 0.6875rem; color: var(--color-text-secondary); white-space: nowrap; }
 
 .itemNaoLidaDot {
-  flex-shrink: 0;
-  width: 8px;
-  height: 8px;
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
-  background: var(--color-primary);
+  background: var(--color-danger);
+  border: 1.5px solid var(--color-surface);
 }
 
 /* ── Coluna direita: thread da conversa ── */

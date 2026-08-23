@@ -11,12 +11,15 @@ export const configuracaoApi = {
   atualizarAlertaPedido: (alertaPedidoSom: string) =>
     api.put<RestauranteConfig>('/api/configuracoes/alerta-pedido', { alertaPedidoSom }),
 
+  atualizarNotificacaoWhatsappFalada: (notificacaoWhatsappFalada: boolean) =>
+    api.put<RestauranteConfig>('/api/configuracoes/alerta-pedido', { notificacaoWhatsappFalada }),
+
   atualizarPix: (pixChave: string) =>
     api.put<RestauranteConfig>('/api/configuracoes/pix', { pixChave }),
 
   atualizarComissoes: (data: { comissaoGarcon: number; comissaoEntregador: number; comissaoCozinheiro: number }) =>
     api.put<RestauranteConfig>('/api/configuracoes/comissoes', data),
 
-  atualizarTaxasMaquininha: (data: { taxaDebito: number; taxaCreditoVista: number; taxaCreditoParcelado: number }) =>
-    api.put<RestauranteConfig>('/api/configuracoes/taxas-maquininha', data),
+  atualizarFrete: (data: { freteTaxaBase: number; freteValorPorKm: number }) =>
+    api.put<RestauranteConfig>('/api/configuracoes/frete', data),
 }

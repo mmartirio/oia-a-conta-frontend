@@ -59,6 +59,7 @@ export interface Categoria {
   nome: string
   ativo: boolean
   restauranteId: number
+  ordem: number
 }
 
 export interface Produto {
@@ -67,9 +68,121 @@ export interface Produto {
   descricao?: string
   preco: number
   imagemBase64: string | null
+  numeroCardapio?: number | null
   ativo: boolean
   categoriaId: number
   restauranteId: number
+}
+
+export interface Cliente {
+  id: number
+  nome: string
+  telefone: string
+  email?: string
+  dataNascimento?: string
+  enderecoRua?: string
+  enderecoNumero?: string
+  enderecoBairro?: string
+  enderecoCidade?: string
+  enderecoComplemento?: string
+  enderecoCep?: string
+  observacoes?: string
+  ativo: boolean
+  restauranteId: number
+  createdAt: string
+}
+
+export interface GrupoCliente {
+  id: number
+  nome: string
+  descricao?: string
+  ativo: boolean
+  totalMembros: number
+  restauranteId: number
+  createdAt: string
+}
+
+export interface GrupoClienteMembro {
+  clienteId: number
+  clienteNome: string
+  clienteTelefone: string
+  adicionadoEm: string
+}
+
+export type TipoMovimentacaoEstoque = 'ENTRADA' | 'SAIDA' | 'AJUSTE' | 'VENDA' | 'ESTORNO'
+
+export interface Estoque {
+  produtoId: number
+  produtoNome: string
+  quantidade: number
+  quantidadeMinima: number
+  controlado: boolean
+  abaixoDoMinimo: boolean
+}
+
+export type TipoDesconto = 'PERCENTUAL' | 'FIXO'
+export type TipoAlvo = 'TODOS' | 'GRUPO' | 'INDIVIDUAL'
+
+export interface Cupom {
+  id: number
+  codigo: string
+  tipoDesconto: TipoDesconto
+  valorDesconto: number
+  tipoAlvo: TipoAlvo
+  grupoClienteId?: number
+  grupoClienteNome?: string
+  clienteId?: number
+  clienteNome?: string
+  validoDe: string
+  validoAte: string
+  ativo: boolean
+  restauranteId: number
+}
+
+export interface Promocao {
+  id: number
+  nome: string
+  descricao?: string
+  tipoDesconto: TipoDesconto
+  valorDesconto: number
+  tipoAlvo: TipoAlvo
+  grupoClienteId?: number
+  grupoClienteNome?: string
+  requisitoGastoMinimo?: number
+  validoDe: string
+  validoAte: string
+  ativo: boolean
+  restauranteId: number
+}
+
+export interface ComboItem {
+  produtoId: number
+  produtoNome: string
+  quantidade: number
+  valorAlocado: number
+}
+
+export interface Combo {
+  id: number
+  nome: string
+  descricao?: string
+  preco: number
+  imagemBase64: string | null
+  ativo: boolean
+  itens: ComboItem[]
+  restauranteId: number
+}
+
+export interface MovimentacaoEstoque {
+  id: number
+  produtoId: number
+  tipo: TipoMovimentacaoEstoque
+  quantidade: number
+  quantidadeResultante: number
+  motivo?: string
+  referenciaExterna?: string
+  criadoPorNome?: string
+  criadoEm: string
 }
 
 export interface ItemPedido {
@@ -79,11 +192,16 @@ export interface ItemPedido {
   quantidade: number
   precoUnitario: number
   observacao?: string
+  comboId?: number
+  comboNome?: string
 }
 
 export interface Pedido {
   id: number
-  comandaId: number
+  comandaId: number | null
+  mesaNumero?: number | null
+  garconNome?: string | null
+  entregaId?: number | null
   itens: ItemPedido[]
   status: StatusPedido
   total: number
@@ -100,9 +218,15 @@ export interface Comanda {
   status: StatusComanda
   metodoPagamento?: MetodoPagamento
   pedidos: Pedido[]
+  subtotal?: number
+  desconto?: number
   total: number
+  clienteId?: number
+  descontoTipo?: 'CUPOM' | 'PROMOCAO'
+  descontoOrigemDescricao?: string
   criadoEm: string
   fechadoEm?: string
+  aguardandoPagamentoEm?: string
 }
 
 export interface NotificacaoMessage {
@@ -124,9 +248,13 @@ export interface AuthResponse {
 }
 
 export interface ItemPedidoRequest {
-  produtoId: number
+  produtoId?: number
+  produtoNome?: string
+  precoUnitario?: number
   quantidade: number
   observacao?: string
+  comboId?: number
+  comboQuantidade?: number
 }
 
 export interface PedidoRequest {
@@ -142,9 +270,9 @@ export interface RestauranteConfig {
   fechadoManualmente?: boolean
   motivoFechamentoManual?: string | null
   alertaPedidoSom?: string
-  taxaDebito?: number
-  taxaCreditoVista?: number
-  taxaCreditoParcelado?: number
+  notificacaoWhatsappFalada?: boolean
+  freteTaxaBase?: number
+  freteValorPorKm?: number
 }
 
 export interface DadosEmpresa {
@@ -214,19 +342,31 @@ export interface Entrega {
   enderecoCidade: string
   enderecoComplemento?: string
   observacao?: string
+  motivoRejeicao?: string | null
   entregadorNome?: string
   entregadorId?: number
   origemWhatsapp?: boolean
+  origemIfood?: boolean
+  pagamentoConfirmadoCaixa?: boolean
   criadoEm: string
+  entregueEm?: string | null
   latitude?: number | null
   longitude?: number | null
   localizacaoAtualizadaEm?: string | null
+  enderecoLatitude?: number | null
+  enderecoLongitude?: number | null
+  distanciaKm?: number | null
+  valorFrete?: number | null
 }
 
 export interface ItemEntregaRequest {
-  produtoId: number
+  produtoId?: number
+  produtoNome?: string
+  precoUnitario?: number
   quantidade: number
   observacao?: string
+  comboId?: number
+  comboQuantidade?: number
 }
 
 export interface EntregaRequest {
@@ -237,11 +377,36 @@ export interface EntregaRequest {
   enderecoBairro?: string
   enderecoCidade: string
   enderecoComplemento?: string
+  enderecoLatitude?: number
+  enderecoLongitude?: number
   metodoPagamento: string
   parcelas?: number
   observacao?: string
   itens: ItemEntregaRequest[]
   origemPdv?: boolean
+}
+
+export interface FreteCalculado {
+  distanciaKm: number | null
+  valorFrete: number | null
+  disponivel: boolean
+}
+
+export interface ParadaRota {
+  entregaId: number
+  ordem: number
+  clienteNome: string
+  enderecoResumo: string
+  distanciaKm: number
+  duracaoMin: number
+  urgente: boolean
+}
+
+export interface RotaSugerida {
+  paradas: ParadaRota[]
+  distanciaTotalKm: number
+  duracaoTotalMin: number
+  semCoordenadas: number[]
 }
 
 export interface ComissaoInfo {
