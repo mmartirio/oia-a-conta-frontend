@@ -5,32 +5,6 @@
   min-height: 480px;
 }
 
-.toolbar {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 0.75rem;
-}
-
-.btnNotificacaoFalada {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.4375rem 0.875rem;
-  border: 1.5px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
-  color: var(--color-text-secondary);
-  font-size: 0.8125rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
-}
-
-.btnNotificacaoFalada:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-}
-
 .loadingBox { display: flex; align-items: center; justify-content: center; padding: 2.5rem 0; }
 
 /* ── Coluna esquerda: lista de conversas ── */

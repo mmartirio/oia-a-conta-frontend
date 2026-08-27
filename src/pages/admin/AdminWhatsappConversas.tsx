@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { FiUser, FiSend, FiMessageSquare, FiEdit2, FiCheck, FiX, FiVolume2 } from 'react-icons/fi'
+import { FiUser, FiSend, FiMessageSquare, FiEdit2, FiCheck, FiX } from 'react-icons/fi'
 import { whatsappConversaApi } from '../../api/whatsappConversaApi'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { Spinner } from '../../components/ui/Spinner'
@@ -8,7 +8,6 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
 import { useNotification } from '../../contexts/NotificationContext'
 import { formatRelativeTime, formatDateTime } from '../../utils/formatters'
-import { playNotificacaoFalada } from '../../utils/audio'
 import type { ConversaResumo, MensagemWhatsapp } from '../../types'
 import styles from './AdminWhatsappConversas.module.css'
 
@@ -195,18 +194,6 @@ export function AdminWhatsappConversas() {
   const temMensagensAntigas = pagina + 1 < totalPages
 
   return (
-    <>
-    <div className={styles.toolbar}>
-      <button
-        type="button"
-        className={styles.btnNotificacaoFalada}
-        onClick={() => playNotificacaoFalada()}
-        title="Tocar notificação falada"
-      >
-        <FiVolume2 size={15} />
-        Notificação falada
-      </button>
-    </div>
     <div className={styles.layout}>
       {/* ── Lista de conversas ── */}
       <section className={styles.listaCol}>
@@ -353,6 +340,5 @@ export function AdminWhatsappConversas() {
         )}
       </section>
     </div>
-    </>
   )
 }
