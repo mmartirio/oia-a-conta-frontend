@@ -1,0 +1,19 @@
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+*.swo
+
+# Node / Frontend
+node_modules/
+dist/
+.env
+.env.local
+.env.production
+
+# OS
+.DS_Store
+Thumbs.db
