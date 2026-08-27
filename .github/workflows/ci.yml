@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  build:
+    name: Build & Type Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+          cache-dependency-path: yarn.lock
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Type check
+        run: yarn tsc --noEmit --project tsconfig.app.json
+
+      - name: Build
+        run: yarn build
+        env:
+          VITE_API_URL: http://localhost:8080
+          VITE_WS_URL: http://localhost:8085
+          VITE_GOOGLE_CLIENT_ID: placeholder
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            --build-arg VITE_API_URL=http://localhost:8080 \
+            --build-arg VITE_WS_URL=http://localhost:8085 \
+            --build-arg VITE_GOOGLE_CLIENT_ID=placeholder \
+            -t comanda-frontend:${{ github.sha }} .
