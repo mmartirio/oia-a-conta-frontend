@@ -89,6 +89,7 @@ export const billingApi = {
   listarTodosContratos: () =>
     unwrapPage(api.get<Page<Contrato>>('/api/contratos?size=1000')),
   meuContrato: () => api.get<Contrato>('/api/contratos/meu'),
+  pagarAssinatura: () => api.post<{ checkoutUrl: string }>('/api/contratos/meu/pagar'),
   buscarContratoPorRestaurante: (id: number) => api.get<Contrato>(`/api/contratos/restaurante/${id}`),
   criarContrato: (restauranteId: number, planoId: number) =>
     api.post<Contrato>('/api/contratos', { restauranteId, planoId }),

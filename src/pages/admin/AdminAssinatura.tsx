@@ -31,6 +31,17 @@ export function AdminAssinatura() {
   const [pagamentos, setPagamentos] = useState<Pagamento[]>([])
   const [loading, setLoading] = useState(true)
   const [erro, setErro] = useState('')
+  const [pagando, setPagando] = useState(false)
+
+  const handlePagarAgora = async () => {
+    setPagando(true)
+    try {
+      const r = await billingApi.pagarAssinatura()
+      window.location.href = r.data.checkoutUrl
+    } catch {
+      setPagando(false)
+    }
+  }
 
   useEffect(() => {
     billingApi.meuContrato()
@@ -157,9 +168,19 @@ export function AdminAssinatura() {
         )}
       </div>
 
-      {(contrato.status === 'INADIMPLENTE' || contrato.status === 'BLOQUEADO') && (
+      {(contrato.status === 'TRIAL' || contrato.status === 'INADIMPLENTE' || contrato.status === 'BLOQUEADO') && (
         <div className={styles.alertaInadimplente}>
-          ⚠️ Há um pagamento pendente. Entre em contato com o suporte para regularizar sua situação.
+          {contrato.status === 'TRIAL'
+            ? '📋 Seu período de teste está em andamento.'
+            : '⚠️ Há um pagamento pendente para regularizar sua assinatura.'}
+          <button
+            className="btn btn-primary"
+            style={{ marginLeft: '0.75rem' }}
+            onClick={handlePagarAgora}
+            disabled={pagando}
+          >
+            {pagando ? 'Abrindo pagamento...' : 'Pagar agora com Mercado Pago'}
+          </button>
         </div>
       )}
     </div>
