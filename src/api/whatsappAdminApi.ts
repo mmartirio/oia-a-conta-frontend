@@ -20,13 +20,6 @@ export interface MensagemTemplate {
   variavelHint?: string
 }
 
-export interface AutomacaoMensagem {
-  id: number
-  acionador: string
-  mensagem: string
-  ativo: boolean
-}
-
 export const whatsappAdminApi = {
   status: () =>
     api.get<WhatsappStatus>('/api/whatsapp/admin/status'),
@@ -43,8 +36,8 @@ export const whatsappAdminApi = {
   criarMensagem: (label: string, texto: string, grupo: string) =>
     api.post<MensagemTemplate>('/api/whatsapp/admin/mensagens', { label, texto, grupo }),
 
-  salvarMensagem: (chave: string, texto: string) =>
-    api.put(`/api/whatsapp/admin/mensagens/${chave}`, { texto }),
+  salvarMensagem: (chave: string, texto: string, label: string) =>
+    api.put(`/api/whatsapp/admin/mensagens/${chave}`, { texto, label }),
 
   // Desativa mensagem de sistema ou exclui mensagem customizada
   remover: (chave: string) =>
@@ -70,16 +63,4 @@ export const whatsappAdminApi = {
 
   atualizarCardapioImagem: (imagemBase64: string) =>
     api.put('/api/whatsapp/admin/cardapio-imagem', { imagemBase64 }),
-
-  listarAutomacoes: () =>
-    api.get<AutomacaoMensagem[]>('/api/whatsapp/admin/automacoes'),
-
-  criarAutomacao: (acionador: string, mensagem: string) =>
-    api.post<AutomacaoMensagem>('/api/whatsapp/admin/automacoes', { acionador, mensagem }),
-
-  atualizarAutomacao: (id: number, acionador: string, mensagem: string, ativo?: boolean) =>
-    api.put<AutomacaoMensagem>(`/api/whatsapp/admin/automacoes/${id}`, { acionador, mensagem, ativo }),
-
-  removerAutomacao: (id: number) =>
-    api.delete(`/api/whatsapp/admin/automacoes/${id}`),
 }
