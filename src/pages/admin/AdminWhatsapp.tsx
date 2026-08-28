@@ -577,8 +577,10 @@ export function AdminWhatsapp() {
           <div>
             <h2 className={styles.sectionTitle}>Respostas Automáticas</h2>
             <p className={styles.sectionHint}>
-              Quando o cliente mandar exatamente o texto do acionador (maiúscula/minúscula não importa), o bot
-              responde com a mensagem configurada, sem interromper um pedido em andamento.
+              Funciona assim: <strong>quando</strong> o cliente mandar exatamente aquele texto (não importa
+              maiúscula/minúscula), <strong>o bot responde</strong> com a mensagem que você configurar — sem
+              interromper um pedido em andamento. Bom para dúvidas comuns tipo "vocês têm opção vegana?" ou
+              "qual o horário de vocês?".
             </p>
           </div>
           <button
@@ -591,15 +593,17 @@ export function AdminWhatsapp() {
 
         {formAutomacaoAberto && (
           <div className={styles.novaForm}>
+            <label className={styles.mensagemLabel}>1. Quando o cliente enviar exatamente:</label>
             <input
               className={styles.novaInput}
-              placeholder='Acionador (ex: "Quero ver mais opções")'
+              placeholder='Ex: Quero ver mais opções'
               value={novaAutomacao.acionador}
               onChange={e => setNovaAutomacao(f => ({ ...f, acionador: e.target.value }))}
             />
+            <label className={styles.mensagemLabel}>2. O bot responde com:</label>
             <textarea
               className={styles.textarea}
-              placeholder="Mensagem de resposta..."
+              placeholder="Ex: Claro! Temos também combos e sobremesas 😊 Dá uma olhada no cardápio completo!"
               rows={3}
               value={novaAutomacao.mensagem}
               onChange={e => setNovaAutomacao(f => ({ ...f, mensagem: e.target.value }))}
@@ -624,7 +628,7 @@ export function AdminWhatsapp() {
             return (
               <div key={a.id} className={styles.mensagemItem}>
                 <div className={styles.mensagemHeader}>
-                  <span className={styles.mensagemLabel}>Acionador</span>
+                  <span className={styles.mensagemLabel}>Quando o cliente enviar:</span>
                   <div className={styles.mensagemBadges}>
                     {!a.ativo && <span className={styles.badgeRemovida}>Desativada</span>}
                   </div>
@@ -635,7 +639,7 @@ export function AdminWhatsapp() {
                   onChange={e => setEdicoesAutomacao(m => ({ ...m, [a.id]: { ...edit, acionador: e.target.value } }))}
                   disabled={!a.ativo}
                 />
-                <p className={styles.variavelHint}>Mensagem de resposta</p>
+                <p className={styles.mensagemLabel} style={{ marginTop: '0.5rem' }}>O bot responde com:</p>
                 <textarea
                   className={`${styles.textarea} ${!a.ativo ? styles.textareaDesativada : ''}`}
                   value={edit.mensagem}
