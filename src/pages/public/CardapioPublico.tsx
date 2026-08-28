@@ -119,8 +119,9 @@ function BackgroundLayer({ restaurante }: { restaurante: RestaurantePublico | nu
   )
 }
 
-export function CardapioPublico() {
-  const { slug } = useParams<{ slug: string }>()
+export function CardapioPublico({ slugProp }: { slugProp?: string } = {}) {
+  const { slug: slugParam } = useParams<{ slug: string }>()
+  const slug = slugProp ?? slugParam
   const [searchParams] = useSearchParams()
 
   const paramName = searchParams.get('name')

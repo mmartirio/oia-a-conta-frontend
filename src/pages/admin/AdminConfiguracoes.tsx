@@ -22,6 +22,7 @@ import { Tabs } from '../../components/ui/Tabs'
 import { QrCodeLink } from '../../components/ui/QrCodeLink'
 import { comprimirImagem, removerFundoBranco, extrairPaletaCores } from '../../utils/imageProcessing'
 import { playAlertaPedidoCliente, OPCOES_ALERTA_PEDIDO, type TipoAlertaPedido } from '../../utils/audio'
+import { publicMenuUrl, PUBLIC_MENU_DOMAIN } from '../../utils/publicMenuUrl'
 import type { DiaSemana, HorarioFuncionamento } from '../../types'
 import styles from './AdminConfiguracoes.module.css'
 
@@ -939,7 +940,7 @@ export function AdminConfiguracoes() {
               type="button"
               variant="outline"
               onClick={() => {
-                navigator.clipboard.writeText(`${window.location.origin}/cardapio/${empresaSlug}`)
+                navigator.clipboard.writeText(publicMenuUrl(empresaSlug))
                 setLinkCopiado(true)
                 setTimeout(() => setLinkCopiado(false), 2000)
               }}
@@ -950,15 +951,15 @@ export function AdminConfiguracoes() {
           </div>
           {empresaSlug ? (
             <a
-              href={`${window.location.origin}/cardapio/${empresaSlug}`}
+              href={publicMenuUrl(empresaSlug)}
               target="_blank"
               rel="noopener noreferrer"
               className={styles.hint}
             >
-              {window.location.origin}/cardapio/{empresaSlug}
+              {publicMenuUrl(empresaSlug)}
             </a>
           ) : (
-            <span className={styles.hint}>{window.location.origin}/cardapio/...</span>
+            <span className={styles.hint}>https://...{`.${PUBLIC_MENU_DOMAIN}`}</span>
           )}
           <span className={styles.hint}>
             Só letras, números e hífens. Ao mudar, o link antigo para de funcionar — avise seus clientes.
@@ -967,7 +968,7 @@ export function AdminConfiguracoes() {
             O link é atualizado automaticamente sempre que o nome do restaurante muda (em "Geral" → Dados da Empresa).
           </span>
           {empresaSlug && (
-            <QrCodeLink value={`${window.location.origin}/cardapio/${empresaSlug}`} fileName={`qrcode-${empresaSlug}.png`} />
+            <QrCodeLink value={publicMenuUrl(empresaSlug)} fileName={`qrcode-${empresaSlug}.png`} />
           )}
         </div>
       </div>

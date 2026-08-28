@@ -7,6 +7,7 @@ import { ToastProvider } from './contexts/ToastContext'
 import { PrivateRoute } from './components/PrivateRoute'
 import { RequirePermission } from './components/RequirePermission'
 import { primeiraRotaPermitida } from './constants/permissoes'
+import { slugFromSubdominio } from './utils/publicMenuUrl'
 import type { Role } from './types'
 
 const ROLE_HOME: Record<Role, string> = {
@@ -94,6 +95,8 @@ import { GestorWhatsapp } from './pages/gestor/GestorWhatsapp'
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ''
 
 export function App() {
+  const slugSubdominio = slugFromSubdominio()
+
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <AuthProvider>
@@ -101,6 +104,9 @@ export function App() {
           <NotificationProvider>
             <ToastProvider>
             <BrowserRouter>
+              {slugSubdominio ? (
+                <CardapioPublico slugProp={slugSubdominio} />
+              ) : (
               <Routes>
                 {/* Públicas */}
                 <Route path="/login" element={<Login />} />
@@ -225,6 +231,7 @@ export function App() {
                 } />
                 <Route path="*" element={<Navigate to="/login" replace />} />
               </Routes>
+              )}
             </BrowserRouter>
             </ToastProvider>
           </NotificationProvider>
