@@ -15,7 +15,7 @@ import { Badge } from '../../components/ui/Badge'
 import { Modal } from '../../components/ui/Modal'
 import { Input } from '../../components/ui/Input'
 import { useToast } from '../../contexts/ToastContext'
-import { formatCurrency } from '../../utils/formatters'
+import { formatCurrency, formatPhone } from '../../utils/formatters'
 import { geocodificarEndereco, type Coordenada } from '../../utils/geocoding'
 import type { Categoria, Produto, Combo, Estoque, Cliente, MetodoPagamento, FreteCalculado } from '../../types'
 import styles from './PdvNovaVenda.module.css'
@@ -590,8 +590,9 @@ export function PdvNovaVenda({ sessaoCaixa, modoInicial, onConcluida }: {
                 <Input
                   label="Telefone do cliente"
                   value={cliente ? cliente.telefone : clienteTelefoneDelivery}
-                  onChange={e => setClienteTelefoneDelivery(e.target.value)}
+                  onChange={e => setClienteTelefoneDelivery(formatPhone(e.target.value))}
                   placeholder="(00) 00000-0000"
+                  maxLength={15}
                   disabled={!!cliente}
                 />
               </div>
@@ -684,8 +685,9 @@ export function PdvNovaVenda({ sessaoCaixa, modoInicial, onConcluida }: {
           <Input
             label="Telefone do cliente"
             value={clienteBusca}
-            onChange={e => setClienteBusca(e.target.value)}
+            onChange={e => setClienteBusca(formatPhone(e.target.value))}
             placeholder="(11) 91234-5678"
+            maxLength={15}
             onKeyDown={e => { if (e.key === 'Enter') handleBuscarCliente() }}
           />
           <Button onClick={handleBuscarCliente} loading={clienteBuscando}>

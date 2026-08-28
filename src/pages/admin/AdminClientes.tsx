@@ -8,6 +8,7 @@ import { Switch } from '../../components/ui/Switch'
 import { Card } from '../../components/ui/Card'
 import { useToast } from '../../contexts/ToastContext'
 import type { Cliente, GrupoCliente, GrupoClienteMembro } from '../../types'
+import { formatPhone } from '../../utils/formatters'
 import styles from './AdminClientes.module.css'
 
 type Tab = 'clientes' | 'grupos'
@@ -352,9 +353,10 @@ export function AdminClientes() {
             <Input
               label="Telefone"
               value={clienteForm.telefone}
-              onChange={e => setClienteForm(f => ({ ...f, telefone: e.target.value }))}
-              required
+              onChange={e => setClienteForm(f => ({ ...f, telefone: formatPhone(e.target.value) }))}
               placeholder="(11) 91234-5678"
+              maxLength={15}
+              required
             />
           </div>
           <div className={styles.formGrid}>

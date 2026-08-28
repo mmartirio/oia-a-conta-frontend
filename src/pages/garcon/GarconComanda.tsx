@@ -10,7 +10,7 @@ import { Badge } from '../../components/ui/Badge'
 import { Modal } from '../../components/ui/Modal'
 import { Card } from '../../components/ui/Card'
 import { Input } from '../../components/ui/Input'
-import { formatCurrency, formatTime, STATUS_PEDIDO_LABEL, METODO_PAGAMENTO_LABEL } from '../../utils/formatters'
+import { formatCurrency, formatTime, formatPhone, STATUS_PEDIDO_LABEL, METODO_PAGAMENTO_LABEL } from '../../utils/formatters'
 import { useToast } from '../../contexts/ToastContext'
 import type { Comanda, Cliente, MetodoPagamento, Pedido } from '../../types'
 import styles from './GarconComanda.module.css'
@@ -322,8 +322,9 @@ export function GarconComanda() {
           <Input
             label="Telefone do cliente"
             value={clienteBusca}
-            onChange={e => setClienteBusca(e.target.value)}
+            onChange={e => setClienteBusca(formatPhone(e.target.value))}
             placeholder="(11) 91234-5678"
+            maxLength={15}
             onKeyDown={e => { if (e.key === 'Enter') handleBuscarCliente() }}
           />
           <Button onClick={handleBuscarCliente} loading={clienteBuscando}>Buscar</Button>

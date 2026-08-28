@@ -8,6 +8,7 @@ import { billingApi, type Plano } from '../api/billingApi'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { PlanoCard } from '../components/PlanoCard'
+import { formatPhone } from '../utils/formatters'
 import logo from '../assets/logo/OIA A CONTA - LOGO.png'
 import styles from './Auth.module.css'
 import reg from './Registro.module.css'
@@ -424,8 +425,9 @@ export function Registro() {
             type="tel"
             id="telefone"
             value={form.telefone}
-            onChange={set('telefone')}
+            onChange={e => setForm(f => ({ ...f, telefone: formatPhone(e.target.value) }))}
             placeholder="(11) 99999-9999"
+            maxLength={15}
           />
           <Input
             label="Senha"

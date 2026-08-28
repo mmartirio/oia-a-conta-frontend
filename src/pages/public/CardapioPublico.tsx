@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { publicApi, type CategoriaPublico, type ComboPublico, type ProdutoPublico, type RestaurantePublico } from '../../api/publicApi'
 import { pausaApi, type PausaStatus } from '../../api/pausaApi'
+import { formatPhone } from '../../utils/formatters'
 import logo from '../../assets/logo/OIA A CONTA - LOGO.png'
 import sacolaIcon from '../../assets/icons/sacola.png'
 import styles from './CardapioPublico.module.css'
@@ -34,14 +35,6 @@ type Tela = 'cardapio' | 'checkout' | 'sucesso'
 
 function formatBRL(v: number) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
-
-function formatarTelefone(value: string): string {
-  const digitos = value.replace(/\D/g, '').slice(0, 11)
-  if (digitos.length <= 2) return digitos.length ? `(${digitos}` : ''
-  if (digitos.length <= 6) return `(${digitos.slice(0, 2)}) ${digitos.slice(2)}`
-  if (digitos.length <= 10) return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 6)}-${digitos.slice(6)}`
-  return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 7)}-${digitos.slice(7)}`
 }
 
 function linkWhatsapp(telefone: string): string | null {
@@ -152,7 +145,7 @@ export function CardapioPublico() {
 
   const [nome, setNome] = useState(paramName ? decodeURIComponent(paramName) : '')
   const [telefone, setTelefone] = useState(
-    paramJid ? decodeURIComponent(paramJid) : (paramTel ? formatarTelefone(decodeURIComponent(paramTel)) : '')
+    paramJid ? decodeURIComponent(paramJid) : (paramTel ? formatPhone(decodeURIComponent(paramTel)) : '')
   )
   const [endereco, setEndereco] = useState('')
   const [metodoPagamento, setMetodoPagamento] = useState('')
@@ -486,7 +479,7 @@ export function CardapioPublico() {
                 placeholder="(11) 99999-9999"
                 maxLength={15}
                 value={telefone}
-                onChange={e => setTelefone(formatarTelefone(e.target.value))}
+                onChange={e => setTelefone(formatPhone(e.target.value))}
               />
             )}
           </div>

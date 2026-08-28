@@ -7,7 +7,7 @@ import { entregaApi } from '../../api/entregaApi'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { useToast } from '../../contexts/ToastContext'
-import { formatCurrency } from '../../utils/formatters'
+import { formatCurrency, formatPhone } from '../../utils/formatters'
 import type { Categoria, MetodoPagamento, Produto } from '../../types'
 import styles from './GarconDelivery.module.css'
 
@@ -126,7 +126,7 @@ export function GarconDelivery() {
           </div>
           <div className={styles.field}>
             <label>Telefone</label>
-            <input value={clienteTelefone} onChange={e => setClienteTelefone(e.target.value)} placeholder="(00) 00000-0000" />
+            <input value={clienteTelefone} onChange={e => setClienteTelefone(formatPhone(e.target.value))} placeholder="(00) 00000-0000" maxLength={15} />
           </div>
         </div>
       </Card>
