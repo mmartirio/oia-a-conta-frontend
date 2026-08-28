@@ -506,7 +506,9 @@ export function CardapioPublico({ slugProp }: { slugProp?: string } = {}) {
               <option value="">Selecione...</option>
               <option value="DINHEIRO">Dinheiro</option>
               <option value="PIX">PIX</option>
-              <option value="CARTAO_CREDITO">Cartão de Crédito</option>
+              {!pausaStatus?.entregadorExterno && (
+                <option value="CARTAO_CREDITO">Cartão de Crédito</option>
+              )}
               <option value="CARTAO_DEBITO">Cartão de Débito</option>
             </select>
           </div>

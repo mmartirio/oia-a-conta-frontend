@@ -65,7 +65,10 @@ const NAV_BOTTOM: NavItem[] = [
 const FILHOS_WHATSAPP = PERMISSAO_CONTAINERS.find(c => c.chave === 'WHATSAPP')?.filhos?.map(f => f.chave) ?? []
 const FILHOS_CONFIG = PERMISSAO_CONTAINERS.find(c => c.chave === 'CONFIGURACOES')?.filhos?.map(f => f.chave) ?? []
 
-function temAcessoNavItem(permissoes: string[] | null | undefined, item: NavItem): boolean {
+function temAcessoNavItem(permissoes: string[] | null | undefined, item: NavItem, entregadorExterno: boolean): boolean {
+  // Restaurante com entregador externo (99/Uber Entrega) não usa o painel
+  // interno de entregador — o pedido é concluído direto pela tela de Delivery.
+  if (item.to === '/entregador' && entregadorExterno) return false
   if (!permissoes) return true
   if (item.to === '/admin/whatsapp') return FILHOS_WHATSAPP.some(p => permissoes.includes(p))
   if (item.to === '/admin/configuracoes') return FILHOS_CONFIG.some(p => permissoes.includes(p))
@@ -137,7 +140,7 @@ export function AdminLayout() {
         </div>
 
         <nav className={styles.nav}>
-          {NAV_ITEMS.filter(item => temAcessoNavItem(user?.permissoes, item)).map(item => (
+          {NAV_ITEMS.filter(item => temAcessoNavItem(user?.permissoes, item, !!statusLoja?.entregadorExterno)).map(item => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -156,7 +159,7 @@ export function AdminLayout() {
             </NavLink>
           ))}
           <div className={styles.navDivider} />
-          {NAV_BOTTOM.filter(item => temAcessoNavItem(user?.permissoes, item)).map(item => (
+          {NAV_BOTTOM.filter(item => temAcessoNavItem(user?.permissoes, item, !!statusLoja?.entregadorExterno)).map(item => (
             <NavLink
               key={item.to}
               to={item.to}

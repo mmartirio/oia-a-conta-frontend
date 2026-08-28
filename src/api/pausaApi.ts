@@ -16,6 +16,7 @@ export interface PausaStatus {
   aberto: boolean
   motivo?: string
   reaberturaPrevista?: string
+  entregadorExterno?: boolean
 }
 
 const publicApi = axios.create({

@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { entregaApi } from '../../api/entregaApi'
+import { configuracaoApi } from '../../api/configuracaoApi'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
@@ -29,6 +30,15 @@ const ACOES: Partial<Record<StatusAtivo, { label: string; fn: (id: number) => Pr
   SAIU_PARA_ENTREGA:    { label: 'Entregue', fn: (id) => entregaApi.entregar(id) },
 }
 
+// Sem entregador próprio (config "Entregador Externo") não faz sentido
+// rastrear "saiu para entrega" separado — o restaurante só confirma que
+// repassou o pedido pro entregador externo (99/Uber Entrega), e o pedido já
+// é dado como concluído nesse momento.
+const ACOES_ENTREGADOR_EXTERNO: Partial<Record<StatusAtivo, { label: string; fn: (id: number) => Promise<unknown> }>> = {
+  ACEITA:               { label: 'Pronto',                  fn: (id) => entregaApi.prontoParaEntrega(id) },
+  PRONTO_PARA_ENTREGA:  { label: 'Entregar ao entregador',   fn: (id) => entregaApi.saiu(id).then(() => entregaApi.entregar(id)) },
+}
+
 export function GarconDeliveryLista() {
   const navigate = useNavigate()
 
@@ -42,8 +52,14 @@ export function GarconDeliveryLista() {
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const prevIdsRef = useRef<Set<number>>(new Set())
+  const [entregadorExterno, setEntregadorExterno] = useState(false)
   const toast = useToast()
   const { confirmarPedidoPendente, rejeitarPedidoPendente } = useNotification()
+  const acoes = entregadorExterno ? ACOES_ENTREGADOR_EXTERNO : ACOES
+
+  useEffect(() => {
+    configuracaoApi.get().then(r => setEntregadorExterno(!!r.data.entregadorExterno)).catch(() => {})
+  }, [])
 
   const load = useCallback(async (paginaAlvo = page) => {
     try {
@@ -72,7 +88,7 @@ export function GarconDeliveryLista() {
   }, [load, page])
 
   const avancar = async (id: number, status: StatusAtivo) => {
-    const acao = ACOES[status]
+    const acao = acoes[status]
     if (!acao) return
     setAtualizando(id)
     try { await acao.fn(id); load() }
@@ -230,13 +246,13 @@ export function GarconDeliveryLista() {
                               ✕
                             </button>
                           </>
-                        ) : ACOES[e.status as StatusAtivo] && (
+                        ) : acoes[e.status as StatusAtivo] && (
                           <Button
                             size="sm"
                             loading={atualizando === e.id}
                             onClick={() => avancar(e.id, e.status as StatusAtivo)}
                           >
-                            {ACOES[e.status as StatusAtivo]!.label}
+                            {acoes[e.status as StatusAtivo]!.label}
                           </Button>
                         )}
                         {e.status !== 'AGUARDANDO' && (

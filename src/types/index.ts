@@ -274,6 +274,7 @@ export interface RestauranteConfig {
   notificacaoWhatsappFalada?: boolean
   freteTaxaBase?: number
   freteValorPorKm?: number
+  entregadorExterno?: boolean
 }
 
 export interface DadosEmpresa {

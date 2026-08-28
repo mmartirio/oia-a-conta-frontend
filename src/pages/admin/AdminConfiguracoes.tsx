@@ -138,6 +138,8 @@ export function AdminConfiguracoes() {
   const [salvandoAlertaSom, setSalvandoAlertaSom] = useState(false)
   const [notificacaoWhatsappFalada, setNotificacaoWhatsappFalada] = useState(false)
   const [salvandoNotificacaoWhatsappFalada, setSalvandoNotificacaoWhatsappFalada] = useState(false)
+  const [entregadorExterno, setEntregadorExterno] = useState(false)
+  const [salvandoEntregadorExterno, setSalvandoEntregadorExterno] = useState(false)
 
   // ── Dados da Empresa ──
   const [loadingEmpresa, setLoadingEmpresa] = useState(true)
@@ -194,6 +196,7 @@ export function AdminConfiguracoes() {
         setMotivoFechamentoManual(r.data.motivoFechamentoManual ?? null)
         setAlertaPedidoSom((r.data.alertaPedidoSom as TipoAlertaPedido) || 'SOM_1')
         setNotificacaoWhatsappFalada(r.data.notificacaoWhatsappFalada ?? false)
+        setEntregadorExterno(r.data.entregadorExterno ?? false)
         setFreteTaxaBase(String(r.data.freteTaxaBase ?? 0))
         setFreteValorPorKm(String(r.data.freteValorPorKm ?? 0))
       })
@@ -388,6 +391,20 @@ export function AdminConfiguracoes() {
       toast.error('Erro ao salvar a preferência de notificação')
     } finally {
       setSalvandoNotificacaoWhatsappFalada(false)
+    }
+  }
+
+  const handleToggleEntregadorExterno = async (ligado: boolean) => {
+    const anterior = entregadorExterno
+    setEntregadorExterno(ligado)
+    setSalvandoEntregadorExterno(true)
+    try {
+      await configuracaoApi.atualizarEntregadorExterno(ligado)
+    } catch {
+      setEntregadorExterno(anterior)
+      toast.error('Erro ao salvar a configuração de entregador externo')
+    } finally {
+      setSalvandoEntregadorExterno(false)
     }
   }
 
@@ -862,6 +879,23 @@ export function AdminConfiguracoes() {
 
       {aba === 'frete' && (
       <div className={styles.form}>
+        <div className={styles.group}>
+          <label className={styles.label}>Entregador Externo</label>
+          <div className={styles.statusRow}>
+            <Switch
+              checked={entregadorExterno}
+              onChange={handleToggleEntregadorExterno}
+              disabled={salvandoEntregadorExterno}
+              label={entregadorExterno ? 'Usa entregador externo' : 'Usa entregador próprio'}
+            />
+            <p className={styles.hint}>
+              Ative quando o restaurante não tem entregador próprio e usa um serviço externo
+              (99 Entrega, Uber Entrega, etc.). O painel de Entregador é desativado, a forma de
+              pagamento Cartão de Crédito some do checkout do cliente (sem maquininha na entrega),
+              e o pedido é concluído assim que você marcar que entregou ao entregador externo.
+            </p>
+          </div>
+        </div>
         <div className={styles.group}>
           <label className={styles.label}>Frete por Distância</label>
           <span className={styles.hint}>

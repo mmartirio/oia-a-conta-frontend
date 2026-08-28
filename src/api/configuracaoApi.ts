@@ -14,6 +14,9 @@ export const configuracaoApi = {
   atualizarNotificacaoWhatsappFalada: (notificacaoWhatsappFalada: boolean) =>
     api.put<RestauranteConfig>('/api/configuracoes/alerta-pedido', { notificacaoWhatsappFalada }),
 
+  atualizarEntregadorExterno: (entregadorExterno: boolean) =>
+    api.put<RestauranteConfig>('/api/configuracoes/alerta-pedido', { entregadorExterno }),
+
   atualizarPix: (pixChave: string) =>
     api.put<RestauranteConfig>('/api/configuracoes/pix', { pixChave }),
 
