@@ -323,6 +323,7 @@ export function AdminUsuarios() {
               id="user-grupo"
               className={styles.select}
               value={form.grupoId ?? ''}
+              disabled={!!editing?.donoConta}
               onChange={e => setForm(f => ({ ...f, grupoId: e.target.value ? Number(e.target.value) : null }))}
             >
               <option value="">Nenhum — sem acesso ao admin</option>
@@ -330,6 +331,11 @@ export function AdminUsuarios() {
                 <option key={g.id} value={g.id}>{g.nome}</option>
               ))}
             </select>
+            {editing?.donoConta && (
+              <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-secondary)', margin: '0.375rem 0 0' }}>
+                O dono do estabelecimento sempre fica no grupo Administrador.
+              </p>
+            )}
           </div>
         </form>
       </Modal>

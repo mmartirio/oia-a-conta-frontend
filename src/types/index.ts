@@ -23,6 +23,7 @@ export interface Usuario {
   ativo: boolean
   grupoId?: number | null
   grupoNome?: string | null
+  donoConta?: boolean
   // Presente só quando o usuário tem um grupo atribuído — nesse caso, essas
   // permissões definem o que ele acessa (substituem o role pra navegação e
   // pro backend). Sem grupo, undefined/null — acesso continua guiado pelo role.
