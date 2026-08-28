@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 import {
   FiClipboard, FiTruck, FiCoffee, FiShoppingCart, FiMessageCircle, FiPieChart,
 } from 'react-icons/fi'
-import { billingApi, type Plano } from '../../api/billingApi'
+import { FaInstagram, FaWhatsapp } from 'react-icons/fa'
+import { billingApi, type Plano, type LinkSocial } from '../../api/billingApi'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { PlanoCard } from '../../components/PlanoCard'
@@ -22,13 +23,20 @@ const RECURSOS = [
 export function LandingPage() {
   const [planos, setPlanos] = useState<Plano[]>([])
   const [loadingPlanos, setLoadingPlanos] = useState(true)
+  const [linksSociais, setLinksSociais] = useState<LinkSocial[]>([])
 
   useEffect(() => {
     billingApi.listarPlanos()
       .then(r => setPlanos(r.data.filter(p => p.ativo)))
       .catch(() => setPlanos([]))
       .finally(() => setLoadingPlanos(false))
+    billingApi.listarLinksSociais()
+      .then(r => setLinksSociais(r.data))
+      .catch(() => setLinksSociais([]))
   }, [])
+
+  const linkInstagram = linksSociais.find(l => l.tipo === 'INSTAGRAM')
+  const linkWhatsapp = linksSociais.find(l => l.tipo === 'WHATSAPP')
 
   return (
     <div className={styles.page}>
@@ -109,10 +117,20 @@ export function LandingPage() {
       <footer className={styles.footer}>
         <img src={logo} alt="Oia a Conta" className={styles.footerLogo} />
         <p>© {new Date().getFullYear()} Oia a Conta</p>
-        <div className={styles.footerLinks}>
-          <Link to="/login">Entrar</Link>
-          <Link to="/registro">Criar conta</Link>
-        </div>
+        {(linkInstagram || linkWhatsapp) && (
+          <div className={styles.footerLinks}>
+            {linkInstagram && (
+              <a href={linkInstagram.url} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                <FaInstagram size={22} />
+              </a>
+            )}
+            {linkWhatsapp && (
+              <a href={linkWhatsapp.url} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+                <FaWhatsapp size={22} />
+              </a>
+            )}
+          </div>
+        )}
       </footer>
     </div>
   )

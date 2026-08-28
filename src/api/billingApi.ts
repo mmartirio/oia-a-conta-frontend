@@ -56,6 +56,13 @@ export interface Ticket {
   updatedAt: string
 }
 
+export interface LinkSocial {
+  id: number
+  tipo: 'INSTAGRAM' | 'WHATSAPP'
+  url: string
+  ativo: boolean
+}
+
 export interface MensagemTicket {
   id: number
   remetenteNome: string
@@ -104,6 +111,14 @@ export const billingApi = {
     api.put<Ticket>(`/api/tickets/${id}/status`, { status }),
   adicionarMensagem: (ticketId: number, mensagem: string) =>
     api.post<MensagemTicket>(`/api/tickets/${ticketId}/mensagens`, { mensagem }),
+
+  // Links sociais (rodapé da landing page)
+  listarLinksSociais: () => api.get<LinkSocial[]>('/api/links-sociais'),
+  listarTodosLinksSociais: () => api.get<LinkSocial[]>('/api/links-sociais/todos'),
+  criarLinkSocial: (link: Partial<LinkSocial>) => api.post<LinkSocial>('/api/links-sociais', link),
+  atualizarLinkSocial: (id: number, link: Partial<LinkSocial>) =>
+    api.put<LinkSocial>(`/api/links-sociais/${id}`, link),
+  deletarLinkSocial: (id: number) => api.delete<void>(`/api/links-sociais/${id}`),
 
   // Financeiro
   relatorioReceita: (inicio: string, fim: string) =>
