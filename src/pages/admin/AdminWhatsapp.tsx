@@ -464,12 +464,14 @@ export function AdminWhatsapp() {
             {/* ── Formulário inline para nova mensagem ── */}
             {aberto && (
               <div className={styles.novaForm}>
+                <label className={styles.mensagemLabel}>1. Nome da mensagem (só pra você identificar):</label>
                 <input
                   className={styles.novaInput}
-                  placeholder="Nome da mensagem (ex: Promoção do dia)"
+                  placeholder="Ex: Promoção do dia"
                   value={form.label}
                   onChange={e => setNovaMsg(n => ({ ...n, [grupo]: { ...form, label: e.target.value } }))}
                 />
+                <label className={styles.mensagemLabel}>2. O bot envia:</label>
                 <textarea
                   className={styles.textarea}
                   placeholder="Texto da mensagem..."
@@ -507,7 +509,6 @@ export function AdminWhatsapp() {
                           title="Mover para baixo"
                         >▼</button>
                       </div>
-                      <span className={styles.mensagemLabel}>{m.label}</span>
                     </div>
                     <div className={styles.mensagemBadges}>
                       {!m.ativo && (
@@ -521,9 +522,12 @@ export function AdminWhatsapp() {
                       )}
                     </div>
                   </div>
+                  <span className={styles.mensagemLabel}>Quando isso acontece:</span>
+                  <p className={styles.sectionHint} style={{ margin: '0.125rem 0 0.5rem' }}>{m.label}</p>
                   {m.variavelHint && (
                     <p className={styles.variavelHint}>{m.variavelHint}</p>
                   )}
+                  <span className={styles.mensagemLabel} style={{ display: 'block', marginTop: '0.375rem', marginBottom: '0.375rem' }}>O bot envia:</span>
                   <textarea
                     className={`${styles.textarea} ${!m.ativo ? styles.textareaDesativada : ''}`}
                     value={textos[m.chave] ?? ''}
