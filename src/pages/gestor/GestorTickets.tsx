@@ -35,7 +35,9 @@ export function GestorTickets() {
     const okStatus = filtroStatus === 'TODOS' || t.status === filtroStatus
     const okSearch = search === '' ||
       t.titulo.toLowerCase().includes(search.toLowerCase()) ||
-      String(t.restauranteId).includes(search)
+      String(t.restauranteId ?? '').includes(search) ||
+      (t.whatsappNome ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      (t.whatsappTelefone ?? '').includes(search)
     return okStatus && okSearch
   })
 
@@ -68,7 +70,7 @@ export function GestorTickets() {
             <tbody>
               {filtrados.map(t => (
                 <tr key={t.id}>
-                  <td>#{t.restauranteId}</td>
+                  <td>{t.origem === 'WHATSAPP' ? `📱 ${t.whatsappNome || t.whatsappTelefone}` : `#${t.restauranteId}`}</td>
                   <td>{t.titulo}</td>
                   <td>
                     <span className={`${styles.badge} ${styles[PRIORIDADE_CLASS[t.prioridade]]}`}>{t.prioridade}</span>

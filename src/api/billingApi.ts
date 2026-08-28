@@ -45,12 +45,15 @@ export interface Pagamento {
 
 export interface Ticket {
   id: number
-  restauranteId: number
+  restauranteId: number | null
   restauranteNome: string
   titulo: string
   descricao: string
   status: 'ABERTO' | 'EM_ANDAMENTO' | 'RESOLVIDO' | 'FECHADO'
   prioridade: 'BAIXA' | 'MEDIA' | 'ALTA' | 'CRITICA'
+  origem?: 'PAINEL' | 'WHATSAPP'
+  whatsappTelefone?: string | null
+  whatsappNome?: string | null
   mensagens: MensagemTicket[]
   createdAt: string
   updatedAt: string

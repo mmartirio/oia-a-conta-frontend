@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { FiGrid, FiLayers, FiHome, FiCreditCard, FiTrendingUp, FiDollarSign, FiHelpCircle, FiPieChart, FiMenu, FiX, FiFileText, FiShare2, FiUserCheck } from 'react-icons/fi'
+import { FiGrid, FiLayers, FiHome, FiCreditCard, FiTrendingUp, FiDollarSign, FiHelpCircle, FiPieChart, FiMenu, FiX, FiFileText, FiShare2, FiUserCheck, FiMessageCircle } from 'react-icons/fi'
 import { useAuth } from '../../contexts/AuthContext'
 import logo from '../../assets/logo/OIA A CONTA - LOGO.png'
 import styles from './GestorLayout.module.css'
@@ -25,6 +25,7 @@ const NAV: NavItem[] = [
   { to: '/gestor/logs',       label: 'Logs',       Icon: FiFileText },
   { to: '/gestor/social',     label: 'Redes Sociais', Icon: FiShare2 },
   { to: '/gestor/admins',     label: 'Administradores', Icon: FiUserCheck },
+  { to: '/gestor/whatsapp',   label: 'WhatsApp de Suporte', Icon: FiMessageCircle },
 ]
 
 export function GestorLayout() {

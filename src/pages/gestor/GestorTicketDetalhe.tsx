@@ -56,6 +56,11 @@ export function GestorTicketDetalhe() {
           <div style={{ flex: 1 }}>
             <h2 style={{ margin: '0 0 0.25rem', fontSize: '1.125rem' }}>{ticket.titulo}</h2>
             <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: '0.9375rem' }}>{ticket.descricao}</p>
+            {ticket.origem === 'WHATSAPP' && (
+              <p style={{ margin: '0.375rem 0 0', color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>
+                📱 Via WhatsApp — respostas aqui são enviadas de volta pro contato ({ticket.whatsappNome || ticket.whatsappTelefone})
+              </p>
+            )}
           </div>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             {['ABERTO', 'EM_ANDAMENTO', 'RESOLVIDO', 'FECHADO'].map(s => (
