@@ -31,4 +31,10 @@ export const usuarioApi = {
 
   alternarAtivoSuperAdmin: (id: number, ativo: boolean) =>
     api.put<Usuario>(`/api/usuarios/super-admins/${id}/ativo`, { ativo }),
+
+  atualizarSuperAdmin: (id: number, data: { nome: string; email: string; senha?: string }) =>
+    api.put<Usuario>(`/api/usuarios/super-admins/${id}`, data),
+
+  excluirSuperAdmin: (id: number) =>
+    api.delete<void>(`/api/usuarios/super-admins/${id}`),
 }
