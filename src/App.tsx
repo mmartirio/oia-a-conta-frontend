@@ -88,6 +88,7 @@ import { GestorTicketDetalhe } from './pages/gestor/GestorTicketDetalhe'
 import { GestorFinanceiro } from './pages/gestor/GestorFinanceiro'
 import { GestorLogs } from './pages/gestor/GestorLogs'
 import { GestorSocial } from './pages/gestor/GestorSocial'
+import { GestorAdmins } from './pages/gestor/GestorAdmins'
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ''
 
@@ -121,6 +122,7 @@ export function App() {
                     <Route path="/gestor/logs" element={<GestorLogs />} />
                     <Route path="/gestor/relatorios" element={<GestorRelatorios />} />
                     <Route path="/gestor/social" element={<GestorSocial />} />
+                    <Route path="/gestor/admins" element={<GestorAdmins />} />
                   </Route>
                 </Route>
 
