@@ -20,6 +20,13 @@ export interface MensagemTemplate {
   variavelHint?: string
 }
 
+export interface AutomacaoMensagem {
+  id: number
+  acionador: string
+  mensagem: string
+  ativo: boolean
+}
+
 export const whatsappAdminApi = {
   status: () =>
     api.get<WhatsappStatus>('/api/whatsapp/admin/status'),
@@ -63,4 +70,16 @@ export const whatsappAdminApi = {
 
   atualizarCardapioImagem: (imagemBase64: string) =>
     api.put('/api/whatsapp/admin/cardapio-imagem', { imagemBase64 }),
+
+  listarAutomacoes: () =>
+    api.get<AutomacaoMensagem[]>('/api/whatsapp/admin/automacoes'),
+
+  criarAutomacao: (acionador: string, mensagem: string) =>
+    api.post<AutomacaoMensagem>('/api/whatsapp/admin/automacoes', { acionador, mensagem }),
+
+  atualizarAutomacao: (id: number, acionador: string, mensagem: string, ativo?: boolean) =>
+    api.put<AutomacaoMensagem>(`/api/whatsapp/admin/automacoes/${id}`, { acionador, mensagem, ativo }),
+
+  removerAutomacao: (id: number) =>
+    api.delete(`/api/whatsapp/admin/automacoes/${id}`),
 }

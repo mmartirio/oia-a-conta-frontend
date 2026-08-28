@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { FiMessageCircle, FiBell } from 'react-icons/fi'
-import { whatsappAdminApi, type WhatsappStatus, type MensagemTemplate } from '../../api/whatsappAdminApi'
+import { whatsappAdminApi, type WhatsappStatus, type MensagemTemplate, type AutomacaoMensagem } from '../../api/whatsappAdminApi'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { Badge } from '../../components/ui/Badge'
 import { Tabs } from '../../components/ui/Tabs'
@@ -77,6 +77,13 @@ export function AdminWhatsapp() {
   const [salvandoChatbotStatus, setSalvandoChatbotStatus] = useState(false)
   const [imagemCardapio, setImagemCardapio] = useState<string>('')
   const [salvandoImagemCardapio, setSalvandoImagemCardapio] = useState(false)
+  const [automacoes, setAutomacoes] = useState<AutomacaoMensagem[]>([])
+  const [formAutomacaoAberto, setFormAutomacaoAberto] = useState(false)
+  const [novaAutomacao, setNovaAutomacao] = useState({ acionador: '', mensagem: '' })
+  const [criandoAutomacao, setCriandoAutomacao] = useState(false)
+  const [edicoesAutomacao, setEdicoesAutomacao] = useState<Record<number, { acionador: string; mensagem: string }>>({})
+  const [salvandoAutomacao, setSalvandoAutomacao] = useState<Record<number, boolean>>({})
+  const [confirmRemoverAutomacao, setConfirmRemoverAutomacao] = useState<AutomacaoMensagem | null>(null)
   const toast = useToast()
 
   const carregarStatus = async () => {
@@ -107,9 +114,18 @@ export function AdminWhatsapp() {
     setTextos(map)
   }
 
+  const carregarAutomacoes = async () => {
+    const r = await whatsappAdminApi.listarAutomacoes()
+    setAutomacoes(r.data)
+    const map: Record<number, { acionador: string; mensagem: string }> = {}
+    r.data.forEach(a => { map[a.id] = { acionador: a.acionador, mensagem: a.mensagem } })
+    setEdicoesAutomacao(map)
+  }
+
   useEffect(() => {
     carregarStatus()
     carregarMensagens()
+    carregarAutomacoes()
     whatsappAdminApi.chatbotStatus()
       .then(r => setChatbotAtivo(r.data.ativo))
       .catch(() => {})
@@ -245,6 +261,53 @@ export function AdminWhatsapp() {
     } finally {
       setCriando(c => ({ ...c, [grupo]: false }))
     }
+  }
+
+  const handleCriarAutomacao = async () => {
+    if (!novaAutomacao.acionador.trim() || !novaAutomacao.mensagem.trim()) return
+    setCriandoAutomacao(true)
+    try {
+      await whatsappAdminApi.criarAutomacao(novaAutomacao.acionador.trim(), novaAutomacao.mensagem.trim())
+      await carregarAutomacoes()
+      setNovaAutomacao({ acionador: '', mensagem: '' })
+      setFormAutomacaoAberto(false)
+      toast.success('Automação criada')
+    } catch {
+      toast.error('Erro ao criar automação')
+    } finally {
+      setCriandoAutomacao(false)
+    }
+  }
+
+  const handleSalvarAutomacao = async (a: AutomacaoMensagem) => {
+    const edit = edicoesAutomacao[a.id]
+    if (!edit || !edit.acionador.trim() || !edit.mensagem.trim()) return
+    setSalvandoAutomacao(s => ({ ...s, [a.id]: true }))
+    try {
+      await whatsappAdminApi.atualizarAutomacao(a.id, edit.acionador.trim(), edit.mensagem.trim())
+      await carregarAutomacoes()
+      toast.success('Automação salva')
+    } catch {
+      toast.error('Erro ao salvar automação')
+    } finally {
+      setSalvandoAutomacao(s => ({ ...s, [a.id]: false }))
+    }
+  }
+
+  const handleToggleAutomacao = async (a: AutomacaoMensagem) => {
+    try {
+      await whatsappAdminApi.atualizarAutomacao(a.id, a.acionador, a.mensagem, !a.ativo)
+      await carregarAutomacoes()
+    } catch {
+      toast.error('Erro ao atualizar automação')
+    }
+  }
+
+  const handleRemoverAutomacao = async () => {
+    if (!confirmRemoverAutomacao) return
+    await whatsappAdminApi.removerAutomacao(confirmRemoverAutomacao.id)
+    await carregarAutomacoes()
+    setConfirmRemoverAutomacao(null)
   }
 
   const grupos = ['chatbot', 'notificacao']
@@ -507,6 +570,100 @@ export function AdminWhatsapp() {
           </section>
         )
       })}
+
+      {/* ── Respostas automáticas por acionador ── */}
+      <section className={styles.card}>
+        <div className={styles.sectionHeader}>
+          <div>
+            <h2 className={styles.sectionTitle}>Respostas Automáticas</h2>
+            <p className={styles.sectionHint}>
+              Quando o cliente mandar exatamente o texto do acionador (maiúscula/minúscula não importa), o bot
+              responde com a mensagem configurada, sem interromper um pedido em andamento.
+            </p>
+          </div>
+          <button
+            className={styles.btnAdicionar}
+            onClick={() => setFormAutomacaoAberto(v => !v)}
+          >
+            {formAutomacaoAberto ? '✕ Cancelar' : '+ Adicionar'}
+          </button>
+        </div>
+
+        {formAutomacaoAberto && (
+          <div className={styles.novaForm}>
+            <input
+              className={styles.novaInput}
+              placeholder='Acionador (ex: "Quero ver mais opções")'
+              value={novaAutomacao.acionador}
+              onChange={e => setNovaAutomacao(f => ({ ...f, acionador: e.target.value }))}
+            />
+            <textarea
+              className={styles.textarea}
+              placeholder="Mensagem de resposta..."
+              rows={3}
+              value={novaAutomacao.mensagem}
+              onChange={e => setNovaAutomacao(f => ({ ...f, mensagem: e.target.value }))}
+            />
+            <button
+              className="btn btn-primary"
+              style={{ alignSelf: 'flex-start', fontSize: '0.8125rem' }}
+              onClick={handleCriarAutomacao}
+              disabled={criandoAutomacao || !novaAutomacao.acionador.trim() || !novaAutomacao.mensagem.trim()}
+            >
+              {criandoAutomacao ? 'Salvando...' : 'Criar automação'}
+            </button>
+          </div>
+        )}
+
+        <div className={styles.mensagensList}>
+          {automacoes.length === 0 && !formAutomacaoAberto && (
+            <p className={styles.sectionHint}>Nenhuma automação cadastrada ainda.</p>
+          )}
+          {automacoes.map(a => {
+            const edit = edicoesAutomacao[a.id] ?? { acionador: a.acionador, mensagem: a.mensagem }
+            return (
+              <div key={a.id} className={styles.mensagemItem}>
+                <div className={styles.mensagemHeader}>
+                  <span className={styles.mensagemLabel}>Acionador</span>
+                  <div className={styles.mensagemBadges}>
+                    {!a.ativo && <span className={styles.badgeRemovida}>Desativada</span>}
+                  </div>
+                </div>
+                <input
+                  className={styles.novaInput}
+                  value={edit.acionador}
+                  onChange={e => setEdicoesAutomacao(m => ({ ...m, [a.id]: { ...edit, acionador: e.target.value } }))}
+                  disabled={!a.ativo}
+                />
+                <p className={styles.variavelHint}>Mensagem de resposta</p>
+                <textarea
+                  className={`${styles.textarea} ${!a.ativo ? styles.textareaDesativada : ''}`}
+                  value={edit.mensagem}
+                  onChange={e => setEdicoesAutomacao(m => ({ ...m, [a.id]: { ...edit, mensagem: e.target.value } }))}
+                  rows={3}
+                  disabled={!a.ativo}
+                />
+                <div className={styles.mensagemActions}>
+                  <button
+                    className="btn btn-primary"
+                    style={{ fontSize: '0.8125rem', padding: '0.375rem 0.75rem' }}
+                    onClick={() => handleSalvarAutomacao(a)}
+                    disabled={salvandoAutomacao[a.id] || !a.ativo}
+                  >
+                    {salvandoAutomacao[a.id] ? 'Salvando...' : 'Salvar'}
+                  </button>
+                  <button className={styles.btnRestaurar} onClick={() => handleToggleAutomacao(a)}>
+                    {a.ativo ? 'Desativar' : 'Reativar'}
+                  </button>
+                  <button className={styles.btnRemover} onClick={() => setConfirmRemoverAutomacao(a)}>
+                    Remover
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </section>
       </div>
       )}
 
@@ -541,6 +698,16 @@ export function AdminWhatsapp() {
         danger
         onConfirm={handleRemover}
         onCancel={() => setConfirmRemover(null)}
+      />
+
+      <ConfirmDialog
+        isOpen={!!confirmRemoverAutomacao}
+        title="Remover automação"
+        message={`Remover a automação com acionador "${confirmRemoverAutomacao?.acionador}"? Esta ação não pode ser desfeita.`}
+        confirmLabel="Remover"
+        danger
+        onConfirm={handleRemoverAutomacao}
+        onCancel={() => setConfirmRemoverAutomacao(null)}
       />
     </div>
   )
