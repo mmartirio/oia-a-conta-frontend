@@ -156,7 +156,8 @@ export function AdminCardapio() {
   // ── Produtos ────────────────────────────────────────────
   const openCreateProd = () => {
     setEditProd(null)
-    setProdForm({ nome: '', descricao: '', preco: '', categoriaId: String(categorias[0]?.id ?? ''), imagemBase64: null, numeroCardapio: '' })
+    const categoriaPadrao = categorias.find(c => c.ativo) ?? categorias[0]
+    setProdForm({ nome: '', descricao: '', preco: '', categoriaId: String(categoriaPadrao?.id ?? ''), imagemBase64: null, numeroCardapio: '' })
     setProdError('')
     setProdModal(true)
   }
