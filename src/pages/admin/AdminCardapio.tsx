@@ -38,7 +38,7 @@ export function AdminCardapio() {
   const [categorias, setCategorias] = useState<Categoria[]>([])
   const [produtos, setProdutos] = useState<Produto[]>([])
   const [filtroCategoria, setFiltroCategoria] = useState<number | undefined>()
-  const [visualizacaoProd, setVisualizacaoProd] = useState<'grade' | 'lista'>('grade')
+  const [visualizacaoProd, setVisualizacaoProd] = useState<'grade' | 'lista'>('lista')
 
   const [catModal, setCatModal] = useState(false)
   const [editCat, setEditCat] = useState<Categoria | null>(null)
