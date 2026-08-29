@@ -364,7 +364,10 @@ export function AdminCardapio() {
                   {p.imagemBase64
                     ? <img src={p.imagemBase64} alt={p.nome} className={styles.prodListThumb} />
                     : <div className={styles.prodListThumbPlaceholder} aria-hidden="true" />}
-                  <span className={styles.prodListNome}>{p.nome}</span>
+                  <div className={styles.prodListInfo}>
+                    <span className={styles.prodListNome}>{p.nome}</span>
+                    {p.descricao && <span className={styles.prodListDesc} title={p.descricao}>{p.descricao}</span>}
+                  </div>
                   <span className={styles.prodListCat}>
                     {categorias.find(c => c.id === p.categoriaId)?.nome ?? '—'}
                   </span>
