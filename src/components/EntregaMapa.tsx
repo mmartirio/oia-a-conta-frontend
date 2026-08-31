@@ -53,17 +53,30 @@ const RAIO_VISAO_RESTAURANTE_KM = 1
 function AjustarVisaoRestaurante({ centro }: { centro: Coordenada }) {
   const map = useMap()
   useEffect(() => {
-    // O container do mapa (.heroMapa) tem a altura definida por flex e só
-    // assume o tamanho final depois do primeiro paint — se o Leaflet calcular
-    // o fitBounds com o tamanho desatualizado, o zoom sai errado. invalidateSize
-    // força reler as dimensões atuais antes de ajustar os limites.
-    map.invalidateSize()
-    const latDelta = RAIO_VISAO_RESTAURANTE_KM / 111
-    const lngDelta = RAIO_VISAO_RESTAURANTE_KM / (111 * Math.cos((centro.lat * Math.PI) / 180))
-    map.fitBounds([
-      [centro.lat - latDelta, centro.lng - lngDelta],
-      [centro.lat + latDelta, centro.lng + lngDelta],
-    ])
+    const ajustar = () => {
+      // O container do mapa (.mapaWrap) tem a altura definida por flex e só
+      // assume o tamanho final depois do primeiro paint — se o Leaflet calcular
+      // o fitBounds com o tamanho desatualizado, o zoom sai errado. invalidateSize
+      // força reler as dimensões atuais antes de ajustar os limites.
+      map.invalidateSize()
+      const latDelta = RAIO_VISAO_RESTAURANTE_KM / 111
+      const lngDelta = RAIO_VISAO_RESTAURANTE_KM / (111 * Math.cos((centro.lat * Math.PI) / 180))
+      map.fitBounds([
+        [centro.lat - latDelta, centro.lng - lngDelta],
+        [centro.lat + latDelta, centro.lng + lngDelta],
+      ])
+    }
+    ajustar()
+
+    // O mapa divide o Dashboard com outros cards que carregam dados de forma
+    // assíncrona (mesas, comandas, resumo do dia) — se algum deles ainda
+    // estiver em skeleton quando o efeito acima roda, o fitBounds usa um
+    // tamanho de container que ainda vai mudar, e como esse efeito só reage
+    // a mudança de endereço, o zoom nunca é corrigido depois. Reobservar o
+    // container e reajustar a cada mudança de tamanho cobre esse caso.
+    const resizeObserver = new ResizeObserver(ajustar)
+    resizeObserver.observe(map.getContainer())
+    return () => resizeObserver.disconnect()
   }, [centro.lat, centro.lng, map])
   return null
 }
