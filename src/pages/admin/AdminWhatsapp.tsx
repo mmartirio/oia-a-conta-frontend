@@ -321,7 +321,7 @@ export function AdminWhatsapp() {
           <span className={styles.statusLabel}>Cardápio numerado:</span>
           <div>
             <p className={styles.sectionHint} style={{ margin: '0 0 0.5rem' }}>
-              Imagem enviada pelo bot quando o cliente não finaliza o pedido em 10 minutos. Desenhe a imagem
+              Imagem enviada pelo bot quando o cliente não finaliza o pedido em 5 minutos. Desenhe a imagem
               com os produtos numerados e cadastre o mesmo número em cada produto no Cardápio, pra o bot
               entender quando o cliente responder só com os números.
             </p>

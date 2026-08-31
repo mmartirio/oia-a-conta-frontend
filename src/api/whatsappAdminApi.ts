@@ -56,7 +56,7 @@ export const whatsappAdminApi = {
   atualizarChatbotStatus: (ativo: boolean) =>
     api.put<{ ativo: boolean }>('/api/whatsapp/admin/chatbot-status', { ativo }),
 
-  // Imagem do cardápio numerado enviada pelo lembrete de 10 min do chatbot —
+  // Imagem do cardápio numerado enviada pelo lembrete de 5 min do chatbot —
   // data URI base64; "" = sem imagem configurada.
   cardapioImagem: () =>
     api.get<{ imagemBase64: string }>('/api/whatsapp/admin/cardapio-imagem'),
