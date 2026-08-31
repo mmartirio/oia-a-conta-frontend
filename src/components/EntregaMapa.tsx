@@ -42,7 +42,7 @@ const iconeEntregador = L.divIcon({
   iconAnchor: [16, 16],
 })
 
-const RAIO_VISAO_RESTAURANTE_KM = 30
+const RAIO_VISAO_RESTAURANTE_KM = 1
 
 // MapContainer só aplica `center`/`zoom` na primeira renderização — pra
 // reenquadrar o mapa sempre que o endereço do restaurante mudar (geocodificado
