@@ -14,8 +14,8 @@ import { AdminWhatsappConversas } from './AdminWhatsappConversas'
 import styles from './AdminWhatsapp.module.css'
 import btnStyles from '../../components/ui/Button.module.css'
 
-// Margem de segurança abaixo do limite validado no backend (whatsapp_config.imagem_cardapio_base64 é TEXT, sem limite rígido, mas mantemos o mesmo teto do restante do admin).
-const IMAGEM_MAX_CARACTERES = 1_200_000
+// Mesmo teto de IMAGEM_MAX_CHARS em WhatsappConfigService (backend) — ~2MB de imagem original em base64.
+const IMAGEM_MAX_CARACTERES = 2_800_000
 
 type AbaWhatsapp = 'conexao' | 'mensagens' | 'conversas'
 
@@ -132,8 +132,9 @@ export function AdminWhatsapp() {
       await whatsappAdminApi.atualizarCardapioImagem(dataUri)
       setImagemCardapio(dataUri)
       toast.success('Imagem do cardápio atualizada')
-    } catch {
-      toast.error('Não foi possível salvar a imagem')
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } }).response?.data?.message
+      toast.error(msg ?? 'Não foi possível salvar a imagem')
     } finally {
       setSalvandoImagemCardapio(false)
     }

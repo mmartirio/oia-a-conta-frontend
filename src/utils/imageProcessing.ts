@@ -39,8 +39,8 @@ export function comprimirImagem(file: File, opcoes: OpcoesCompressaoImagem): Pro
       const ctx = canvas.getContext('2d')
       if (!ctx) { reject(new Error('Canvas não suportado')); return }
 
-      const manterPng = file.type === 'image/png'
-      const mime = manterPng ? 'image/png' : 'image/jpeg'
+      let manterPng = file.type === 'image/png'
+      let mime = manterPng ? 'image/png' : 'image/jpeg'
 
       // JPEG não tem canal alfa — se a imagem original tiver áreas
       // transparentes (ex: PNG/WEBP recortado que não preenche o quadro), o
@@ -55,6 +55,20 @@ export function comprimirImagem(file: File, opcoes: OpcoesCompressaoImagem): Pro
 
       let qualidade = qualidadeInicial
       let dataUri = manterPng ? canvas.toDataURL(mime) : canvas.toDataURL(mime, qualidade)
+
+      // PNG é sem perda — se mesmo redimensionado ainda estourar o limite
+      // (comum em artes cheias de gradiente/textura, ex: cardápio ilustrado),
+      // redimensionar sozinho não resolve. Cai pra JPEG a partir daqui —
+      // perde transparência (ganha fundo branco), mas passa a comprimir de
+      // verdade pelo loop de qualidade abaixo.
+      if (manterPng && dataUri.length > maxCaracteres) {
+        manterPng = false
+        mime = 'image/jpeg'
+        ctx.fillStyle = '#ffffff'
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+        ctx.drawImage(img, 0, 0, largura, altura)
+        dataUri = canvas.toDataURL(mime, qualidade)
+      }
 
       while (!manterPng && dataUri.length > maxCaracteres && qualidade > 0.35) {
         qualidade -= 0.1
