@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Modal } from '../../components/ui/Modal'
 import { Switch } from '../../components/ui/Switch'
+import { Select } from '../../components/ui/Select'
 import { Card } from '../../components/ui/Card'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { useToast } from '../../contexts/ToastContext'
@@ -15,6 +16,29 @@ import type { Categoria, Produto } from '../../types'
 import styles from './AdminCardapio.module.css'
 
 type Tab = 'categorias' | 'produtos'
+type OrdemProduto = 'numero' | 'nome' | 'preco' | 'recente'
+
+// Padrão: pelo Nº do cardápio do WhatsApp, quando existir — produtos sem
+// número (não aparecem no cardápio numerado) vão pro final, por nome.
+function ordenarProdutos(lista: Produto[], ordem: OrdemProduto): Produto[] {
+  const arr = [...lista]
+  switch (ordem) {
+    case 'nome':
+      return arr.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+    case 'preco':
+      return arr.sort((a, b) => a.preco - b.preco)
+    case 'recente':
+      return arr.sort((a, b) => b.id - a.id)
+    case 'numero':
+    default:
+      return arr.sort((a, b) => {
+        if (a.numeroCardapio != null && b.numeroCardapio != null) return a.numeroCardapio - b.numeroCardapio
+        if (a.numeroCardapio != null) return -1
+        if (b.numeroCardapio != null) return 1
+        return a.nome.localeCompare(b.nome, 'pt-BR')
+      })
+  }
+}
 
 // Margem de segurança abaixo do limite validado no backend
 // (IMAGEM_MAX_CHARS = 1.400.000 em ProdutoService/ComboService).
@@ -39,6 +63,7 @@ export function AdminCardapio() {
   const [produtos, setProdutos] = useState<Produto[]>([])
   const [filtroCategoria, setFiltroCategoria] = useState<number | undefined>()
   const [visualizacaoProd, setVisualizacaoProd] = useState<'grade' | 'lista'>('lista')
+  const [ordemProd, setOrdemProd] = useState<OrdemProduto>('numero')
 
   const [catModal, setCatModal] = useState(false)
   const [editCat, setEditCat] = useState<Categoria | null>(null)
@@ -294,6 +319,16 @@ export function AdminCardapio() {
               ))}
             </div>
             <div className={styles.toolbarRight}>
+              <Select
+                value={ordemProd}
+                onChange={e => setOrdemProd(e.target.value as OrdemProduto)}
+                aria-label="Ordenar produtos por"
+              >
+                <option value="numero">Nº no cardápio do WhatsApp</option>
+                <option value="nome">Nome (A-Z)</option>
+                <option value="preco">Preço (menor → maior)</option>
+                <option value="recente">Mais recente primeiro</option>
+              </Select>
               <div className={styles.viewToggle}>
                 <button
                   type="button"
@@ -320,7 +355,7 @@ export function AdminCardapio() {
 
           {visualizacaoProd === 'grade' ? (
             <div className={styles.prodGrid}>
-              {produtos.map(p => (
+              {ordenarProdutos(produtos, ordemProd).map(p => (
                 <Card key={p.id} className={styles.prodCard}>
                   <div className={styles.prodHeader}>
                     <div className={styles.prodHeaderLeft}>
@@ -360,7 +395,7 @@ export function AdminCardapio() {
             </div>
           ) : (
             <div className={styles.prodList}>
-              {produtos.map(p => (
+              {ordenarProdutos(produtos, ordemProd).map(p => (
                 <Card key={p.id} className={styles.prodListRow}>
                   {p.imagemBase64
                     ? <img src={p.imagemBase64} alt={p.nome} className={styles.prodListThumb} />
