@@ -76,6 +76,7 @@
 .cardTel { font-size: 0.875rem; color: var(--color-text-secondary); margin: 0; }
 .cardEndereco { font-size: 0.875rem; color: var(--color-text-secondary); margin: 0; line-height: 1.4; }
 .cardEntregador { font-size: 0.875rem; color: var(--color-primary); font-weight: 600; margin: 0; }
+.cardPagamento { font-size: 0.8125rem; color: var(--color-text-secondary); margin: 0; }
 
 .cardFooter {
   display: flex;

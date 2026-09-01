@@ -8,8 +8,8 @@ import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { Pagination } from '../../components/ui/Pagination'
 import { useToast } from '../../contexts/ToastContext'
 import { useNotification } from '../../contexts/NotificationContext'
-import { formatCurrency, formatDateTime } from '../../utils/formatters'
-import type { Entrega } from '../../types'
+import { formatCurrency, formatDateTime, METODO_PAGAMENTO_LABEL } from '../../utils/formatters'
+import type { Entrega, MetodoPagamento } from '../../types'
 import styles from './GarconDeliveryLista.module.css'
 
 type StatusAtivo = 'AGUARDANDO' | 'CONFIRMADA' | 'ACEITA' | 'PRONTO_PARA_ENTREGA' | 'SAIU_PARA_ENTREGA'
@@ -116,6 +116,15 @@ export function GarconDeliveryLista() {
     } finally { setAtualizando(null) }
   }
 
+  const validarPix = async (id: number) => {
+    setAtualizando(id)
+    try { await entregaApi.validarPix(id); load() }
+    catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } }).response?.data?.message
+      toast.error(msg ?? 'Erro ao validar pagamento')
+    } finally { setAtualizando(null) }
+  }
+
   const rejeitarPedido = async (id: number) => {
     const motivo = window.prompt('Motivo da recusa (o cliente vai receber essa mensagem):')
     if (!motivo || !motivo.trim()) return
@@ -206,6 +215,15 @@ export function GarconDeliveryLista() {
                       {e.enderecoCidade ? `, ${e.enderecoCidade}` : ''}
                     </p>
 
+                    <p className={styles.cardPagamento}>
+                      💳 {METODO_PAGAMENTO_LABEL[e.metodoPagamento as MetodoPagamento] ?? e.metodoPagamento}
+                      {e.metodoPagamento === 'PIX' && (
+                        e.pagamentoPixValidado
+                          ? ' — ✓ pago'
+                          : ' — pagamento não validado'
+                      )}
+                    </p>
+
                     {e.entregadorNome && (
                       <p className={styles.cardEntregador}>🏍️ {e.entregadorNome}</p>
                     )}
@@ -234,6 +252,16 @@ export function GarconDeliveryLista() {
                         </button>
                         {e.status === 'AGUARDANDO' ? (
                           <>
+                            {e.metodoPagamento === 'PIX' && !e.pagamentoPixValidado && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                loading={atualizando === e.id}
+                                onClick={() => validarPix(e.id)}
+                              >
+                                🔑 Validar PIX
+                              </Button>
+                            )}
                             <Button
                               size="sm"
                               loading={atualizando === e.id}
