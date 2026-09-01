@@ -15,13 +15,14 @@ import styles from './GarconDeliveryLista.module.css'
 type StatusAtivo = 'AGUARDANDO' | 'CONFIRMADA' | 'ACEITA' | 'PRONTO_PARA_ENTREGA' | 'SAIU_PARA_ENTREGA'
 
 // CONFIRMADA hoje é só pedido PIX já aceito mas ainda não mandado pra
-// cozinha (ver EntregaService.confirmar) — fica agrupado visualmente com
-// ACEITA em "Produção", mas com uma ação própria ("Enviar pra cozinha") em
-// vez da ação de ACEITA. Continua aparecendo aqui também pra qualquer
-// entrega antiga (legado) que porventura ainda esteja parada nesse status.
+// cozinha (ver EntregaService.confirmar) — fica junto com AGUARDANDO em
+// "Aguardando confirmação" (ainda precisa de uma ação da equipe: mandar pra
+// cozinha), NÃO com ACEITA em "Produção" — só ACEITA tem pedidoCozinhaId de
+// verdade preenchido; misturar os dois fazia parecer que o pedido já tinha
+// ido pra cozinha só por estar naquela coluna.
 const COLUNAS: { statuses: StatusAtivo[]; label: string; cor: string }[] = [
-  { statuses: ['AGUARDANDO'],                                label: 'Aguardando confirmação', cor: '#ef4444' },
-  { statuses: ['CONFIRMADA', 'ACEITA'],                      label: 'Produção',    cor: '#f59e0b' },
+  { statuses: ['AGUARDANDO', 'CONFIRMADA'],                  label: 'Aguardando confirmação', cor: '#ef4444' },
+  { statuses: ['ACEITA'],                                    label: 'Produção',    cor: '#f59e0b' },
   { statuses: ['PRONTO_PARA_ENTREGA', 'SAIU_PARA_ENTREGA'], label: 'Entrega',     cor: '#22c55e' },
 ]
 
