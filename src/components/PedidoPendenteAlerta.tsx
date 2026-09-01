@@ -19,7 +19,7 @@ function formatarContagem(ms: number): string {
 // dispensável qualquer, é uma decisão que precisa ser tomada).
 export function PedidoPendenteAlerta() {
   const { user } = useAuth()
-  const { pedidosPendentes, confirmarPedidoPendente, rejeitarPedidoPendente } = useNotification()
+  const { pedidosPendentes, confirmarPedidoPendente, validarPagamentoPixPendente, rejeitarPedidoPendente } = useNotification()
   const toast = useToast()
   const navigate = useNavigate()
 
@@ -60,6 +60,19 @@ export function PedidoPendenteAlerta() {
       if (podeAcessarDelivery) navigate('/delivery')
     } catch {
       toast.error('Erro ao aceitar o pedido. Tente novamente.')
+    } finally {
+      setProcessando(false)
+    }
+  }
+
+  const handleValidarPix = async () => {
+    setProcessando(true)
+    try {
+      await validarPagamentoPixPendente(pedido.id)
+      toast.success('Pagamento validado! Pedido enviado para a cozinha.')
+      if (podeAcessarDelivery) navigate('/delivery')
+    } catch {
+      toast.error('Erro ao validar o pagamento. Tente novamente.')
     } finally {
       setProcessando(false)
     }
@@ -157,13 +170,23 @@ export function PedidoPendenteAlerta() {
             >
               ✕
             </button>
-            <button
-              className={styles.btnAceitar}
-              onClick={handleConfirmar}
-              disabled={processando}
-            >
-              {processando ? 'Enviando...' : '✓ Aceitar pedido'}
-            </button>
+            {pedido.metodoPagamento === 'PIX' ? (
+              <button
+                className={styles.btnAceitar}
+                onClick={handleValidarPix}
+                disabled={processando}
+              >
+                {processando ? 'Validando...' : '🔑 Validar PIX'}
+              </button>
+            ) : (
+              <button
+                className={styles.btnAceitar}
+                onClick={handleConfirmar}
+                disabled={processando}
+              >
+                {processando ? 'Enviando...' : '✓ Aceitar pedido'}
+              </button>
+            )}
           </div>
         )}
       </div>

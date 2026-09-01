@@ -35,6 +35,7 @@ interface NotificationContextValue {
   clearAll: () => void
   pedidosPendentes: Entrega[]
   confirmarPedidoPendente: (id: number) => Promise<void>
+  validarPagamentoPixPendente: (id: number) => Promise<void>
   rejeitarPedidoPendente: (id: number, motivo: string) => Promise<void>
   conversasWhatsappNaoLidas: number
   recarregarConversasWhatsappNaoLidas: () => void
@@ -118,6 +119,15 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   const confirmarPedidoPendente = async (id: number) => {
     await entregaApi.confirmar(id)
+    pararAlertaPedidoCliente()
+    setPedidosPendentes(prev => prev.filter(e => e.id !== id))
+  }
+
+  // Só existe pra pedido PIX — já aceita e manda pra cozinha na mesma ação
+  // (ver EntregaService.validarPagamentoPix), por isso sai da lista de
+  // pendentes igual ao confirmar normal.
+  const validarPagamentoPixPendente = async (id: number) => {
+    await entregaApi.validarPix(id)
     pararAlertaPedidoCliente()
     setPedidosPendentes(prev => prev.filter(e => e.id !== id))
   }
@@ -277,7 +287,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   return (
     <NotificationContext.Provider value={{
       notifications, dismiss, clearAll,
-      pedidosPendentes, confirmarPedidoPendente, rejeitarPedidoPendente,
+      pedidosPendentes, confirmarPedidoPendente, validarPagamentoPixPendente, rejeitarPedidoPendente,
       conversasWhatsappNaoLidas, recarregarConversasWhatsappNaoLidas,
       atualizarPreferenciaNotificacaoFalada,
     }}>

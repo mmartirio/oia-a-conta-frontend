@@ -250,23 +250,25 @@ export function GarconDeliveryLista() {
                         </button>
                         {e.status === 'AGUARDANDO' ? (
                           <>
-                            {e.metodoPagamento === 'PIX' && !e.pagamentoPixValidado && (
+                            {e.metodoPagamento === 'PIX' ? (
+                              // Validar PIX já aceita e manda pra cozinha —
+                              // não faz sentido ter "Confirmar" também.
                               <Button
                                 size="sm"
-                                variant="outline"
                                 loading={atualizando === e.id}
                                 onClick={() => validarPix(e.id)}
                               >
                                 🔑 Validar PIX
                               </Button>
+                            ) : (
+                              <Button
+                                size="sm"
+                                loading={atualizando === e.id}
+                                onClick={() => confirmarPedido(e.id)}
+                              >
+                                ✓ Confirmar
+                              </Button>
                             )}
-                            <Button
-                              size="sm"
-                              loading={atualizando === e.id}
-                              onClick={() => confirmarPedido(e.id)}
-                            >
-                              ✓ Confirmar
-                            </Button>
                             <button
                               className={styles.btnCancelar}
                               onClick={() => rejeitarPedido(e.id)}
