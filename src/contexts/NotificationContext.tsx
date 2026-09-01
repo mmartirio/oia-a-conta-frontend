@@ -35,6 +35,7 @@ interface NotificationContextValue {
   clearAll: () => void
   pedidosPendentes: Entrega[]
   confirmarPedidoPendente: (id: number) => Promise<void>
+  validarPagamentoPixPendente: (id: number) => Promise<void>
   rejeitarPedidoPendente: (id: number, motivo: string) => Promise<void>
   conversasWhatsappNaoLidas: number
   recarregarConversasWhatsappNaoLidas: () => void
@@ -120,6 +121,15 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     await entregaApi.confirmar(id)
     pararAlertaPedidoCliente()
     setPedidosPendentes(prev => prev.filter(e => e.id !== id))
+  }
+
+  // Não remove o pedido da lista — só destrava o botão "Aceitar pedido" no
+  // alerta (ver PedidoPendenteAlerta) e tira esse pedido do prazo de recusa
+  // automática (ver o useEffect abaixo), já que o cliente pode demorar pra
+  // pagar o PIX.
+  const validarPagamentoPixPendente = async (id: number) => {
+    const resp = await entregaApi.validarPix(id)
+    setPedidosPendentes(prev => prev.map(e => (e.id === id ? resp.data : e)))
   }
 
   const rejeitarPedidoPendente = async (id: number, motivo: string) => {
@@ -256,12 +266,16 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   // Se a cozinha não decidir em PRAZO_ACEITE_PEDIDO_MS, recusa automaticamente
   // com uma justificativa padrão (o cliente recebe essa mensagem no WhatsApp).
+  // Pedido PIX ainda não validado fica de fora desse prazo — o cliente pode
+  // demorar pra pagar, e recusar automaticamente por isso seria errado (ver
+  // PedidoPendenteAlerta, que também não mostra a contagem regressiva nesse caso).
   useEffect(() => {
     if (pedidosPendentes.length === 0) return
     const interval = setInterval(() => {
       const agora = Date.now()
       pedidosPendentes.forEach(p => {
         if (autoRejeitandoRef.current.has(p.id)) return
+        if (p.metodoPagamento === 'PIX' && !p.pagamentoPixValidado) return
         const criadoEm = new Date(p.criadoEm).getTime()
         if (agora - criadoEm < PRAZO_ACEITE_PEDIDO_MS) return
         autoRejeitandoRef.current.add(p.id)
@@ -277,7 +291,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   return (
     <NotificationContext.Provider value={{
       notifications, dismiss, clearAll,
-      pedidosPendentes, confirmarPedidoPendente, rejeitarPedidoPendente,
+      pedidosPendentes, confirmarPedidoPendente, validarPagamentoPixPendente, rejeitarPedidoPendente,
       conversasWhatsappNaoLidas, recarregarConversasWhatsappNaoLidas,
       atualizarPreferenciaNotificacaoFalada,
     }}>

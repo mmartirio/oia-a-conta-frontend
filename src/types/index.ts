@@ -357,6 +357,7 @@ export interface Entrega {
   origemWhatsapp?: boolean
   origemIfood?: boolean
   pagamentoConfirmadoCaixa?: boolean
+  pagamentoPixValidado?: boolean
   criadoEm: string
   entregueEm?: string | null
   latitude?: number | null

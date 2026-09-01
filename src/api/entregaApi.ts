@@ -19,6 +19,9 @@ export const entregaApi = {
   confirmar: (id: number) =>
     api.put<Entrega>(`/api/entregas/${id}/confirmar`),
 
+  validarPix: (id: number) =>
+    api.put<Entrega>(`/api/entregas/${id}/validar-pix`),
+
   rejeitar: (id: number, motivo: string) =>
     api.put<Entrega>(`/api/entregas/${id}/rejeitar`, { motivo }),
 

@@ -19,7 +19,7 @@ function formatarContagem(ms: number): string {
 // dispensável qualquer, é uma decisão que precisa ser tomada).
 export function PedidoPendenteAlerta() {
   const { user } = useAuth()
-  const { pedidosPendentes, confirmarPedidoPendente, rejeitarPedidoPendente } = useNotification()
+  const { pedidosPendentes, confirmarPedidoPendente, validarPagamentoPixPendente, rejeitarPedidoPendente } = useNotification()
   const toast = useToast()
   const navigate = useNavigate()
 
@@ -31,14 +31,19 @@ export function PedidoPendenteAlerta() {
   // Mais antigo primeiro (a lista vem em ordem decrescente de criação)
   const pedido = pedidosPendentes[pedidosPendentes.length - 1]
 
+  // PIX ainda não validado não tem prazo — o cliente pode demorar pra pagar,
+  // então não faz sentido recusar automaticamente por tempo (ver
+  // NotificationContext, que também pula esse pedido no useEffect de recusa).
+  const aguardandoValidacaoPix = pedido?.metodoPagamento === 'PIX' && !pedido?.pagamentoPixValidado
+
   useEffect(() => {
-    if (!pedido) return
+    if (!pedido || aguardandoValidacaoPix) return
     const prazoFinal = new Date(pedido.criadoEm).getTime() + PRAZO_ACEITE_PEDIDO_MS
     const atualizar = () => setRestanteMs(prazoFinal - Date.now())
     atualizar()
     const interval = setInterval(atualizar, 1000)
     return () => clearInterval(interval)
-  }, [pedido?.id, pedido?.criadoEm])
+  }, [pedido?.id, pedido?.criadoEm, aguardandoValidacaoPix])
 
   if (!user || (user.role !== 'ADMIN' && user.role !== 'COZINHA')) return null
   if (!pedido) return null
@@ -60,6 +65,18 @@ export function PedidoPendenteAlerta() {
       if (podeAcessarDelivery) navigate('/delivery')
     } catch {
       toast.error('Erro ao aceitar o pedido. Tente novamente.')
+    } finally {
+      setProcessando(false)
+    }
+  }
+
+  const handleValidarPix = async () => {
+    setProcessando(true)
+    try {
+      await validarPagamentoPixPendente(pedido.id)
+      toast.success('Pagamento PIX validado! Agora é só aceitar o pedido.')
+    } catch {
+      toast.error('Erro ao validar o pagamento. Tente novamente.')
     } finally {
       setProcessando(false)
     }
@@ -91,9 +108,15 @@ export function PedidoPendenteAlerta() {
 
         <h2 className={styles.titulo}>🔔 Novo pedido!</h2>
 
-        <p className={`${styles.contagem} ${restanteMs <= 30000 ? styles.contagemUrgente : ''}`}>
-          Recusa automática em <strong>{formatarContagem(restanteMs)}</strong> se não for decidido
-        </p>
+        {aguardandoValidacaoPix ? (
+          <p className={styles.contagem}>
+            🔑 Aguardando validação do pagamento PIX
+          </p>
+        ) : (
+          <p className={`${styles.contagem} ${restanteMs <= 30000 ? styles.contagemUrgente : ''}`}>
+            Recusa automática em <strong>{formatarContagem(restanteMs)}</strong> se não for decidido
+          </p>
+        )}
 
         <div className={styles.resumo}>
           <p className={styles.cliente}>{pedido.clienteNome}</p>
@@ -157,13 +180,23 @@ export function PedidoPendenteAlerta() {
             >
               ✕
             </button>
-            <button
-              className={styles.btnAceitar}
-              onClick={handleConfirmar}
-              disabled={processando}
-            >
-              {processando ? 'Enviando...' : '✓ Aceitar pedido'}
-            </button>
+            {aguardandoValidacaoPix ? (
+              <button
+                className={styles.btnAceitar}
+                onClick={handleValidarPix}
+                disabled={processando}
+              >
+                {processando ? 'Validando...' : '🔑 Validar pagamento PIX'}
+              </button>
+            ) : (
+              <button
+                className={styles.btnAceitar}
+                onClick={handleConfirmar}
+                disabled={processando}
+              >
+                {processando ? 'Enviando...' : '✓ Aceitar pedido'}
+              </button>
+            )}
           </div>
         )}
       </div>
