@@ -14,9 +14,11 @@ import styles from './GarconDeliveryLista.module.css'
 
 type StatusAtivo = 'AGUARDANDO' | 'CONFIRMADA' | 'ACEITA' | 'PRONTO_PARA_ENTREGA' | 'SAIU_PARA_ENTREGA'
 
-// CONFIRMADA agrupada junto com ACEITA em "Produção" — não existe mais um
-// estágio manual de "aceitar" separado, mas entregas antigas (dado legado)
-// podem ainda estar paradas em CONFIRMADA, então continuam aparecendo aqui.
+// CONFIRMADA hoje é só pedido PIX já aceito mas ainda não mandado pra
+// cozinha (ver EntregaService.confirmar) — fica agrupado visualmente com
+// ACEITA em "Produção", mas com uma ação própria ("Enviar pra cozinha") em
+// vez da ação de ACEITA. Continua aparecendo aqui também pra qualquer
+// entrega antiga (legado) que porventura ainda esteja parada nesse status.
 const COLUNAS: { statuses: StatusAtivo[]; label: string; cor: string }[] = [
   { statuses: ['AGUARDANDO'],                                label: 'Aguardando confirmação', cor: '#ef4444' },
   { statuses: ['CONFIRMADA', 'ACEITA'],                      label: 'Produção',    cor: '#f59e0b' },
@@ -25,6 +27,7 @@ const COLUNAS: { statuses: StatusAtivo[]; label: string; cor: string }[] = [
 
 // AGUARDANDO não entra aqui — tem UI própria (confirmar/rejeitar com motivo)
 const ACOES: Partial<Record<StatusAtivo, { label: string; fn: (id: number) => Promise<unknown> }>> = {
+  CONFIRMADA:            { label: 'Enviar pra cozinha', fn: (id) => entregaApi.enviarParaProducao(id) },
   ACEITA:               { label: 'Pronto',   fn: (id) => entregaApi.prontoParaEntrega(id) },
   PRONTO_PARA_ENTREGA:  { label: 'Saiu',     fn: (id) => entregaApi.saiu(id) },
   SAIU_PARA_ENTREGA:    { label: 'Entregue', fn: (id) => entregaApi.entregar(id) },
@@ -35,6 +38,7 @@ const ACOES: Partial<Record<StatusAtivo, { label: string; fn: (id: number) => Pr
 // repassou o pedido pro entregador externo (99/Uber Entrega), e o pedido já
 // é dado como concluído nesse momento.
 const ACOES_ENTREGADOR_EXTERNO: Partial<Record<StatusAtivo, { label: string; fn: (id: number) => Promise<unknown> }>> = {
+  CONFIRMADA:            { label: 'Enviar pra cozinha', fn: (id) => entregaApi.enviarParaProducao(id) },
   ACEITA:               { label: 'Pronto',                  fn: (id) => entregaApi.prontoParaEntrega(id) },
   PRONTO_PARA_ENTREGA:  { label: 'Entregar ao entregador',   fn: (id) => entregaApi.saiu(id).then(() => entregaApi.entregar(id)) },
 }
