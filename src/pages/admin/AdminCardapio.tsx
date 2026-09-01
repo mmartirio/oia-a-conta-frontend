@@ -324,7 +324,7 @@ export function AdminCardapio() {
                 onChange={e => setOrdemProd(e.target.value as OrdemProduto)}
                 aria-label="Ordenar produtos por"
               >
-                <option value="numero">Nº no cardápio do WhatsApp</option>
+                <option value="numero">Nº no cardápio do WhatsApp (opcional) — padrão</option>
                 <option value="nome">Nome (A-Z)</option>
                 <option value="preco">Preço (menor → maior)</option>
                 <option value="recente">Mais recente primeiro</option>
