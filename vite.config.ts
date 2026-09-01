@@ -12,7 +12,10 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      injectRegister: 'auto',
+      // false: registro manual em registerServiceWorker.ts, pra poder
+      // reagir a "tem versão nova" (onNeedRefresh) e recarregar sozinho —
+      // o registro automático padrão não tinha esse hook.
+      injectRegister: false,
       strategies: 'generateSW',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
       devOptions: {
