@@ -150,6 +150,26 @@
 
 .toolbarRight { display: flex; align-items: center; gap: 0.75rem; }
 
+/* Seletor de ordenação discreto — só a caixa cheia do Select padrão chamava
+   demais atenção numa toolbar que já tem filtros, toggle de visão e botão
+   de ação. Sem borda/fundo visível até o hover, texto pequeno e largura
+   pelo conteúdo. */
+.ordenarSelect { width: auto; }
+.ordenarSelect select {
+  width: auto;
+  padding: 0.3rem 1.6rem 0.3rem 0.5rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background-color: transparent;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+.ordenarSelect select:hover,
+.ordenarSelect select:focus {
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
 .viewToggle {
   display: flex;
   border: 1.5px solid var(--color-border);

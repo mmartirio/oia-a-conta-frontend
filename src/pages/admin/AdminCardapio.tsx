@@ -320,14 +320,16 @@ export function AdminCardapio() {
             </div>
             <div className={styles.toolbarRight}>
               <Select
+                className={styles.ordenarSelect}
                 value={ordemProd}
                 onChange={e => setOrdemProd(e.target.value as OrdemProduto)}
                 aria-label="Ordenar produtos por"
+                title="Ordenar por"
               >
-                <option value="numero">Nº no cardápio do WhatsApp (opcional) — padrão</option>
-                <option value="nome">Nome (A-Z)</option>
-                <option value="preco">Preço (menor → maior)</option>
-                <option value="recente">Mais recente primeiro</option>
+                <option value="numero">Nº WhatsApp</option>
+                <option value="nome">Nome</option>
+                <option value="preco">Preço</option>
+                <option value="recente">Recentes</option>
               </Select>
               <div className={styles.viewToggle}>
                 <button
