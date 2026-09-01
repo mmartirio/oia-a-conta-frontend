@@ -22,9 +22,6 @@ export const entregaApi = {
   validarPix: (id: number) =>
     api.put<Entrega>(`/api/entregas/${id}/validar-pix`),
 
-  enviarParaProducao: (id: number) =>
-    api.put<Entrega>(`/api/entregas/${id}/enviar-producao`),
-
   rejeitar: (id: number, motivo: string) =>
     api.put<Entrega>(`/api/entregas/${id}/rejeitar`, { motivo }),
 

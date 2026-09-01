@@ -14,21 +14,19 @@ import styles from './GarconDeliveryLista.module.css'
 
 type StatusAtivo = 'AGUARDANDO' | 'CONFIRMADA' | 'ACEITA' | 'PRONTO_PARA_ENTREGA' | 'SAIU_PARA_ENTREGA'
 
-// CONFIRMADA hoje é só pedido PIX já aceito mas ainda não mandado pra
-// cozinha (ver EntregaService.confirmar) — fica junto com AGUARDANDO em
-// "Aguardando confirmação" (ainda precisa de uma ação da equipe: mandar pra
-// cozinha), NÃO com ACEITA em "Produção" — só ACEITA tem pedidoCozinhaId de
-// verdade preenchido; misturar os dois fazia parecer que o pedido já tinha
-// ido pra cozinha só por estar naquela coluna.
+// CONFIRMADA hoje é só pedido PIX já aceito sem validar o pagamento ainda
+// (ver EntregaService.confirmar) — fica junto com AGUARDANDO em "Aguardando
+// confirmação", com o botão "Validar PIX" como única ação (validar já manda
+// pra produção na hora — ver validarPix). NÃO entra em "Produção": só ACEITA
+// tem pedidoCozinhaId de verdade preenchido.
 const COLUNAS: { statuses: StatusAtivo[]; label: string; cor: string }[] = [
   { statuses: ['AGUARDANDO', 'CONFIRMADA'],                  label: 'Aguardando confirmação', cor: '#ef4444' },
   { statuses: ['ACEITA'],                                    label: 'Produção',    cor: '#f59e0b' },
   { statuses: ['PRONTO_PARA_ENTREGA', 'SAIU_PARA_ENTREGA'], label: 'Entrega',     cor: '#22c55e' },
 ]
 
-// AGUARDANDO não entra aqui — tem UI própria (confirmar/rejeitar com motivo)
+// AGUARDANDO e CONFIRMADA não entram aqui — têm UI própria (ver JSX abaixo)
 const ACOES: Partial<Record<StatusAtivo, { label: string; fn: (id: number) => Promise<unknown> }>> = {
-  CONFIRMADA:            { label: 'Enviar pra cozinha', fn: (id) => entregaApi.enviarParaProducao(id) },
   ACEITA:               { label: 'Pronto',   fn: (id) => entregaApi.prontoParaEntrega(id) },
   PRONTO_PARA_ENTREGA:  { label: 'Saiu',     fn: (id) => entregaApi.saiu(id) },
   SAIU_PARA_ENTREGA:    { label: 'Entregue', fn: (id) => entregaApi.entregar(id) },
@@ -39,7 +37,6 @@ const ACOES: Partial<Record<StatusAtivo, { label: string; fn: (id: number) => Pr
 // repassou o pedido pro entregador externo (99/Uber Entrega), e o pedido já
 // é dado como concluído nesse momento.
 const ACOES_ENTREGADOR_EXTERNO: Partial<Record<StatusAtivo, { label: string; fn: (id: number) => Promise<unknown> }>> = {
-  CONFIRMADA:            { label: 'Enviar pra cozinha', fn: (id) => entregaApi.enviarParaProducao(id) },
   ACEITA:               { label: 'Pronto',                  fn: (id) => entregaApi.prontoParaEntrega(id) },
   PRONTO_PARA_ENTREGA:  { label: 'Entregar ao entregador',   fn: (id) => entregaApi.saiu(id).then(() => entregaApi.entregar(id)) },
 }
@@ -279,6 +276,16 @@ export function GarconDeliveryLista() {
                               ✕
                             </button>
                           </>
+                        ) : e.status === 'CONFIRMADA' ? (
+                          // Já aceito, só falta validar o PIX — validar já
+                          // manda pra produção na hora (ver validarPix).
+                          <Button
+                            size="sm"
+                            loading={atualizando === e.id}
+                            onClick={() => validarPix(e.id)}
+                          >
+                            🔑 Validar PIX
+                          </Button>
                         ) : acoes[e.status as StatusAtivo] && (
                           <Button
                             size="sm"
