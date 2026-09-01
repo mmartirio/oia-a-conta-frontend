@@ -1,12 +1,19 @@
 import api from './axios'
 import type { Combo } from '../types'
 
+export interface ComboGrupoPayload {
+  nome: string
+  quantidade: number
+  produtoIds: number[]
+}
+
 export interface ComboPayload {
   nome: string
   descricao?: string
   preco: number
   imagemBase64?: string | null
-  itens: { produtoId: number; quantidade: number }[]
+  numeroCardapio?: number
+  grupos: ComboGrupoPayload[]
 }
 
 export const comboApi = {

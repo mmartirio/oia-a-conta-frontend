@@ -142,6 +142,26 @@
   font-size: 0.875rem;
 }
 
+/* Grupos do combo (ex: "2 Pastéis") — cada um com nome, quantidade e a
+   lista de produtos elegíveis pro cliente escolher. */
+.gruposList { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.grupoBox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding: 0.75rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+
+.grupoHeader { display: flex; align-items: center; gap: 0.5rem; }
+
+.grupoNomeInput { flex: 1; }
+
+.grupoQtdInput { width: 72px; flex-shrink: 0; }
+
 /* Foto */
 .imagemBox { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
 

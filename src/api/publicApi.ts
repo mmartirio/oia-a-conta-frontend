@@ -33,11 +33,17 @@ export interface CategoriaPublico {
   produtos: ProdutoPublico[]
 }
 
-export interface ComboItemPublico {
+export interface ComboGrupoProdutoPublico {
   produtoId: number
-  produtoNome: string
+  nome: string
+  preco: number
+}
+
+export interface ComboGrupoPublico {
+  id: number
+  nome: string
   quantidade: number
-  valorAlocado: number
+  produtos: ComboGrupoProdutoPublico[]
 }
 
 export interface ComboPublico {
@@ -47,7 +53,7 @@ export interface ComboPublico {
   preco: number
   imagemBase64: string | null
   ativo: boolean
-  itens: ComboItemPublico[]
+  grupos: ComboGrupoPublico[]
 }
 
 export interface CardapioPublicoData {

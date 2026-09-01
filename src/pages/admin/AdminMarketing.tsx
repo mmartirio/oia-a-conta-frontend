@@ -29,15 +29,23 @@ const IMAGEM_MAX_CARACTERES = 1_200_000
 // existentes com tipoAlvo GRUPO continuam sendo exibidos/editáveis normalmente.
 const GRUPOS_CLIENTES_ATIVO = false
 
+interface ComboGrupoForm {
+  nome: string
+  quantidade: number
+  produtoIds: number[]
+}
+
 interface ComboForm {
   nome: string
   descricao: string
   preco: string
   imagemBase64: string | null
-  itens: { produtoId: number; quantidade: number }[]
+  // "" = combo não aparece no cardápio numerado do WhatsApp.
+  numeroCardapio: string
+  grupos: ComboGrupoForm[]
 }
 
-const COMBO_FORM_VAZIO: ComboForm = { nome: '', descricao: '', preco: '', imagemBase64: null, itens: [] }
+const COMBO_FORM_VAZIO: ComboForm = { nome: '', descricao: '', preco: '', imagemBase64: null, numeroCardapio: '', grupos: [] }
 
 interface CupomForm {
   codigo: string
@@ -150,28 +158,43 @@ export function AdminMarketing() {
       descricao: c.descricao ?? '',
       preco: String(c.preco),
       imagemBase64: c.imagemBase64 ?? null,
-      itens: c.itens.map(i => ({ produtoId: i.produtoId, quantidade: i.quantidade }))
+      numeroCardapio: c.numeroCardapio != null ? String(c.numeroCardapio) : '',
+      grupos: c.grupos.map(g => ({ nome: g.nome, quantidade: g.quantidade, produtoIds: g.produtos.map(p => p.produtoId) }))
     })
     setComboError('')
     setComboModal(true)
   }
 
-  const toggleProdutoNoCombo = (produtoId: number) => {
-    setComboForm(f => {
-      const existe = f.itens.some(i => i.produtoId === produtoId)
-      return {
-        ...f,
-        itens: existe
-          ? f.itens.filter(i => i.produtoId !== produtoId)
-          : [...f.itens, { produtoId, quantidade: 1 }]
-      }
-    })
+  const adicionarGrupo = () => {
+    setComboForm(f => ({ ...f, grupos: [...f.grupos, { nome: '', quantidade: 1, produtoIds: [] }] }))
   }
 
-  const alterarQuantidadeItem = (produtoId: number, quantidade: number) => {
+  const removerGrupo = (grupoIndex: number) => {
+    setComboForm(f => ({ ...f, grupos: f.grupos.filter((_, i) => i !== grupoIndex) }))
+  }
+
+  const atualizarNomeGrupo = (grupoIndex: number, nome: string) => {
     setComboForm(f => ({
       ...f,
-      itens: f.itens.map(i => i.produtoId === produtoId ? { ...i, quantidade } : i)
+      grupos: f.grupos.map((g, i) => i === grupoIndex ? { ...g, nome } : g)
+    }))
+  }
+
+  const atualizarQuantidadeGrupo = (grupoIndex: number, quantidade: number) => {
+    setComboForm(f => ({
+      ...f,
+      grupos: f.grupos.map((g, i) => i === grupoIndex ? { ...g, quantidade } : g)
+    }))
+  }
+
+  const toggleProdutoNoGrupo = (grupoIndex: number, produtoId: number) => {
+    setComboForm(f => ({
+      ...f,
+      grupos: f.grupos.map((g, i) => {
+        if (i !== grupoIndex) return g
+        const existe = g.produtoIds.includes(produtoId)
+        return { ...g, produtoIds: existe ? g.produtoIds.filter(id => id !== produtoId) : [...g.produtoIds, produtoId] }
+      })
     }))
   }
 
@@ -194,9 +217,19 @@ export function AdminMarketing() {
   const handleSaveCombo = async (e: FormEvent) => {
     e.preventDefault()
     setComboError('')
-    if (comboForm.itens.length < 2) {
-      setComboError('Selecione pelo menos 2 produtos para o combo')
+    if (comboForm.grupos.length === 0) {
+      setComboError('Adicione pelo menos um grupo (ex: "2 Pastéis")')
       return
+    }
+    for (const g of comboForm.grupos) {
+      if (!g.nome.trim()) {
+        setComboError('Todo grupo precisa de um nome (ex: "Pastéis", "Refrigerante")')
+        return
+      }
+      if (g.produtoIds.length === 0) {
+        setComboError(`Selecione pelo menos um sabor elegível pro grupo "${g.nome}"`)
+        return
+      }
     }
     setSavingCombo(true)
     try {
@@ -205,7 +238,8 @@ export function AdminMarketing() {
         descricao: comboForm.descricao || undefined,
         preco: parseFloat(comboForm.preco),
         imagemBase64: comboForm.imagemBase64,
-        itens: comboForm.itens
+        numeroCardapio: comboForm.numeroCardapio.trim() ? Number(comboForm.numeroCardapio) : undefined,
+        grupos: comboForm.grupos.map(g => ({ nome: g.nome, quantidade: g.quantidade, produtoIds: g.produtoIds }))
       }
       if (editCombo) {
         await comboApi.atualizar(editCombo.id, payload)
@@ -416,7 +450,7 @@ export function AdminMarketing() {
                 {c.descricao && <p className={styles.cardDesc}>{c.descricao}</p>}
                 <p className={styles.cardPreco}>{formatCurrency(c.preco)}</p>
                 <p className={styles.cardItens}>
-                  {c.itens.map(i => `${i.quantidade}x ${i.produtoNome}`).join(' + ')}
+                  {c.grupos.map(g => `${g.quantidade}x ${g.nome}`).join(' + ')}
                 </p>
                 <div className={styles.cardActions}>
                   <Switch
@@ -552,33 +586,58 @@ export function AdminMarketing() {
             onChange={e => setComboForm(f => ({ ...f, preco: e.target.value }))}
             required
           />
+          <Input
+            label="Nº no cardápio do WhatsApp (opcional)"
+            type="number"
+            min={1}
+            value={comboForm.numeroCardapio}
+            onChange={e => setComboForm(f => ({ ...f, numeroCardapio: e.target.value }))}
+          />
 
           <div className={styles.formField}>
-            <label className={styles.label}>Produtos do combo (selecione ao menos 2)</label>
-            <div className={styles.itensList}>
-              {produtos.filter(p => p.ativo || comboForm.itens.some(i => i.produtoId === p.id)).map(p => {
-                const item = comboForm.itens.find(i => i.produtoId === p.id)
-                return (
-                  <div key={p.id} className={styles.itemRow}>
-                    <input
-                      type="checkbox"
-                      checked={!!item}
-                      onChange={() => toggleProdutoNoCombo(p.id)}
+            <label className={styles.label}>
+              Grupos do combo (ex: "2 Pastéis") — o cliente escolhe os sabores dentro de cada grupo, sem mudar o preço
+            </label>
+            <div className={styles.gruposList}>
+              {comboForm.grupos.map((grupo, grupoIndex) => (
+                <div key={grupoIndex} className={styles.grupoBox}>
+                  <div className={styles.grupoHeader}>
+                    <Input
+                      className={styles.grupoNomeInput}
+                      placeholder='Nome do grupo (ex: "Pastéis")'
+                      value={grupo.nome}
+                      onChange={e => atualizarNomeGrupo(grupoIndex, e.target.value)}
                     />
-                    <span className={styles.itemRowNome}>{p.nome}</span>
-                    {item && (
-                      <input
-                        type="number"
-                        min={1}
-                        className={styles.itemRowQtd}
-                        value={item.quantidade}
-                        onChange={e => alterarQuantidadeItem(p.id, Math.max(1, Number(e.target.value)))}
-                      />
-                    )}
+                    <Input
+                      className={styles.grupoQtdInput}
+                      type="number"
+                      min={1}
+                      title="Quantidade desse grupo no combo"
+                      value={grupo.quantidade}
+                      onChange={e => atualizarQuantidadeGrupo(grupoIndex, Math.max(1, Number(e.target.value)))}
+                    />
+                    <Button type="button" variant="outline" size="sm" onClick={() => removerGrupo(grupoIndex)}>
+                      Remover
+                    </Button>
                   </div>
-                )
-              })}
+                  <div className={styles.itensList}>
+                    {produtos.filter(p => p.ativo || grupo.produtoIds.includes(p.id)).map(p => (
+                      <div key={p.id} className={styles.itemRow}>
+                        <input
+                          type="checkbox"
+                          checked={grupo.produtoIds.includes(p.id)}
+                          onChange={() => toggleProdutoNoGrupo(grupoIndex, p.id)}
+                        />
+                        <span className={styles.itemRowNome}>{p.nome}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
+            <Button type="button" variant="outline" size="sm" onClick={adicionarGrupo}>
+              + Adicionar grupo
+            </Button>
           </div>
 
           <div className={styles.formField}>

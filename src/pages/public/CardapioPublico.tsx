@@ -634,7 +634,7 @@ export function CardapioPublico({ slugProp }: { slugProp?: string } = {}) {
                     key={combo.id}
                     imagem={combo.imagemBase64}
                     nome={combo.nome}
-                    descricao={combo.descricao || combo.itens.map(i => `${i.quantidade}x ${i.produtoNome}`).join(' + ')}
+                    descricao={combo.descricao || combo.grupos.map(g => `${g.quantidade}x ${g.nome}`).join(' + ')}
                     preco={combo.preco}
                     qtd={qtd}
                     onAdd={() => addCombo(combo)}

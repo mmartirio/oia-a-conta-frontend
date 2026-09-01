@@ -156,11 +156,17 @@ export interface Promocao {
   restauranteId: number
 }
 
-export interface ComboItem {
+export interface ComboGrupoProduto {
   produtoId: number
-  produtoNome: string
+  nome: string
+  preco: number
+}
+
+export interface ComboGrupo {
+  id: number
+  nome: string
   quantidade: number
-  valorAlocado: number
+  produtos: ComboGrupoProduto[]
 }
 
 export interface Combo {
@@ -169,8 +175,9 @@ export interface Combo {
   descricao?: string
   preco: number
   imagemBase64: string | null
+  numeroCardapio?: number | null
   ativo: boolean
-  itens: ComboItem[]
+  grupos: ComboGrupo[]
   restauranteId: number
 }
 
