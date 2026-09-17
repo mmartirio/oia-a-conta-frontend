@@ -58,9 +58,9 @@ export function AdminAssinatura() {
     )
   }
 
-  const funcionalidades: string[] = (() => {
-    try { return JSON.parse(contrato.plano.funcionalidades) } catch { return [] }
-  })()
+  const funcionalidades: string[] = contrato.plano.funcionalidades
+    ? contrato.plano.funcionalidades.split(',').map(f => f.trim()).filter(Boolean)
+    : []
 
   return (
     <div className={styles.page}>

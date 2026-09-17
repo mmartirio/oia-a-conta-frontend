@@ -9,6 +9,7 @@ const FUNCIONALIDADES_DISPONIVEIS = [
   'Delivery',
   'Cozinha em tempo real',
   'Controle de mesas',
+  'Atendimento de garçom',
   'PDV / Caixa',
   'Gestão de usuários',
   'Relatórios financeiros',
