@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { FiTrash2, FiPlus, FiX } from 'react-icons/fi'
 import { configuracaoApi } from '../../api/configuracaoApi'
-import { pausaApi, type Pausa } from '../../api/pausaApi'
+import { pausaApi, type Pausa, type PausaStatus } from '../../api/pausaApi'
 import { restauranteApi } from '../../api/restauranteApi'
 import { billingApi } from '../../api/billingApi'
 import { horarioApi } from '../../api/horarioApi'
@@ -134,6 +134,11 @@ export function AdminConfiguracoes() {
   const [modalFecharAberto, setModalFecharAberto] = useState(false)
   const [motivoFechar, setMotivoFechar] = useState('')
   const [salvandoStatusLoja, setSalvandoStatusLoja] = useState(false)
+  // Status efetivo (considera pausas e horário de funcionamento) — o mesmo
+  // que o sidebar e o WhatsApp usam. O toggle acima só reflete o fechamento
+  // manual, então sem isso a tela dizia "Loja aberta" mesmo com a loja
+  // fechada de verdade em outro lugar (pausa ativa ou fora do horário).
+  const [statusReal, setStatusReal] = useState<PausaStatus | null>(null)
   const [alertaPedidoSom, setAlertaPedidoSom] = useState<TipoAlertaPedido>('SOM_1')
   const [salvandoAlertaSom, setSalvandoAlertaSom] = useState(false)
   const [notificacaoWhatsappFalada, setNotificacaoWhatsappFalada] = useState(false)
@@ -185,6 +190,11 @@ export function AdminConfiguracoes() {
     pausaApi.listar().then(r => setPausas(r.data)).catch(() => {})
   }
 
+  const carregarStatusReal = () => {
+    if (!user?.restauranteId) return
+    pausaApi.status(user.restauranteId).then(r => setStatusReal(r.data)).catch(() => {})
+  }
+
   useEffect(() => {
     configuracaoApi.get()
       .then(r => {
@@ -202,6 +212,7 @@ export function AdminConfiguracoes() {
       })
       .finally(() => setLoading(false))
     carregarPausas()
+    carregarStatusReal()
 
     restauranteApi.buscarDados()
       .then(r => {
@@ -261,6 +272,7 @@ export function AdminConfiguracoes() {
       setPausaInicio('')
       setPausaFim('')
       carregarPausas()
+      carregarStatusReal()
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } }).response?.data?.message
       toast.error(msg ?? 'Erro ao agendar pausa')
@@ -278,6 +290,7 @@ export function AdminConfiguracoes() {
       setModalEncerramentoAberto(false)
       setMotivoEncerramento('')
       carregarPausas()
+      carregarStatusReal()
     } catch {
       toast.error('Erro ao encerrar atendimento')
     } finally {
@@ -292,6 +305,7 @@ export function AdminConfiguracoes() {
       await pausaApi.cancelar(confirmCancelarPausa.id)
       setConfirmCancelarPausa(null)
       carregarPausas()
+      carregarStatusReal()
     } catch {
       toast.error('Erro ao cancelar pausa')
     } finally {
@@ -414,6 +428,7 @@ export function AdminConfiguracoes() {
       const r = await configuracaoApi.atualizarStatusLoja(false)
       setFechadoManualmente(r.data.fechadoManualmente ?? false)
       setMotivoFechamentoManual(r.data.motivoFechamentoManual ?? null)
+      carregarStatusReal()
       toast.success('Loja reaberta com sucesso')
     } catch {
       toast.error('Erro ao reabrir a loja')
@@ -428,6 +443,7 @@ export function AdminConfiguracoes() {
       const r = await configuracaoApi.atualizarStatusLoja(true, motivoFechar.trim() || undefined)
       setFechadoManualmente(r.data.fechadoManualmente ?? true)
       setMotivoFechamentoManual(r.data.motivoFechamentoManual ?? null)
+      carregarStatusReal()
       toast.success('Loja fechada com sucesso')
       setModalFecharAberto(false)
       setMotivoFechar('')
@@ -682,6 +698,14 @@ export function AdminConfiguracoes() {
           <div className={styles.statusBanner}>
             Loja fechada manualmente
             {motivoFechamentoManual ? ` — motivo: ${motivoFechamentoManual}` : ''}
+          </div>
+        )}
+        {!fechadoManualmente && statusReal && !statusReal.aberto && (
+          <div className={styles.statusBanner}>
+            A loja está fechada agora mesmo sem fechamento manual ativo
+            {statusReal.motivo ? ` — ${statusReal.motivo}` : ''}. É por isso que ela aparece
+            fechada no sidebar e no WhatsApp: esse toggle só controla o fechamento manual, não
+            uma pausa ativa nem o horário de funcionamento configurado.
           </div>
         )}
         <div className={styles.statusRow}>
