@@ -28,8 +28,8 @@ export function PlanoCard({ plano, children }: PlanoCardProps) {
         {plano.periodoTeste && plano.diasTeste > 0 && (
           <li><strong>{plano.diasTeste} dias grátis</strong></li>
         )}
-        <li>Até {plano.limiteUsuarios} usuários</li>
-        <li>Até {plano.limiteMesas} mesas</li>
+        {plano.limiteUsuarios > 0 && <li>Até {plano.limiteUsuarios} usuários</li>}
+        {plano.limiteMesas > 0 && <li>Até {plano.limiteMesas} mesas</li>}
         {funcs.map(f => <li key={f}>{f}</li>)}
       </ul>
       {children}
