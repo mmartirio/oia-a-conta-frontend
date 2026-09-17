@@ -8,14 +8,12 @@ import {
 import { MdDeliveryDining } from 'react-icons/md'
 import { useAuth } from '../../contexts/AuthContext'
 import { useNotification } from '../../contexts/NotificationContext'
+import { StatusLojaProvider, useStatusLoja } from '../../contexts/StatusLojaContext'
 import { NotificationAlert } from '../NotificationAlert'
 import { PedidoPendenteAlerta } from '../PedidoPendenteAlerta'
-import { pausaApi, type PausaStatus } from '../../api/pausaApi'
 import { PERMISSAO_CONTAINERS } from '../../constants/permissoes'
 import logo from '../../assets/logo/OIA A CONTA - LOGO.png'
 import styles from './AdminLayout.module.css'
-
-const INTERVALO_ATUALIZACAO_STATUS_MS = 60_000
 
 function WhatsAppIcon({ size = 17 }: { size?: number }) {
   return (
@@ -76,23 +74,19 @@ function temAcessoNavItem(permissoes: string[] | null | undefined, item: NavItem
 }
 
 export function AdminLayout() {
+  return (
+    <StatusLojaProvider>
+      <AdminLayoutInner />
+    </StatusLojaProvider>
+  )
+}
+
+function AdminLayoutInner() {
   const { user, logout } = useAuth()
   const { conversasWhatsappNaoLidas } = useNotification()
-  const [statusLoja, setStatusLoja] = useState<PausaStatus | null>(null)
+  const { statusLoja } = useStatusLoja()
   const [menuAberto, setMenuAberto] = useState(false)
   const location = useLocation()
-
-  useEffect(() => {
-    const restauranteId = user?.restauranteId
-    if (!restauranteId) return
-
-    const carregarStatus = () => {
-      pausaApi.status(restauranteId).then(r => setStatusLoja(r.data)).catch(() => {})
-    }
-    carregarStatus()
-    const interval = setInterval(carregarStatus, INTERVALO_ATUALIZACAO_STATUS_MS)
-    return () => clearInterval(interval)
-  }, [user?.restauranteId])
 
   // Fecha o menu mobile automaticamente ao navegar para outra rota
   useEffect(() => { setMenuAberto(false) }, [location.pathname])
