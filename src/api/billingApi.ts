@@ -21,6 +21,15 @@ export interface Plano {
   diasTeste: number
   ativo: boolean
   destaque: boolean
+  // Só planos como o Startup exigem escolher a modalidade de operação
+  // (mesas ou delivery) no cadastro — ver Contrato.modalidadeOperacao.
+  exigeModalidadeOperacao: boolean
+  // Limite de atendentes de WhatsApp — qual campo vale depende da
+  // modalidade do contrato (ver backend, BillingService.buscarRestricoesOperacao).
+  // null = sem limite.
+  limiteAtendentesWhatsapp: number | null
+  limiteAtendentesWhatsappMesas: number | null
+  limiteAtendentesWhatsappDelivery: number | null
 }
 
 export interface Contrato {
@@ -31,6 +40,8 @@ export interface Contrato {
   dataInicio: string
   dataVencimento: string
   dataProximoVencimento: string
+  // Preenchida só quando plano.exigeModalidadeOperacao é true.
+  modalidadeOperacao: 'MESAS' | 'DELIVERY' | null
 }
 
 export interface Pagamento {
@@ -94,6 +105,9 @@ export const billingApi = {
     api.post<Contrato>('/api/contratos', { restauranteId, planoId }),
   atualizarStatusContrato: (id: number, status: string) =>
     api.put<Contrato>(`/api/contratos/${id}/status`, { status }),
+  // Troca de modalidade pedida pelo dono via suporte — só SUPER_ADMIN.
+  atualizarModalidadeContrato: (id: number, modalidadeOperacao: 'MESAS' | 'DELIVERY') =>
+    api.put<Contrato>(`/api/contratos/${id}/modalidade`, { modalidadeOperacao }),
   pagamentoManual: (contratoId: number, valor: number, observacao = '') =>
     api.post<Pagamento>(`/api/contratos/${contratoId}/pagamento-manual`, { valor, observacao }),
   // Paginação real — usada na tela de detalhe de uma única empresa (GestorEmpresaDetalhe).

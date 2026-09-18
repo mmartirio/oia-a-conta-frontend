@@ -29,6 +29,9 @@ export function GestorEmpresaDetalhe() {
   const [observacao, setObservacao] = useState('')
   const [registrando, setRegistrando] = useState(false)
 
+  const [modalidadeSelecionada, setModalidadeSelecionada] = useState<'MESAS' | 'DELIVERY' | ''>('')
+  const [salvandoModalidade, setSalvandoModalidade] = useState(false)
+
   const carregarPagamentos = async (contratoId: number, paginaAlvo = page) => {
     const p = await billingApi.listarPagamentos(contratoId, paginaAlvo)
     setPagamentos(p.data.content)
@@ -41,6 +44,7 @@ export function GestorEmpresaDetalhe() {
     try {
       const c = await billingApi.buscarContratoPorRestaurante(restauranteId)
       setContrato(c.data)
+      setModalidadeSelecionada(c.data.modalidadeOperacao ?? '')
       await carregarPagamentos(c.data.id, page)
     } catch {
       setErro('Não foi possível carregar os dados desta empresa.')
@@ -70,6 +74,20 @@ export function GestorEmpresaDetalhe() {
       toast.error('Erro ao registrar pagamento')
     } finally {
       setRegistrando(false)
+    }
+  }
+
+  const handleSalvarModalidade = async () => {
+    if (!contrato || !modalidadeSelecionada) return
+    setSalvandoModalidade(true)
+    try {
+      const c = await billingApi.atualizarModalidadeContrato(contrato.id, modalidadeSelecionada)
+      setContrato(c.data)
+      toast.success('Modalidade de operação atualizada')
+    } catch {
+      toast.error('Erro ao atualizar modalidade de operação')
+    } finally {
+      setSalvandoModalidade(false)
     }
   }
 
@@ -125,6 +143,38 @@ export function GestorEmpresaDetalhe() {
               </div>
             </div>
           </div>
+
+          {/* ── Modalidade de operação (só planos como o Startup) ── */}
+          {contrato.plano?.exigeModalidadeOperacao && (
+            <div className={styles.relatorioCard}>
+              <h2 className={styles.sectionTitle} style={{ marginTop: 0 }}>Modalidade de Operação</h2>
+              <p style={{ marginTop: 0, color: 'var(--color-text-secondary)' }}>
+                Este plano opera só com mesas ou só com delivery. Trocar aqui esconde na hora os
+                dados do modo anterior (mesas/comandas ou delivery/entregador) do painel do dono —
+                os registros continuam no banco, nada é apagado.
+              </p>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                <div className={styles.formRow} style={{ minWidth: '220px' }}>
+                  <label>Modalidade</label>
+                  <select
+                    value={modalidadeSelecionada}
+                    onChange={e => setModalidadeSelecionada(e.target.value as 'MESAS' | 'DELIVERY')}
+                  >
+                    <option value="" disabled>Selecione...</option>
+                    <option value="MESAS">Presencial (mesas e comandas)</option>
+                    <option value="DELIVERY">Delivery</option>
+                  </select>
+                </div>
+                <Button
+                  loading={salvandoModalidade}
+                  onClick={handleSalvarModalidade}
+                  disabled={!modalidadeSelecionada || modalidadeSelecionada === contrato.modalidadeOperacao}
+                >
+                  Salvar modalidade
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* ── Registrar pagamento manual ── */}
           <div className={styles.relatorioCard}>

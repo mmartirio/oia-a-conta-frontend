@@ -15,10 +15,11 @@ import reg from './Registro.module.css'
 
 const STEP_LABEL: Record<Step, string> = {
   plano: 'Plano',
+  modalidade: 'Modalidade',
   form: 'Dados',
   verificacao: 'Confirmação',
 }
-const STEP_ORDER: Step[] = ['plano', 'form', 'verificacao']
+const STEP_ORDER: Step[] = ['plano', 'modalidade', 'form', 'verificacao']
 
 function ProgressoWizard({ atual, claro }: { atual: Step; claro?: boolean }) {
   const idxAtual = STEP_ORDER.indexOf(atual)
@@ -48,7 +49,8 @@ function gerarSenha(): string {
     .join('')
 }
 
-type Step = 'plano' | 'form' | 'verificacao'
+type Step = 'plano' | 'modalidade' | 'form' | 'verificacao'
+type ModalidadeOperacao = 'MESAS' | 'DELIVERY'
 
 export function Registro() {
   const navigate = useNavigate()
@@ -60,6 +62,7 @@ export function Registro() {
   const [planos, setPlanos] = useState<Plano[]>([])
   const [loadingPlanos, setLoadingPlanos] = useState(true)
   const [planoSelecionado, setPlanoSelecionado] = useState<Plano | null>(null)
+  const [modalidadeOperacao, setModalidadeOperacao] = useState<ModalidadeOperacao | null>(null)
 
   const [form, setForm] = useState({
     restauranteNome: '',
@@ -93,7 +96,7 @@ export function Registro() {
           const preSelecionado = ativos.find(p => String(p.id) === planoId)
           if (preSelecionado) {
             setPlanoSelecionado(preSelecionado)
-            setStep('form')
+            setStep(preSelecionado.exigeModalidadeOperacao ? 'modalidade' : 'form')
           }
         }
       })
@@ -110,6 +113,12 @@ export function Registro() {
 
   const selecionarPlano = (p: Plano) => {
     setPlanoSelecionado(p)
+    setModalidadeOperacao(null)
+    setStep(p.exigeModalidadeOperacao ? 'modalidade' : 'form')
+  }
+
+  const escolherModalidade = (m: ModalidadeOperacao) => {
+    setModalidadeOperacao(m)
     setStep('form')
   }
 
@@ -158,6 +167,7 @@ export function Registro() {
         senha: form.senha,
         telefone: form.telefone || undefined,
         planoId: planoSelecionado?.id,
+        modalidadeOperacao: modalidadeOperacao ?? undefined,
       })
       setEmailPendente(form.email)
       setCodigos(['', '', '', '', '', ''])
@@ -340,6 +350,45 @@ export function Registro() {
     )
   }
 
+  // ── Etapa 1.5: modalidade de operação (só planos que exigem, ex: Startup) ─
+  if (step === 'modalidade') {
+    return (
+      <div className={styles.page}>
+        <div className={`${styles.card} ${reg.formCard}`}>
+          <div className={styles.logo}>
+            <img src={logo} alt="Oia a Conta" />
+          </div>
+
+          <ProgressoWizard atual={step} claro />
+
+          {planoSelecionado && (
+            <div className={reg.planoBadgeSelected}>
+              Plano: <strong>{planoSelecionado.nome}</strong>
+            </div>
+          )}
+
+          <h2 className={styles.title}>Como seu restaurante vai operar?</h2>
+          <p className={styles.subtitle}>
+            O plano {planoSelecionado?.nome} atende um único formato — dá pra mudar depois falando com o suporte.
+          </p>
+
+          <div className={reg.planosGrid}>
+            <Button fullWidth variant="outline" onClick={() => escolherModalidade('MESAS')}>
+              Presencial (mesas e comandas)
+            </Button>
+            <Button fullWidth variant="outline" onClick={() => escolherModalidade('DELIVERY')}>
+              Delivery e entregadores
+            </Button>
+          </div>
+
+          <Button type="button" variant="ghost" fullWidth onClick={() => setStep('plano')}>
+            ← Voltar e trocar plano
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   // ── Etapa 2: formulário de cadastro ──────────────────────────────────────
   return (
     <div className={styles.page}>
@@ -492,8 +541,16 @@ export function Registro() {
           <Button type="submit" loading={loading} fullWidth size="lg" disabled={!aceitouTermos}>
             Cadastrar e verificar e-mail
           </Button>
-          <Button type="button" variant="ghost" fullWidth onClick={() => { setStep('plano'); setAceitouTermos(false) }}>
-            ← Voltar e trocar plano
+          <Button
+            type="button"
+            variant="ghost"
+            fullWidth
+            onClick={() => {
+              setStep(planoSelecionado?.exigeModalidadeOperacao ? 'modalidade' : 'plano')
+              setAceitouTermos(false)
+            }}
+          >
+            ← Voltar
           </Button>
         </form>
 

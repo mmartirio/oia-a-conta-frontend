@@ -140,7 +140,7 @@ export function App() {
                     <Route element={<RequirePermission permission="DASHBOARD" />}>
                       <Route path="/admin" element={<AdminDashboard />} />
                     </Route>
-                    <Route element={<RequirePermission permission="MESAS" />}>
+                    <Route element={<RequirePermission permission="MESAS" modalidade="MESAS" />}>
                       <Route path="/admin/mesas" element={<AdminMesas />} />
                     </Route>
                     <Route element={<RequirePermission permission="CARDAPIO" />}>
@@ -168,25 +168,25 @@ export function App() {
                     <Route element={<RequirePermission permission="SUPORTE" />}>
                       <Route path="/admin/suporte" element={<AdminSuporte />} />
                     </Route>
-                    <Route element={<RequirePermission permission={['WHATSAPP_CONEXAO', 'WHATSAPP_MENSAGENS', 'WHATSAPP_CONVERSAS']} />}>
+                    <Route element={<RequirePermission permission={['WHATSAPP_CONEXAO', 'WHATSAPP_MENSAGENS', 'WHATSAPP_CONVERSAS']} modalidade="DELIVERY" />}>
                       <Route path="/admin/whatsapp" element={<AdminWhatsapp />} />
                     </Route>
-                    <Route element={<RequirePermission permission="IFOOD_CONEXAO" />}>
+                    <Route element={<RequirePermission permission="IFOOD_CONEXAO" modalidade="DELIVERY" />}>
                       <Route path="/admin/ifood" element={<AdminIfood />} />
                     </Route>
                     {/* Modo solo: admin acessa todos os painéis com sidebar */}
                     <Route element={<RequirePermission permission="COZINHA" />}>
                       <Route path="/cozinha" element={<CozinhaPedidos />} />
                     </Route>
-                    <Route element={<RequirePermission permission="GARCOM" />}>
+                    <Route element={<RequirePermission permission="GARCOM" modalidade="MESAS" />}>
                       <Route path="/garcon" element={<GarconMesas />} />
                     </Route>
-                    <Route element={<RequirePermission permission="COMANDA" />}>
+                    <Route element={<RequirePermission permission="COMANDA" modalidade="MESAS" />}>
                       <Route path="/garcon/comandas" element={<GarconComandas />} />
                       <Route path="/garcon/comanda/:id" element={<GarconComanda />} />
                       <Route path="/garcon/comanda/:id/novo-pedido" element={<GarconNovoPedido />} />
                     </Route>
-                    <Route element={<RequirePermission permission="DELIVERY" />}>
+                    <Route element={<RequirePermission permission="DELIVERY" modalidade="DELIVERY" />}>
                       <Route path="/delivery" element={<GarconDeliveryLista />} />
                       <Route path="/delivery/novo" element={<GarconDelivery />} />
                     </Route>
@@ -199,7 +199,7 @@ export function App() {
                       <Route path="/pdv/delivery" element={<Navigate to="/pdv" replace />} />
                       <Route path="/pdv/delivery/novo" element={<Navigate to="/pdv" replace />} />
                     </Route>
-                    <Route element={<RequirePermission permission="ENTREGADOR" />}>
+                    <Route element={<RequirePermission permission="ENTREGADOR" modalidade="DELIVERY" />}>
                       <Route path="/entregador" element={<EntregadorPainel />} />
                     </Route>
                   </Route>

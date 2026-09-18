@@ -31,13 +31,20 @@ interface FormState {
   diasTeste: number
   ativo: boolean
   destaque: boolean
+  exigeModalidadeOperacao: boolean
+  // '' representa "sem limite" (null na API) — mesmo padrão de input
+  // numérico opcional usado nos três campos abaixo.
+  limiteAtendentesWhatsapp: number | ''
+  limiteAtendentesWhatsappMesas: number | ''
+  limiteAtendentesWhatsappDelivery: number | ''
 }
 
 const emptyForm = (): FormState => ({
   nome: '', descricao: '', precoMensal: 0,
   limiteUsuarios: 10, limiteMesas: 20,
   funcionalidades: [], periodoTeste: false, diasTeste: 30,
-  ativo: true, destaque: false,
+  ativo: true, destaque: false, exigeModalidadeOperacao: false,
+  limiteAtendentesWhatsapp: '', limiteAtendentesWhatsappMesas: '', limiteAtendentesWhatsappDelivery: '',
 })
 
 function planoParaForm(p: Plano): FormState {
@@ -49,11 +56,20 @@ function planoParaForm(p: Plano): FormState {
     funcionalidades: funcs,
     periodoTeste: p.periodoTeste ?? false,
     diasTeste: p.diasTeste ?? 30,
+    limiteAtendentesWhatsapp: p.limiteAtendentesWhatsapp ?? '',
+    limiteAtendentesWhatsappMesas: p.limiteAtendentesWhatsappMesas ?? '',
+    limiteAtendentesWhatsappDelivery: p.limiteAtendentesWhatsappDelivery ?? '',
   }
 }
 
 function formParaApi(f: FormState): Partial<Plano> {
-  return { ...f, funcionalidades: f.funcionalidades.join(',') }
+  return {
+    ...f,
+    funcionalidades: f.funcionalidades.join(','),
+    limiteAtendentesWhatsapp: f.limiteAtendentesWhatsapp === '' ? null : f.limiteAtendentesWhatsapp,
+    limiteAtendentesWhatsappMesas: f.limiteAtendentesWhatsappMesas === '' ? null : f.limiteAtendentesWhatsappMesas,
+    limiteAtendentesWhatsappDelivery: f.limiteAtendentesWhatsappDelivery === '' ? null : f.limiteAtendentesWhatsappDelivery,
+  }
 }
 
 export function GestorPlanos() {
@@ -194,6 +210,28 @@ export function GestorPlanos() {
                 </div>
               </div>
 
+              <div className={styles.row2}>
+                <div className={styles.formRow}>
+                  <label>Atendentes WhatsApp {form.exigeModalidadeOperacao ? '(sem modalidade restrita)' : ''}</label>
+                  <input type="number" min="0" placeholder="sem limite" value={form.limiteAtendentesWhatsapp}
+                    onChange={e => setForm(f => ({ ...f, limiteAtendentesWhatsapp: e.target.value === '' ? '' : Number(e.target.value) }))} />
+                </div>
+                <div className={styles.formRow}>
+                  <label>Atendentes WhatsApp (modalidade mesas)</label>
+                  <input type="number" min="0" placeholder="sem limite" value={form.limiteAtendentesWhatsappMesas}
+                    onChange={e => setForm(f => ({ ...f, limiteAtendentesWhatsappMesas: e.target.value === '' ? '' : Number(e.target.value) }))} />
+                </div>
+                <div className={styles.formRow}>
+                  <label>Atendentes WhatsApp (modalidade delivery)</label>
+                  <input type="number" min="0" placeholder="sem limite" value={form.limiteAtendentesWhatsappDelivery}
+                    onChange={e => setForm(f => ({ ...f, limiteAtendentesWhatsappDelivery: e.target.value === '' ? '' : Number(e.target.value) }))} />
+                </div>
+              </div>
+              <p style={{ marginTop: '-0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>
+                Se o plano não exige modalidade, só o primeiro campo vale. Se exige, o campo usado
+                depende da modalidade escolhida pelo restaurante no cadastro (o primeiro é ignorado).
+              </p>
+
               <div className={styles.formRow}>
                 <label>Funcionalidades incluídas</label>
                 <div className={styles.funcGrid}>
@@ -225,6 +263,11 @@ export function GestorPlanos() {
                   <input type="checkbox" checked={form.periodoTeste}
                     onChange={e => setForm(f => ({ ...f, periodoTeste: e.target.checked }))} />
                   Período de teste gratuito
+                </label>
+                <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={form.exigeModalidadeOperacao}
+                    onChange={e => setForm(f => ({ ...f, exigeModalidadeOperacao: e.target.checked }))} />
+                  Exige escolher modalidade (mesas ou delivery) no cadastro
                 </label>
               </div>
               {form.periodoTeste && (

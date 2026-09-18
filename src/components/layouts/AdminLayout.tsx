@@ -31,25 +31,29 @@ interface NavItem {
   Icon: React.ElementType<any>
   end?: boolean
   permission: string
+  // Só usado quando o plano restringe modalidade de operação (ver
+  // AuthContext.restringeModalidade) — item some se a modalidade ativa do
+  // contrato for a outra.
+  modalidade?: 'MESAS' | 'DELIVERY'
 }
 
 const NAV_ITEMS: NavItem[] = [
   { to: '/admin',               label: 'Dashboard',   Icon: FiGrid, end: true, permission: 'DASHBOARD' },
   { to: '/pdv',                 label: 'Caixa (PDV)', Icon: FiShoppingCart, permission: 'CAIXA_PDV' },
   { to: '/admin/cardapio',      label: 'Cardápio',    Icon: FiBookOpen, permission: 'CARDAPIO' },
-  { to: '/admin/mesas',         label: 'Mesas',       Icon: FiLayout, permission: 'MESAS' },
+  { to: '/admin/mesas',         label: 'Mesas',       Icon: FiLayout, permission: 'MESAS', modalidade: 'MESAS' },
   { to: '/cozinha',             label: 'Cozinha',     Icon: FiCoffee, permission: 'COZINHA' },
-  { to: '/garcon/comandas',     label: 'Comanda',     Icon: FiClipboard, permission: 'COMANDA' },
-  { to: '/garcon',              label: 'Garçom',      Icon: FiHexagon, permission: 'GARCOM' },
-  { to: '/delivery',            label: 'Delivery',    Icon: FiPackage, permission: 'DELIVERY' },
-  { to: '/entregador',          label: 'Entregador',  Icon: MdDeliveryDining, permission: 'ENTREGADOR' },
+  { to: '/garcon/comandas',     label: 'Comanda',     Icon: FiClipboard, permission: 'COMANDA', modalidade: 'MESAS' },
+  { to: '/garcon',              label: 'Garçom',      Icon: FiHexagon, permission: 'GARCOM', modalidade: 'MESAS' },
+  { to: '/delivery',            label: 'Delivery',    Icon: FiPackage, permission: 'DELIVERY', modalidade: 'DELIVERY' },
+  { to: '/entregador',          label: 'Entregador',  Icon: MdDeliveryDining, permission: 'ENTREGADOR', modalidade: 'DELIVERY' },
   { to: '/admin/usuarios',      label: 'Usuários',    Icon: FiUsers, permission: 'USUARIOS' },
   { to: '/admin/clientes',      label: 'Clientes',    Icon: FiUser, permission: 'CLIENTES' },
   { to: '/admin/estoque',       label: 'Estoque',     Icon: FiArchive, permission: 'ESTOQUE' },
   { to: '/admin/marketing',     label: 'Marketing',   Icon: FiTag, permission: 'MARKETING' },
   { to: '/admin/financeiro',    label: 'Financeiro',  Icon: FiDollarSign, permission: 'FINANCEIRO' },
-  { to: '/admin/whatsapp',      label: 'WhatsApp',    Icon: WhatsAppIcon, permission: 'WHATSAPP_CONEXAO' },
-  { to: '/admin/ifood',         label: 'iFood',       Icon: FiShoppingBag, permission: 'IFOOD_CONEXAO' },
+  { to: '/admin/whatsapp',      label: 'WhatsApp',    Icon: WhatsAppIcon, permission: 'WHATSAPP_CONEXAO', modalidade: 'DELIVERY' },
+  { to: '/admin/ifood',         label: 'iFood',       Icon: FiShoppingBag, permission: 'IFOOD_CONEXAO', modalidade: 'DELIVERY' },
 ]
 
 const NAV_BOTTOM: NavItem[] = [
@@ -73,6 +77,15 @@ function temAcessoNavItem(permissoes: string[] | null | undefined, item: NavItem
   return permissoes.includes(item.permission)
 }
 
+function temModalidade(
+  item: NavItem,
+  restringeModalidade: boolean,
+  modalidadeOperacao: 'MESAS' | 'DELIVERY' | null,
+): boolean {
+  if (!item.modalidade || !restringeModalidade) return true
+  return item.modalidade === modalidadeOperacao
+}
+
 export function AdminLayout() {
   return (
     <StatusLojaProvider>
@@ -82,7 +95,7 @@ export function AdminLayout() {
 }
 
 function AdminLayoutInner() {
-  const { user, logout } = useAuth()
+  const { user, logout, restringeModalidade, modalidadeOperacao } = useAuth()
   const { conversasWhatsappNaoLidas } = useNotification()
   const { statusLoja } = useStatusLoja()
   const [menuAberto, setMenuAberto] = useState(false)
@@ -134,7 +147,10 @@ function AdminLayoutInner() {
         </div>
 
         <nav className={styles.nav}>
-          {NAV_ITEMS.filter(item => temAcessoNavItem(user?.permissoes, item, !!statusLoja?.entregadorExterno)).map(item => (
+          {NAV_ITEMS
+            .filter(item => temAcessoNavItem(user?.permissoes, item, !!statusLoja?.entregadorExterno))
+            .filter(item => temModalidade(item, restringeModalidade, modalidadeOperacao))
+            .map(item => (
             <NavLink
               key={item.to}
               to={item.to}
