@@ -65,6 +65,47 @@
   color: var(--color-text-secondary);
 }
 
+.seletorModalidade {
+  display: flex;
+  gap: 0.375rem;
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  padding: 0.25rem;
+}
+
+.seletorBtn,
+.seletorAtivo {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 0.4rem 0.5rem;
+  border-radius: calc(var(--radius-md) - 0.15rem);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  transition: background 0.15s, color 0.15s, transform 0.1s;
+}
+
+.seletorBtn:active,
+.seletorAtivo:active {
+  transform: scale(0.97);
+}
+
+.seletorAtivo {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+/* Botão "Selecionar"/"Assinar" passado como children (ver Registro.tsx/
+   LandingPage.tsx) — fica vermelho com texto branco quando o card é hover,
+   independente da variante (outline/primary) escolhida pra ele. */
+.card:hover .selecionarBtn {
+  background: var(--color-danger) !important;
+  border-color: var(--color-danger) !important;
+  color: #fff !important;
+}
+
 .funcList {
   list-style: none;
   padding: 0;

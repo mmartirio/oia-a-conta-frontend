@@ -1,8 +1,8 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import type { Plano } from '../api/billingApi'
 import styles from './PlanoCard.module.css'
 
-function parseFuncionalidades(f: string): string[] {
+function parseFuncionalidades(f: string | null): string[] {
   return f ? f.split(',').map(s => s.trim()).filter(Boolean) : []
 }
 
@@ -12,7 +12,14 @@ interface PlanoCardProps {
 }
 
 export function PlanoCard({ plano, children }: PlanoCardProps) {
-  const funcs = parseFuncionalidades(plano.funcionalidades)
+  // Só planos que exigem modalidade (ex: Start UP) têm recursos diferentes
+  // por presencial/delivery — os demais mostram uma lista só, como sempre.
+  const [modalidade, setModalidade] = useState<'MESAS' | 'DELIVERY'>('MESAS')
+
+  const funcs = plano.exigeModalidadeOperacao
+    ? parseFuncionalidades(modalidade === 'MESAS' ? plano.funcionalidadesMesas : plano.funcionalidadesDelivery)
+    : parseFuncionalidades(plano.funcionalidades)
+
   return (
     <div className={`${styles.card} ${plano.destaque ? styles.destaque : ''}`}>
       {plano.destaque && <span className={styles.badge}>Mais popular</span>}
@@ -24,12 +31,34 @@ export function PlanoCard({ plano, children }: PlanoCardProps) {
         </span>
         <span className={styles.precoLabel}>/mês</span>
       </div>
+
+      {plano.exigeModalidadeOperacao && (
+        <div className={styles.seletorModalidade}>
+          <button
+            type="button"
+            className={modalidade === 'MESAS' ? styles.seletorAtivo : styles.seletorBtn}
+            onClick={() => setModalidade('MESAS')}
+          >
+            Presencial
+          </button>
+          <button
+            type="button"
+            className={modalidade === 'DELIVERY' ? styles.seletorAtivo : styles.seletorBtn}
+            onClick={() => setModalidade('DELIVERY')}
+          >
+            Delivery
+          </button>
+        </div>
+      )}
+
       <ul className={styles.funcList}>
         {plano.periodoTeste && plano.diasTeste > 0 && (
           <li><strong>{plano.diasTeste} dias grátis</strong></li>
         )}
-        {plano.limiteUsuarios > 0 && <li>Até {plano.limiteUsuarios} usuários</li>}
-        {plano.limiteMesas > 0 && <li>Até {plano.limiteMesas} mesas</li>}
+        <li>{plano.limiteUsuarios ? `Até ${plano.limiteUsuarios} usuários` : 'Usuários ilimitados'}</li>
+        {(!plano.exigeModalidadeOperacao || modalidade === 'MESAS') && (
+          <li>{plano.limiteMesas ? `Até ${plano.limiteMesas} mesas` : 'Mesas ilimitadas'}</li>
+        )}
         {funcs.map(f => <li key={f}>{f}</li>)}
       </ul>
       {children}

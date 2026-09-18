@@ -8,6 +8,7 @@ import { billingApi, type Plano, type LinkSocial } from '../../api/billingApi'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { PlanoCard } from '../../components/PlanoCard'
+import planoCardStyles from '../../components/PlanoCard.module.css'
 import logo from '../../assets/logo/OIA A CONTA - LOGO.png'
 import styles from './LandingPage.module.css'
 
@@ -95,7 +96,11 @@ export function LandingPage() {
               <div key={p.id} className={styles.planoCardWrap}>
                 <PlanoCard plano={p}>
                   <Link to={`/registro?planoId=${p.id}`}>
-                    <Button fullWidth variant={p.destaque ? 'primary' : 'outline'}>
+                    <Button
+                      fullWidth
+                      variant={p.destaque ? 'primary' : 'outline'}
+                      className={planoCardStyles.selecionarBtn}
+                    >
                       Assinar
                     </Button>
                   </Link>

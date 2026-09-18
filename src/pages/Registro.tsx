@@ -8,6 +8,7 @@ import { billingApi, type Plano } from '../api/billingApi'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { PlanoCard } from '../components/PlanoCard'
+import planoCardStyles from '../components/PlanoCard.module.css'
 import { formatPhone } from '../utils/formatters'
 import logo from '../assets/logo/OIA A CONTA - LOGO.png'
 import styles from './Auth.module.css'
@@ -333,6 +334,7 @@ export function Registro() {
                   <Button
                     fullWidth
                     variant={p.destaque ? 'primary' : 'outline'}
+                    className={planoCardStyles.selecionarBtn}
                     onClick={() => selecionarPlano(p)}
                   >
                     Selecionar

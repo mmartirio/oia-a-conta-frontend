@@ -14,8 +14,11 @@ export interface Plano {
   nome: string
   descricao: string
   precoMensal: number
-  limiteUsuarios: number
-  limiteMesas: number
+  // null = sem limite (ex: plano PRO).
+  limiteUsuarios: number | null
+  limiteMesas: number | null
+  // Só usada quando o plano NÃO exige modalidade — ver
+  // funcionalidadesMesas/funcionalidadesDelivery abaixo.
   funcionalidades: string
   periodoTeste: boolean
   diasTeste: number
@@ -24,6 +27,10 @@ export interface Plano {
   // Só planos como o Startup exigem escolher a modalidade de operação
   // (mesas ou delivery) no cadastro — ver Contrato.modalidadeOperacao.
   exigeModalidadeOperacao: boolean
+  // Recursos exibidos no seletor Presencial/Delivery do card do plano —
+  // só preenchidas quando exigeModalidadeOperacao é true.
+  funcionalidadesMesas: string | null
+  funcionalidadesDelivery: string | null
   // Limite de atendentes de WhatsApp — qual campo vale depende da
   // modalidade do contrato (ver backend, BillingService.buscarRestricoesOperacao).
   // null = sem limite.

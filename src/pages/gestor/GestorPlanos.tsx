@@ -19,14 +19,24 @@ const FUNCIONALIDADES_DISPONIVEIS = [
   'Painel de entregadores',
 ]
 
+function parseFuncs(f: string | null): string[] {
+  return f ? f.split(',').map(s => s.trim()).filter(Boolean) : []
+}
+
 interface FormState {
   id?: number
   nome: string
   descricao: string
   precoMensal: number
-  limiteUsuarios: number
-  limiteMesas: number
+  // '' representa "sem limite" (null na API).
+  limiteUsuarios: number | ''
+  limiteMesas: number | ''
+  // Usada só quando exigeModalidadeOperacao é false.
   funcionalidades: string[]
+  // Usadas só quando exigeModalidadeOperacao é true — recursos mostrados
+  // no seletor Presencial/Delivery do card do plano.
+  funcionalidadesMesas: string[]
+  funcionalidadesDelivery: string[]
   periodoTeste: boolean
   diasTeste: number
   ativo: boolean
@@ -42,18 +52,20 @@ interface FormState {
 const emptyForm = (): FormState => ({
   nome: '', descricao: '', precoMensal: 0,
   limiteUsuarios: 10, limiteMesas: 20,
-  funcionalidades: [], periodoTeste: false, diasTeste: 30,
+  funcionalidades: [], funcionalidadesMesas: [], funcionalidadesDelivery: [],
+  periodoTeste: false, diasTeste: 30,
   ativo: true, destaque: false, exigeModalidadeOperacao: false,
   limiteAtendentesWhatsapp: '', limiteAtendentesWhatsappMesas: '', limiteAtendentesWhatsappDelivery: '',
 })
 
 function planoParaForm(p: Plano): FormState {
-  const funcs = p.funcionalidades
-    ? p.funcionalidades.split(',').map(f => f.trim()).filter(Boolean)
-    : []
   return {
     ...p,
-    funcionalidades: funcs,
+    limiteUsuarios: p.limiteUsuarios ?? '',
+    limiteMesas: p.limiteMesas ?? '',
+    funcionalidades: parseFuncs(p.funcionalidades),
+    funcionalidadesMesas: parseFuncs(p.funcionalidadesMesas),
+    funcionalidadesDelivery: parseFuncs(p.funcionalidadesDelivery),
     periodoTeste: p.periodoTeste ?? false,
     diasTeste: p.diasTeste ?? 30,
     limiteAtendentesWhatsapp: p.limiteAtendentesWhatsapp ?? '',
@@ -65,7 +77,11 @@ function planoParaForm(p: Plano): FormState {
 function formParaApi(f: FormState): Partial<Plano> {
   return {
     ...f,
+    limiteUsuarios: f.limiteUsuarios === '' ? null : f.limiteUsuarios,
+    limiteMesas: f.limiteMesas === '' ? null : f.limiteMesas,
     funcionalidades: f.funcionalidades.join(','),
+    funcionalidadesMesas: f.funcionalidadesMesas.join(','),
+    funcionalidadesDelivery: f.funcionalidadesDelivery.join(','),
     limiteAtendentesWhatsapp: f.limiteAtendentesWhatsapp === '' ? null : f.limiteAtendentesWhatsapp,
     limiteAtendentesWhatsappMesas: f.limiteAtendentesWhatsappMesas === '' ? null : f.limiteAtendentesWhatsappMesas,
     limiteAtendentesWhatsappDelivery: f.limiteAtendentesWhatsappDelivery === '' ? null : f.limiteAtendentesWhatsappDelivery,
@@ -90,12 +106,15 @@ export function GestorPlanos() {
   const abrirCriar = () => { setForm(emptyForm()); setFeedback(null); setModal('criar') }
   const abrirEditar = (p: Plano) => { setForm(planoParaForm(p)); setFeedback(null); setModal('editar') }
 
-  const toggleFunc = (func: string) => {
+  const toggleFunc = (
+    campo: 'funcionalidades' | 'funcionalidadesMesas' | 'funcionalidadesDelivery',
+    func: string,
+  ) => {
     setForm(f => ({
       ...f,
-      funcionalidades: f.funcionalidades.includes(func)
-        ? f.funcionalidades.filter(x => x !== func)
-        : [...f.funcionalidades, func],
+      [campo]: f[campo].includes(func)
+        ? f[campo].filter(x => x !== func)
+        : [...f[campo], func],
     }))
   }
 
@@ -143,16 +162,21 @@ export function GestorPlanos() {
             </thead>
             <tbody>
               {planos.map(p => {
-                const funcs = p.funcionalidades
-                  ? p.funcionalidades.split(',').map(f => f.trim()).filter(Boolean)
-                  : []
+                const funcs = p.exigeModalidadeOperacao
+                  ? parseFuncs(p.funcionalidadesMesas)
+                  : parseFuncs(p.funcionalidades)
                 return (
                   <tr key={p.id}>
                     <td><strong>{p.nome}</strong></td>
                     <td>R$ {Number(p.precoMensal).toFixed(2).replace('.', ',')}</td>
-                    <td>{p.limiteUsuarios}</td>
-                    <td>{p.limiteMesas}</td>
+                    <td>{p.limiteUsuarios ?? '—'}</td>
+                    <td>{p.limiteMesas ?? '—'}</td>
                     <td style={{ maxWidth: 200 }}>
+                      {p.exigeModalidadeOperacao && (
+                        <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
+                          Presencial (delivery no editar):
+                        </span>
+                      )}
                       {funcs.length === 0
                         ? <span style={{ color: 'var(--color-text-secondary)' }}>—</span>
                         : <ul className={styles.funcList}>{funcs.map((f, i) => <li key={i}>{f}</li>)}</ul>
@@ -200,13 +224,13 @@ export function GestorPlanos() {
                 </div>
                 <div className={styles.formRow}>
                   <label>Limite de usuários</label>
-                  <input type="number" min="1" value={form.limiteUsuarios}
-                    onChange={e => setForm(f => ({ ...f, limiteUsuarios: Number(e.target.value) }))} />
+                  <input type="number" min="0" placeholder="sem limite" value={form.limiteUsuarios}
+                    onChange={e => setForm(f => ({ ...f, limiteUsuarios: e.target.value === '' ? '' : Number(e.target.value) }))} />
                 </div>
                 <div className={styles.formRow}>
                   <label>Limite de mesas</label>
-                  <input type="number" min="1" value={form.limiteMesas}
-                    onChange={e => setForm(f => ({ ...f, limiteMesas: Number(e.target.value) }))} />
+                  <input type="number" min="0" placeholder="sem limite" value={form.limiteMesas}
+                    onChange={e => setForm(f => ({ ...f, limiteMesas: e.target.value === '' ? '' : Number(e.target.value) }))} />
                 </div>
               </div>
 
@@ -232,21 +256,56 @@ export function GestorPlanos() {
                 depende da modalidade escolhida pelo restaurante no cadastro (o primeiro é ignorado).
               </p>
 
-              <div className={styles.formRow}>
-                <label>Funcionalidades incluídas</label>
-                <div className={styles.funcGrid}>
-                  {FUNCIONALIDADES_DISPONIVEIS.map(func => (
-                    <label key={func} className={styles.funcCheck}>
-                      <input
-                        type="checkbox"
-                        checked={form.funcionalidades.includes(func)}
-                        onChange={() => toggleFunc(func)}
-                      />
-                      {func}
-                    </label>
-                  ))}
+              {form.exigeModalidadeOperacao ? (
+                <>
+                  <div className={styles.formRow}>
+                    <label>Funcionalidades incluídas — Presencial</label>
+                    <div className={styles.funcGrid}>
+                      {FUNCIONALIDADES_DISPONIVEIS.map(func => (
+                        <label key={func} className={styles.funcCheck}>
+                          <input
+                            type="checkbox"
+                            checked={form.funcionalidadesMesas.includes(func)}
+                            onChange={() => toggleFunc('funcionalidadesMesas', func)}
+                          />
+                          {func}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div className={styles.formRow}>
+                    <label>Funcionalidades incluídas — Delivery</label>
+                    <div className={styles.funcGrid}>
+                      {FUNCIONALIDADES_DISPONIVEIS.map(func => (
+                        <label key={func} className={styles.funcCheck}>
+                          <input
+                            type="checkbox"
+                            checked={form.funcionalidadesDelivery.includes(func)}
+                            onChange={() => toggleFunc('funcionalidadesDelivery', func)}
+                          />
+                          {func}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className={styles.formRow}>
+                  <label>Funcionalidades incluídas</label>
+                  <div className={styles.funcGrid}>
+                    {FUNCIONALIDADES_DISPONIVEIS.map(func => (
+                      <label key={func} className={styles.funcCheck}>
+                        <input
+                          type="checkbox"
+                          checked={form.funcionalidades.includes(func)}
+                          onChange={() => toggleFunc('funcionalidades', func)}
+                        />
+                        {func}
+                      </label>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className={styles.formRow} style={{ flexDirection: 'row', gap: '2rem', flexWrap: 'wrap' }}>
                 <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', cursor: 'pointer' }}>
