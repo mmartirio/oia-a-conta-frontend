@@ -165,11 +165,45 @@
 
 /* ── Recursos ───────────────────────────────────────────── */
 
+.recursosRow {
+  display: flex;
+  align-items: stretch;
+  gap: 1.5rem;
+  margin-top: 2.5rem;
+}
+
 .recursosGrid {
+  flex: 1;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1.25rem;
-  margin-top: 2.5rem;
+}
+
+/* Alinhada à direita da seção, com a mesma altura que o bloco de cards ao
+   lado (align-items: stretch no .recursosRow cuida disso). */
+.recursosImagem {
+  flex-shrink: 0;
+  width: 280px;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+.recursosImagem img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+@media (max-width: 860px) {
+  .recursosRow {
+    flex-direction: column;
+  }
+
+  .recursosImagem {
+    width: 100%;
+    height: 220px;
+  }
 }
 
 .recursoCard {

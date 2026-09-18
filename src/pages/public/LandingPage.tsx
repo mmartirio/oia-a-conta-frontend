@@ -10,6 +10,7 @@ import { Card } from '../../components/ui/Card'
 import { PlanoCard } from '../../components/PlanoCard'
 import planoCardStyles from '../../components/PlanoCard.module.css'
 import logo from '../../assets/logo/OIA A CONTA - LOGO.png'
+import hamburger from '../../assets/image/hamburger.png'
 import styles from './LandingPage.module.css'
 
 const RECURSOS = [
@@ -71,14 +72,19 @@ export function LandingPage() {
 
       <section id="recursos" className={styles.section}>
         <h2 className={styles.sectionTitle}>Tudo o que o seu restaurante precisa</h2>
-        <div className={styles.recursosGrid}>
-          {RECURSOS.map(r => (
-            <Card key={r.titulo} className={styles.recursoCard}>
-              <r.Icon size={48} className={styles.recursoIcon} />
-              <h3 className={styles.recursoTitulo}>{r.titulo}</h3>
-              <p className={styles.recursoDesc}>{r.desc}</p>
-            </Card>
-          ))}
+        <div className={styles.recursosRow}>
+          <div className={styles.recursosGrid}>
+            {RECURSOS.map(r => (
+              <Card key={r.titulo} className={styles.recursoCard}>
+                <r.Icon size={48} className={styles.recursoIcon} />
+                <h3 className={styles.recursoTitulo}>{r.titulo}</h3>
+                <p className={styles.recursoDesc}>{r.desc}</p>
+              </Card>
+            ))}
+          </div>
+          <div className={styles.recursosImagem}>
+            <img src={hamburger} alt="Hambúrguer" />
+          </div>
         </div>
       </section>
 
