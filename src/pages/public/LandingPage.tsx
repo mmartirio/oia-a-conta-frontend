@@ -76,7 +76,7 @@ export function LandingPage() {
           <div className={styles.recursosGrid}>
             {RECURSOS.map(r => (
               <Card key={r.titulo} className={styles.recursoCard}>
-                <r.Icon size={48} className={styles.recursoIcon} />
+                <r.Icon size={64} className={styles.recursoIcon} />
                 <h3 className={styles.recursoTitulo}>{r.titulo}</h3>
                 <p className={styles.recursoDesc}>{r.desc}</p>
               </Card>

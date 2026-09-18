@@ -228,7 +228,7 @@
 .recursoIcon {
   color: var(--color-primary);
   background: color-mix(in srgb, var(--color-primary) 12%, white);
-  padding: 1rem;
+  padding: 1.25rem;
   border-radius: var(--radius-lg);
   margin-bottom: 1.125rem;
   stroke-width: 1.5;
