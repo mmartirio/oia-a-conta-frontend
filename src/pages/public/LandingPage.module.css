@@ -172,15 +172,17 @@
   margin-top: 2.5rem;
 }
 
+/* Largura travada em ~2 colunas (240px cada + gap) pra sobrar espaço pra
+   imagem empurrar mais pra direita e os 6 cards caírem em 3 fileiras. */
 .recursosGrid {
-  flex: 1;
+  flex: 0 1 520px;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1.25rem;
 }
 
-/* Alinhada à direita da seção, com a mesma largura e altura que o bloco de
-   cards ao lado (flex: 1 nos dois + align-items: stretch no .recursosRow). */
+/* Alinhada à direita da seção — cresce pra ocupar o espaço que sobra do
+   grid (mais largura que os 2 colunas de cards, empurrada pra direita). */
 .recursosImagem {
   flex: 1;
   border-radius: var(--radius-xl);
