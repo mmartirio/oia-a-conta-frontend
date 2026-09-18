@@ -34,20 +34,22 @@ export function PlanoCard({ plano, children }: PlanoCardProps) {
 
       {plano.exigeModalidadeOperacao && (
         <div className={styles.seletorModalidade}>
-          <button
-            type="button"
-            className={modalidade === 'MESAS' ? styles.seletorAtivo : styles.seletorBtn}
-            onClick={() => setModalidade('MESAS')}
-          >
+          <span className={modalidade === 'MESAS' ? styles.seletorLabelAtivo : styles.seletorLabel}>
             Presencial
-          </button>
+          </span>
           <button
             type="button"
-            className={modalidade === 'DELIVERY' ? styles.seletorAtivo : styles.seletorBtn}
-            onClick={() => setModalidade('DELIVERY')}
+            role="switch"
+            aria-checked={modalidade === 'DELIVERY'}
+            aria-label="Alternar entre presencial e delivery"
+            className={`${styles.iosSwitch} ${modalidade === 'DELIVERY' ? styles.iosSwitchOn : ''}`}
+            onClick={() => setModalidade(modalidade === 'MESAS' ? 'DELIVERY' : 'MESAS')}
           >
-            Delivery
+            <span className={styles.iosSwitchThumb} />
           </button>
+          <span className={modalidade === 'DELIVERY' ? styles.seletorLabelAtivo : styles.seletorLabel}>
+            Delivery
+          </span>
         </div>
       )}
 

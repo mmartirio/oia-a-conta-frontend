@@ -67,34 +67,60 @@
 
 .seletorModalidade {
   display: flex;
-  gap: 0.375rem;
-  background: var(--color-bg);
-  border-radius: var(--radius-md);
-  padding: 0.25rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  padding: 0.25rem 0;
 }
 
-.seletorBtn,
-.seletorAtivo {
-  flex: 1;
-  border: none;
-  background: transparent;
-  padding: 0.4rem 0.5rem;
-  border-radius: calc(var(--radius-md) - 0.15rem);
+.seletorLabel,
+.seletorLabelAtivo {
   font-size: 0.8125rem;
   font-weight: 600;
-  cursor: pointer;
   color: var(--color-text-secondary);
-  transition: background 0.15s, color 0.15s, transform 0.1s;
+  transition: color 0.15s;
 }
 
-.seletorBtn:active,
-.seletorAtivo:active {
+.seletorLabelAtivo {
+  color: var(--color-text);
+}
+
+/* Toggle switch estilo iOS — troca entre Presencial (off) e Delivery (on). */
+.iosSwitch {
+  position: relative;
+  flex-shrink: 0;
+  width: 46px;
+  height: 26px;
+  border: none;
+  border-radius: 999px;
+  background: var(--color-border);
+  padding: 0;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.iosSwitch:active {
   transform: scale(0.97);
 }
 
-.seletorAtivo {
+.iosSwitchOn {
   background: var(--color-primary);
-  color: #fff;
+}
+
+.iosSwitchThumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease;
+}
+
+.iosSwitchOn .iosSwitchThumb {
+  transform: translateX(20px);
 }
 
 /* Botão "Selecionar"/"Assinar" passado como children (ver Registro.tsx/
