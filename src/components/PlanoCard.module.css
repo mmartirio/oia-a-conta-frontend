@@ -10,9 +10,20 @@
   transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
 }
 
+/* No hover, tudo que normalmente usa a cor primária (avermelhada) neste
+   card vira azul — a especificidade de :hover já vence a de .destaque
+   sozinha, então isso também cobre o card em destaque (ex: plano PRO). */
 .card:hover {
-  border-color: var(--color-primary);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  border-color: var(--color-primary-selected);
+  box-shadow: 0 8px 32px rgba(52, 152, 219, 0.25);
+}
+
+.card:hover .badge {
+  background: var(--color-primary-selected);
+}
+
+.card:hover .precoValor {
+  color: var(--color-primary-selected);
 }
 
 .destaque {
@@ -32,6 +43,7 @@
   padding: 0.25rem 0.75rem;
   border-radius: 999px;
   white-space: nowrap;
+  transition: background 0.2s;
 }
 
 .nome {
@@ -58,6 +70,7 @@
   font-size: 1.75rem;
   font-weight: 800;
   color: var(--color-primary);
+  transition: color 0.2s;
 }
 
 .precoLabel {
