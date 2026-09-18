@@ -70,7 +70,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section id="recursos" className={styles.section}>
+      <section id="recursos" className={`${styles.section} ${styles.recursosSection}`}>
         <h2 className={styles.sectionTitle}>Tudo o que o seu restaurante precisa</h2>
         <div className={styles.recursosRow}>
           <div className={styles.recursosGrid}>
