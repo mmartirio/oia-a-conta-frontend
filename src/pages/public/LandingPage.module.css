@@ -179,14 +179,12 @@
   gap: 1.25rem;
 }
 
-/* Alinhada à direita da seção, com a mesma altura que o bloco de cards ao
-   lado (align-items: stretch no .recursosRow cuida disso). */
+/* Alinhada à direita da seção, com a mesma largura e altura que o bloco de
+   cards ao lado (flex: 1 nos dois + align-items: stretch no .recursosRow). */
 .recursosImagem {
-  flex-shrink: 0;
-  width: 280px;
+  flex: 1;
   border-radius: var(--radius-xl);
   overflow: hidden;
-  background: var(--color-surface);
   display: flex;
   align-items: center;
   justify-content: center;
