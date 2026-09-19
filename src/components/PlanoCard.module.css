@@ -154,6 +154,16 @@
   color: #fff !important;
 }
 
+/* No plano Startup, borda e preço ficam vermelhos no hover em vez do azul
+   padrão — maior especificidade (.card.startup) que a regra geral acima. */
+.card.startup:hover {
+  border-color: var(--color-danger);
+}
+
+.card.startup:hover .precoValor {
+  color: var(--color-danger);
+}
+
 .funcList {
   list-style: none;
   padding: 0;

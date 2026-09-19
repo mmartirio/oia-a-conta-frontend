@@ -21,7 +21,7 @@ export function PlanoCard({ plano, children }: PlanoCardProps) {
     : parseFuncionalidades(plano.funcionalidades)
 
   return (
-    <div className={`${styles.card} ${plano.destaque ? styles.destaque : ''}`}>
+    <div className={`${styles.card} ${plano.destaque ? styles.destaque : ''} ${plano.exigeModalidadeOperacao ? styles.startup : ''}`}>
       {plano.destaque && <span className={styles.badge}>Mais popular</span>}
       <h3 className={styles.nome}>{plano.nome}</h3>
       <p className={styles.desc}>{plano.descricao}</p>
