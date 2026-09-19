@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  FiClipboard, FiTruck, FiCoffee, FiShoppingCart, FiMessageCircle, FiPieChart,
+  FiClipboard, FiCoffee, FiShoppingCart, FiMessageCircle, FiPieChart,
   FiChevronLeft, FiChevronRight, FiCheckCircle,
 } from 'react-icons/fi'
-import { FaInstagram, FaWhatsapp } from 'react-icons/fa'
+import { FaInstagram, FaWhatsapp, FaMotorcycle } from 'react-icons/fa'
 import { billingApi, type Plano, type LinkSocial } from '../../api/billingApi'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
@@ -22,66 +22,66 @@ const RECURSOS = [
     Icon: FiClipboard, titulo: 'Mesas & Comandas',
     desc: 'Cada mesa tem sua comanda digital: o garçom lança os pedidos pelo celular ou tablet, a cozinha recebe na hora e a conta fecha sozinha, certinha, sem precisar conferir papel nem calcular na mão.',
     bullets: [
-      'Comandas ilimitadas por mesa, sem limite de itens ou trocas de pedido',
-      'Divisão de conta por pessoa ou por item, sem erro de cálculo',
-      'Pedido aparece na cozinha assim que o garçom lança, em tempo real',
-      'Transferência e junção de mesas quando o grupo muda de lugar ou cresce',
-      'Histórico completo de cada comanda fechada, pra consultar depois',
+      'Comandas ilimitadas por mesa, sem limite de itens ou trocas de pedido.',
+      'Divisão de conta por pessoa ou por item, sem erro de cálculo.',
+      'Pedido aparece na cozinha assim que o garçom lança, em tempo real.',
+      'Transferência e junção de mesas quando o grupo muda de lugar ou cresce.',
+      'Histórico completo de cada comanda fechada, pra consultar depois.',
     ],
   },
   {
-    Icon: FiTruck, titulo: 'Delivery',
+    Icon: FaMotorcycle, titulo: 'Delivery',
     desc: 'O cliente pede pelo cardápio digital, o pedido cai direto na fila de entrega e o entregador recebe a rota pra sair sem perder tempo — tudo isso já integrado com o resto do restaurante, num painel só.',
     bullets: [
-      'Cardápio digital com link próprio, pra divulgar nas redes ou no WhatsApp',
-      'Painel de entregadores mostra a rota otimizada de cada entrega',
-      'Cliente acompanha o status do pedido em tempo real, do preparo à entrega',
-      'Cálculo automático de frete por distância, sem precisar negociar',
-      'Integração com iFood pra centralizar pedidos de mais de um canal',
+      'Cardápio digital com link próprio, pra divulgar nas redes ou no WhatsApp.',
+      'Painel de entregadores mostra a rota otimizada de cada entrega.',
+      'Cliente acompanha o status do pedido em tempo real, do preparo à entrega.',
+      'Cálculo automático de frete por distância, sem precisar negociar.',
+      'Integração com iFood pra centralizar pedidos de mais de um canal.',
     ],
   },
   {
     Icon: FiCoffee, titulo: 'Cozinha',
     desc: 'Uma tela só pra cozinha acompanhar tudo o que precisa sair — mesa e delivery juntos, organizados por ordem de chegada, sem post-it perdido nem pedido esquecido no meio da correria.',
     bullets: [
-      'Fila de preparo organizada automaticamente por horário do pedido',
-      'Impressão automática de comandas assim que o pedido entra',
-      'Alerta sonoro avisa a equipe sempre que chega um pedido novo',
-      'Marcação de item pronto por etapa, pra acompanhar o preparo',
-      'Pedidos de mesa e delivery na mesma fila, sem confusão entre eles',
+      'Fila de preparo organizada automaticamente por horário do pedido.',
+      'Impressão automática de comandas assim que o pedido entra.',
+      'Alerta sonoro avisa a equipe sempre que chega um pedido novo.',
+      'Marcação de item pronto por etapa, pra acompanhar o preparo.',
+      'Pedidos de mesa e delivery na mesma fila, sem confusão entre eles.',
     ],
   },
   {
     Icon: FiShoppingCart, titulo: 'Caixa (PDV)',
     desc: 'Do balcão ao fechamento do dia: o caixa registra vendas avulsas, controla entradas e saídas durante o turno e fecha a sessão já com a conferência pronta, sem precisar recontar nada na mão.',
     bullets: [
-      'Abertura e fechamento de caixa com conferência automática de valores',
-      'Aceita múltiplas formas de pagamento na mesma venda',
-      'Sangria e suprimento registrados, com motivo e responsável',
-      'Venda rápida de balcão sem precisar abrir uma comanda',
-      'Relatório de fechamento por operador, pra saber quem vendeu o quê',
+      'Abertura e fechamento de caixa com conferência automática de valores.',
+      'Aceita múltiplas formas de pagamento na mesma venda.',
+      'Sangria e suprimento registrados, com motivo e responsável.',
+      'Venda rápida de balcão sem precisar abrir uma comanda.',
+      'Relatório de fechamento por operador, pra saber quem vendeu o quê.',
     ],
   },
   {
     Icon: FiMessageCircle, titulo: 'WhatsApp',
     desc: 'Um chatbot que atende o cliente sozinho, 24 horas por dia: recebe o pedido, confirma endereço e forma de pagamento — e só chama alguém da equipe quando realmente precisa de uma pessoa.',
     bullets: [
-      'Atendimento automático 24h, mesmo com o restaurante fechado',
-      'Confirma endereço e forma de pagamento sem intervenção manual',
-      'Passa a conversa pra um atendente humano quando o cliente pede',
-      'Envia o status do pedido automaticamente pro cliente acompanhar',
-      'Guarda o histórico de conversas por cliente pra consultar depois',
+      'Atendimento automático 24h, mesmo com o restaurante fechado.',
+      'Confirma endereço e forma de pagamento sem intervenção manual.',
+      'Passa a conversa pra um atendente humano quando o cliente pede.',
+      'Envia o status do pedido automaticamente pro cliente acompanhar.',
+      'Guarda o histórico de conversas por cliente pra consultar depois.',
     ],
   },
   {
     Icon: FiPieChart, titulo: 'Financeiro',
     desc: 'Faturamento, despesas e comissões reunidos num painel só, com gráficos prontos — pra você enxergar rápido se o mês está bom, sem precisar montar planilha nem juntar relatório de sistema nenhum.',
     bullets: [
-      'Relatórios de faturamento por dia, semana ou mês, prontos pra ver',
-      'Controle de despesas e comissões de funcionários num lugar só',
-      'Gráficos visuais pra decisão rápida, sem precisar interpretar números soltos',
-      'Fechamento de caixa consolidado de todo o período escolhido',
-      'Exportação de dados pra passar direto pra contabilidade',
+      'Relatórios de faturamento por dia, semana ou mês, prontos pra ver.',
+      'Controle de despesas e comissões de funcionários num lugar só.',
+      'Gráficos visuais pra decisão rápida, sem precisar interpretar números soltos.',
+      'Fechamento de caixa consolidado de todo o período escolhido.',
+      'Exportação de dados pra passar direto pra contabilidade.',
     ],
   },
 ]
