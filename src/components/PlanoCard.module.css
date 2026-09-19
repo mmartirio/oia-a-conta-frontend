@@ -154,10 +154,12 @@
   color: #fff !important;
 }
 
-/* No plano Startup, borda e preço ficam vermelhos no hover em vez do azul
-   padrão — maior especificidade (.card.startup) que a regra geral acima. */
+/* No plano Startup, borda, sombra e preço ficam vermelhos no hover em vez
+   do azul padrão — maior especificidade (.card.startup) que a regra geral
+   acima (.card:hover, que também define box-shadow azul). */
 .card.startup:hover {
   border-color: var(--color-danger);
+  box-shadow: 0 8px 32px color-mix(in srgb, var(--color-danger) 25%, transparent);
 }
 
 .card.startup:hover .precoValor {
