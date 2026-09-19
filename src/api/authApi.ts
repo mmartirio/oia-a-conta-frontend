@@ -19,6 +19,8 @@ export const authApi = {
     telefone?: string
     planoId?: number
     modalidadeOperacao?: 'MESAS' | 'DELIVERY'
+    termosAceitos: boolean
+    versaoContrato: string
   }) => api.post<{ mensagem: string }>('/api/auth/registro-iniciar', {
     nomeRestaurante: data.restauranteNome,
     nomeAdmin: data.adminNome,
@@ -27,6 +29,8 @@ export const authApi = {
     telefone: data.telefone,
     planoId: data.planoId,
     modalidadeOperacao: data.modalidadeOperacao,
+    termosAceitos: data.termosAceitos,
+    versaoContrato: data.versaoContrato,
   }),
 
   verificarEmail: (email: string, codigo: string) =>

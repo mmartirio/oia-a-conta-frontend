@@ -1,0 +1,76 @@
+.page {
+  min-height: 100vh;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 2rem;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.logo {
+  height: 36px;
+  width: auto;
+  object-fit: contain;
+}
+
+.voltar {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.voltar:hover { color: var(--color-primary); }
+
+.artigo {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 4rem;
+  line-height: 1.7;
+}
+
+.titulo {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin: 0 0 0.5rem;
+}
+
+.artigo :global(h2) {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin: 2rem 0 0.75rem;
+  color: var(--color-primary);
+}
+
+.artigo :global(p) {
+  margin: 0 0 1rem;
+  color: var(--color-text);
+}
+
+.artigo :global(ul) {
+  margin: 0 0 1rem 1.25rem;
+  padding: 0;
+}
+
+.artigo :global(li) {
+  margin-bottom: 0.5rem;
+}
+
+.artigo :global(strong) {
+  color: var(--color-text);
+}
+
+.rodape {
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+  padding: 1.5rem;
+  border-top: 1px solid var(--color-border);
+}

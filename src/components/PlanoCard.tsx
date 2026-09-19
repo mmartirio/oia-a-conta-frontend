@@ -6,15 +6,17 @@ function parseFuncionalidades(f: string | null): string[] {
   return f ? f.split(',').map(s => s.trim()).filter(Boolean) : []
 }
 
+type Modalidade = 'MESAS' | 'DELIVERY'
+
 interface PlanoCardProps {
   plano: Plano
-  children: ReactNode
+  children: ReactNode | ((modalidade: Modalidade) => ReactNode)
 }
 
 export function PlanoCard({ plano, children }: PlanoCardProps) {
   // Só planos que exigem modalidade (ex: Start UP) têm recursos diferentes
   // por presencial/delivery — os demais mostram uma lista só, como sempre.
-  const [modalidade, setModalidade] = useState<'MESAS' | 'DELIVERY'>('MESAS')
+  const [modalidade, setModalidade] = useState<Modalidade>('MESAS')
 
   const funcs = plano.exigeModalidadeOperacao
     ? parseFuncionalidades(modalidade === 'MESAS' ? plano.funcionalidadesMesas : plano.funcionalidadesDelivery)
@@ -63,7 +65,7 @@ export function PlanoCard({ plano, children }: PlanoCardProps) {
         )}
         {funcs.map(f => <li key={f}>{f}</li>)}
       </ul>
-      {children}
+      {typeof children === 'function' ? children(modalidade) : children}
     </div>
   )
 }

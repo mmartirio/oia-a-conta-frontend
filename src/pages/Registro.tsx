@@ -10,6 +10,7 @@ import { Input } from '../components/ui/Input'
 import { PlanoCard } from '../components/PlanoCard'
 import planoCardStyles from '../components/PlanoCard.module.css'
 import { formatPhone } from '../utils/formatters'
+import { VERSAO_CONTRATO } from '../constants/legal'
 import logo from '../assets/logo/OIA A CONTA - LOGO.png'
 import styles from './Auth.module.css'
 import reg from './Registro.module.css'
@@ -91,13 +92,22 @@ export function Registro() {
         setPlanos(ativos)
         // Veio da landing page com um plano específico em mente (?planoId=X)
         // — pula a etapa de escolha e cai direto no formulário com o plano
-        // já selecionado.
+        // já selecionado. Se a modalidade também veio na URL (escolhida no
+        // toggle do próprio card), pula a etapa "modalidade" também — ela só
+        // reaparece se o usuário pedir pra trocar lá do formulário (ver
+        // botão "Voltar" na etapa 2).
         const planoId = searchParams.get('planoId')
         if (planoId) {
           const preSelecionado = ativos.find(p => String(p.id) === planoId)
           if (preSelecionado) {
             setPlanoSelecionado(preSelecionado)
-            setStep(preSelecionado.exigeModalidadeOperacao ? 'modalidade' : 'form')
+            const modalidadeUrl = searchParams.get('modalidade')
+            if (preSelecionado.exigeModalidadeOperacao && (modalidadeUrl === 'MESAS' || modalidadeUrl === 'DELIVERY')) {
+              setModalidadeOperacao(modalidadeUrl)
+              setStep('form')
+            } else {
+              setStep(preSelecionado.exigeModalidadeOperacao ? 'modalidade' : 'form')
+            }
           }
         }
       })
@@ -112,10 +122,10 @@ export function Registro() {
     return () => clearTimeout(t)
   }, [reenvioTimer])
 
-  const selecionarPlano = (p: Plano) => {
+  const selecionarPlano = (p: Plano, modalidade: ModalidadeOperacao) => {
     setPlanoSelecionado(p)
-    setModalidadeOperacao(null)
-    setStep(p.exigeModalidadeOperacao ? 'modalidade' : 'form')
+    setModalidadeOperacao(p.exigeModalidadeOperacao ? modalidade : null)
+    setStep('form')
   }
 
   const escolherModalidade = (m: ModalidadeOperacao) => {
@@ -169,6 +179,8 @@ export function Registro() {
         telefone: form.telefone || undefined,
         planoId: planoSelecionado?.id,
         modalidadeOperacao: modalidadeOperacao ?? undefined,
+        termosAceitos: aceitouTermos,
+        versaoContrato: VERSAO_CONTRATO,
       })
       setEmailPendente(form.email)
       setCodigos(['', '', '', '', '', ''])
@@ -331,14 +343,16 @@ export function Registro() {
             <div className={reg.planosGrid}>
               {planos.map(p => (
                 <PlanoCard key={p.id} plano={p}>
-                  <Button
-                    fullWidth
-                    variant={p.destaque ? 'primary' : 'outline'}
-                    className={planoCardStyles.selecionarBtn}
-                    onClick={() => selecionarPlano(p)}
-                  >
-                    Selecionar
-                  </Button>
+                  {modalidade => (
+                    <Button
+                      fullWidth
+                      variant={p.destaque ? 'primary' : 'outline'}
+                      className={planoCardStyles.selecionarBtn}
+                      onClick={() => selecionarPlano(p, modalidade)}
+                    >
+                      Selecionar
+                    </Button>
+                  )}
                 </PlanoCard>
               ))}
             </div>
@@ -404,6 +418,19 @@ export function Registro() {
         {planoSelecionado && (
           <div className={reg.planoBadgeSelected}>
             Plano: <strong>{planoSelecionado.nome}</strong>
+          </div>
+        )}
+
+        {planoSelecionado?.exigeModalidadeOperacao && modalidadeOperacao && (
+          <div className={reg.modalidadeBadgeSelected}>
+            Modalidade: <strong>{modalidadeOperacao === 'MESAS' ? 'Presencial' : 'Delivery'}</strong>
+            <button
+              type="button"
+              className={reg.modalidadeTrocarBtn}
+              onClick={() => setStep('modalidade')}
+            >
+              Trocar
+            </button>
           </div>
         )}
 
@@ -497,45 +524,19 @@ export function Registro() {
             </p>
           )}
           {planoSelecionado && (
-            <>
-              <div className={reg.contrato}>
-                <h3 className={reg.contratoTitle}>Contrato de Adesão ao Serviço</h3>
-                <p className={reg.contratoTexto}>
-                  Ao criar sua conta, você, na qualidade de <strong>Contratante</strong>, adere ao
-                  plano <strong>{planoSelecionado.nome}</strong> da plataforma{' '}
-                  <strong>Oia a Conta</strong> pelo valor de{' '}
-                  <strong>
-                    {planoSelecionado.precoMensal.toLocaleString('pt-BR', {
-                      style: 'currency', currency: 'BRL',
-                    })}
-                    /mês
-                  </strong>
-                  , cobrado mensalmente via <strong>PIX</strong>, conforme os termos abaixo.
-                  Este contrato aplica-se a este e a qualquer plano contratado na plataforma.
-                </p>
-                <ul className={reg.contratoLista}>
-                  <li><strong>Objeto:</strong> Prestação de serviço de software como serviço (SaaS) para gestão de restaurante — mesas, comandas, cozinha, caixa, delivery e integrações — conforme as funcionalidades do plano contratado.</li>
-                  {planoSelecionado.periodoTeste && planoSelecionado.diasTeste > 0 && (
-                    <li><strong>Período de teste:</strong> {planoSelecionado.diasTeste} dias gratuitos a partir da ativação, conforme art. 49 do CDC (Lei 8.078/90).</li>
-                  )}
-                  <li><strong>Sem fidelidade:</strong> Não há prazo mínimo de permanência. O cancelamento pode ser solicitado a qualquer momento, sem multa ou encargo, diretamente pelo painel ou pelo suporte.</li>
-                  <li><strong>Cobrança:</strong> Mensal recorrente via PIX, com vencimento todo dia correspondente à data de ativação. O acesso é suspenso automaticamente em caso de inadimplência após 3 dias úteis.</li>
-                  <li><strong>Cancelamento após pagamento:</strong> Se o cancelamento for solicitado depois da cobrança do período vigente já ter sido paga, o acesso permanece ativo até o fim desse período, sem cobranças futuras e sem reembolso proporcional do valor já pago — ressalvado o direito de arrependimento de 7 dias descrito abaixo, quando aplicável.</li>
-                  <li><strong>Troca de plano:</strong> O Contratante pode migrar para outro plano disponível a qualquer momento, com ajuste de cobrança proporcional no próximo vencimento.</li>
-                  <li><strong>Dados pessoais e base legal (LGPD – Lei 13.709/18):</strong> O tratamento dos dados fornecidos tem como base legal a <strong>execução deste contrato</strong> (art. 7º, V, LGPD) — necessários para prestar o serviço, emitir cobranças e dar suporte — e o <strong>cumprimento de obrigação legal ou regulatória</strong> (art. 7º, II) para dados fiscais/contábeis exigidos por lei. Não compartilhamos dados com terceiros para fins comerciais. Você pode solicitar acesso, correção, portabilidade ou exclusão dos seus dados a qualquer momento pelo suporte, nos termos dos arts. 17 a 22 da LGPD.</li>
-                  <li><strong>Direito de arrependimento:</strong> Nos primeiros 7 dias após a contratação, o consumidor pode cancelar sem custo, conforme art. 49 do CDC.</li>
-                  <li><strong>Foro:</strong> Fica eleito o foro da comarca do Contratante para dirimir eventuais conflitos.</li>
-                </ul>
-              </div>
-              <label className={reg.contratoAceite}>
-                <input
-                  type="checkbox"
-                  checked={aceitouTermos}
-                  onChange={e => setAceitouTermos(e.target.checked)}
-                />
-                Li e aceito os termos do Contrato de Adesão, incluindo a Política de Privacidade (LGPD)
-              </label>
-            </>
+            <label className={reg.contratoAceite}>
+              <input
+                type="checkbox"
+                checked={aceitouTermos}
+                onChange={e => setAceitouTermos(e.target.checked)}
+              />
+              <span>
+                Li e aceito o{' '}
+                <a href="/contrato" target="_blank" rel="noopener noreferrer">Contrato de Adesão</a>, os{' '}
+                <a href="/termos-de-uso" target="_blank" rel="noopener noreferrer">Termos de Uso</a> e a{' '}
+                <a href="/privacidade" target="_blank" rel="noopener noreferrer">Política de Privacidade</a>
+              </span>
+            </label>
           )}
 
           <p className={reg.trustNote}>🔒 Seus dados estão protegidos · cancele quando quiser</p>

@@ -43,6 +43,9 @@ import { Login } from './pages/Login'
 import { Registro } from './pages/Registro'
 import { CardapioPublico } from './pages/public/CardapioPublico'
 import { LandingPage } from './pages/public/LandingPage'
+import { ContratoAdesao } from './pages/public/ContratoAdesao'
+import { TermosDeUso } from './pages/public/TermosDeUso'
+import { PoliticaPrivacidade } from './pages/public/PoliticaPrivacidade'
 
 // Admin
 import { AdminDashboard } from './pages/admin/AdminDashboard'
@@ -111,6 +114,9 @@ export function App() {
                 {/* Públicas */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/registro" element={<Registro />} />
+                <Route path="/contrato" element={<ContratoAdesao />} />
+                <Route path="/termos-de-uso" element={<TermosDeUso />} />
+                <Route path="/privacidade" element={<PoliticaPrivacidade />} />
                 <Route path="/cardapio/:slug" element={<CardapioPublico />} />
                 <Route path="/" element={<SmartRedirect />} />
 

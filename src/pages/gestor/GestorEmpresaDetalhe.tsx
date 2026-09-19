@@ -153,6 +153,23 @@ export function GestorEmpresaDetalhe() {
                 dados do modo anterior (mesas/comandas ou delivery/entregador) do painel do dono —
                 os registros continuam no banco, nada é apagado.
               </p>
+              <p style={{ marginTop: 0, marginBottom: '1rem', fontSize: '0.875rem' }}>
+                <strong>Trocas grátis usadas:</strong> {contrato.trocasModalidadeGratisUsadas}/2
+                {contrato.trocasModalidadeGratisUsadas >= 2 && (
+                  <span style={{ color: 'var(--color-warning)' }}>
+                    {' '}— próximas trocas cobram R$ 30,00 cada (somado no próximo pagamento manual)
+                  </span>
+                )}
+                {contrato.saldoEncargosModalidade > 0 && (
+                  <>
+                    <br />
+                    <strong>Encargos pendentes:</strong>{' '}
+                    <span style={{ color: 'var(--color-warning)' }}>
+                      {contrato.saldoEncargosModalidade.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </span>{' '}— será somado automaticamente no próximo "Pagamento Manual" registrado abaixo
+                  </>
+                )}
+              </p>
               <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
                 <div className={styles.formRow} style={{ minWidth: '220px' }}>
                   <label>Modalidade</label>

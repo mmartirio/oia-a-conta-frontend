@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, Link } from 'react-router-dom'
 import { FiTrash2, FiPlus, FiX } from 'react-icons/fi'
 import { configuracaoApi } from '../../api/configuracaoApi'
 import { pausaApi, type Pausa } from '../../api/pausaApi'
 import { restauranteApi } from '../../api/restauranteApi'
-import { billingApi } from '../../api/billingApi'
+import { billingApi, type Contrato, type Plano } from '../../api/billingApi'
 import { horarioApi } from '../../api/horarioApi'
 import { useToast } from '../../contexts/ToastContext'
 import { useAuth } from '../../contexts/AuthContext'
@@ -17,6 +17,7 @@ import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Textarea } from '../../components/ui/Textarea'
 import { Modal } from '../../components/ui/Modal'
+import { Select } from '../../components/ui/Select'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { Switch } from '../../components/ui/Switch'
 import { Tabs } from '../../components/ui/Tabs'
@@ -160,8 +161,20 @@ export function AdminConfiguracoes() {
   const [empresaEnderecoCidade, setEmpresaEnderecoCidade] = useState('')
   const [empresaEnderecoComplemento, setEmpresaEnderecoComplemento] = useState('')
   const [empresaSlug, setEmpresaSlug] = useState('')
-  const [empresaPlano, setEmpresaPlano] = useState('')
   const [linkCopiado, setLinkCopiado] = useState(false)
+
+  // ── Plano / Modalidade do contrato ──
+  const [empresaContrato, setEmpresaContrato] = useState<Contrato | null>(null)
+  const [planosDisponiveis, setPlanosDisponiveis] = useState<Plano[]>([])
+  const [modalPlanoAberto, setModalPlanoAberto] = useState(false)
+  const [novoPlanoId, setNovoPlanoId] = useState('')
+  const [novoPlanoModalidade, setNovoPlanoModalidade] = useState<'MESAS' | 'DELIVERY' | ''>('')
+  const [trocandoPlano, setTrocandoPlano] = useState(false)
+  const [erroTrocaPlano, setErroTrocaPlano] = useState('')
+  const [modalModalidadeAberto, setModalModalidadeAberto] = useState(false)
+  const [novaModalidade, setNovaModalidade] = useState<'MESAS' | 'DELIVERY' | ''>('')
+  const [trocandoModalidade, setTrocandoModalidade] = useState(false)
+  const [erroTrocaModalidade, setErroTrocaModalidade] = useState('')
 
   // ── Cardápio Público: logo + cores ──
   const [logoBase64, setLogoBase64] = useState<string | null>(null)
@@ -236,8 +249,8 @@ export function AdminConfiguracoes() {
     // o campo Restaurante.plano do auth-service é legado, sempre "BASICO"
     // desde o cadastro, nunca atualizado quando o plano muda.
     billingApi.meuContrato()
-      .then(r => setEmpresaPlano(r.data.plano.nome))
-      .catch(() => setEmpresaPlano(''))
+      .then(r => setEmpresaContrato(r.data))
+      .catch(() => setEmpresaContrato(null))
 
     horarioApi.listar()
       .then(r => {
@@ -484,6 +497,63 @@ export function AdminConfiguracoes() {
       toast.error(msg ?? 'Erro ao salvar dados da empresa')
     } finally {
       setSalvandoEmpresa(false)
+    }
+  }
+
+  // ── Plano / Modalidade do contrato ──
+  const abrirModalPlano = () => {
+    setErroTrocaPlano('')
+    setNovoPlanoId(empresaContrato ? String(empresaContrato.plano.id) : '')
+    setNovoPlanoModalidade(empresaContrato?.modalidadeOperacao ?? '')
+    setModalPlanoAberto(true)
+    if (planosDisponiveis.length === 0) {
+      billingApi.listarPlanos().then(r => setPlanosDisponiveis(r.data)).catch(() => {})
+    }
+  }
+
+  const planoEscolhido = planosDisponiveis.find(p => String(p.id) === novoPlanoId)
+
+  const handleTrocarPlano = async () => {
+    if (!novoPlanoId) return
+    if (planoEscolhido?.exigeModalidadeOperacao && !novoPlanoModalidade) {
+      setErroTrocaPlano('Escolha a modalidade de operação pra este plano.')
+      return
+    }
+    setTrocandoPlano(true)
+    setErroTrocaPlano('')
+    try {
+      const r = await billingApi.alterarMeuPlano(Number(novoPlanoId), novoPlanoModalidade || undefined)
+      setEmpresaContrato(r.data)
+      setModalPlanoAberto(false)
+      toast.success('Plano alterado com sucesso')
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { mensagem?: string } } }).response?.data?.mensagem
+      setErroTrocaPlano(msg ?? 'Erro ao trocar de plano')
+    } finally {
+      setTrocandoPlano(false)
+    }
+  }
+
+  const abrirModalModalidade = () => {
+    setErroTrocaModalidade('')
+    setNovaModalidade(empresaContrato?.modalidadeOperacao ?? '')
+    setModalModalidadeAberto(true)
+  }
+
+  const handleTrocarModalidade = async () => {
+    if (!novaModalidade) return
+    setTrocandoModalidade(true)
+    setErroTrocaModalidade('')
+    try {
+      const r = await billingApi.alterarMinhaModalidade(novaModalidade)
+      setEmpresaContrato(r.data)
+      setModalModalidadeAberto(false)
+      toast.success('Modalidade alterada com sucesso')
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { mensagem?: string } } }).response?.data?.mensagem
+      setErroTrocaModalidade(msg ?? 'Erro ao trocar de modalidade')
+    } finally {
+      setTrocandoModalidade(false)
     }
   }
 
@@ -781,8 +851,43 @@ export function AdminConfiguracoes() {
         ) : (
           <>
             <div className={styles.empresaReadonly}>
-              <span><strong>Plano:</strong> {empresaPlano || '—'}</span>
+              <span><strong>Plano:</strong> {empresaContrato?.plano.nome || '—'}</span>
+              <button type="button" className={styles.trocarBtn} onClick={abrirModalPlano}>
+                Alterar plano
+              </button>
+
+              {empresaContrato?.plano.exigeModalidadeOperacao && (
+                <>
+                  <span>
+                    <strong>Modalidade:</strong>{' '}
+                    {empresaContrato.modalidadeOperacao === 'DELIVERY' ? 'Delivery' : 'Presencial'}
+                  </span>
+                  {empresaContrato.trocasModalidadeGratisUsadas < 2 ? (
+                    <button type="button" className={styles.trocarBtn} onClick={abrirModalModalidade}>
+                      Alterar modalidade
+                    </button>
+                  ) : (
+                    <Link to="/admin/suporte" className={styles.trocarBtn}>
+                      Solicitar ao suporte
+                    </Link>
+                  )}
+                </>
+              )}
             </div>
+
+            {empresaContrato?.plano.exigeModalidadeOperacao && empresaContrato.trocasModalidadeGratisUsadas >= 2 && (
+              <p className={styles.modalidadeAviso}>
+                Você já usou as 2 trocas gratuitas de modalidade. Novas trocas custam R$ 30,00 cada,
+                cobradas na sua próxima fatura — solicite ao suporte pra trocar.
+              </p>
+            )}
+
+            {empresaContrato && empresaContrato.saldoEncargosModalidade > 0 && (
+              <p className={styles.modalidadeAviso}>
+                Você tem {empresaContrato.saldoEncargosModalidade.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}{' '}
+                em encargos de troca de modalidade pendentes, que serão somados à sua próxima fatura.
+              </p>
+            )}
 
             <div className={styles.fieldRow}>
               <div className={`${styles.field} ${styles.fieldFlex2}`}>
@@ -1374,6 +1479,79 @@ export function AdminConfiguracoes() {
           placeholder="Ex: Sistema de pedidos indisponível temporariamente"
           rows={3}
         />
+      </Modal>
+
+      <Modal
+        isOpen={modalPlanoAberto}
+        onClose={() => setModalPlanoAberto(false)}
+        title="Alterar plano"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setModalPlanoAberto(false)} disabled={trocandoPlano}>
+              Cancelar
+            </Button>
+            <Button loading={trocandoPlano} onClick={handleTrocarPlano} disabled={!novoPlanoId}>
+              Confirmar troca
+            </Button>
+          </>
+        }
+      >
+        {erroTrocaPlano && <div className={styles.modalidadeAviso}>{erroTrocaPlano}</div>}
+        <Select
+          label="Novo plano"
+          value={novoPlanoId}
+          onChange={e => { setNovoPlanoId(e.target.value); setNovoPlanoModalidade('') }}
+        >
+          <option value="" disabled>Selecione...</option>
+          {planosDisponiveis.map(p => (
+            <option key={p.id} value={p.id}>{p.nome} — {p.precoMensal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}/mês</option>
+          ))}
+        </Select>
+        {planoEscolhido?.exigeModalidadeOperacao && (
+          <Select
+            label="Modalidade de operação"
+            value={novoPlanoModalidade}
+            onChange={e => setNovoPlanoModalidade(e.target.value as 'MESAS' | 'DELIVERY')}
+          >
+            <option value="" disabled>Selecione...</option>
+            <option value="MESAS">Presencial (mesas e comandas)</option>
+            <option value="DELIVERY">Delivery</option>
+          </Select>
+        )}
+      </Modal>
+
+      <Modal
+        isOpen={modalModalidadeAberto}
+        onClose={() => setModalModalidadeAberto(false)}
+        title="Alterar modalidade"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setModalModalidadeAberto(false)} disabled={trocandoModalidade}>
+              Cancelar
+            </Button>
+            <Button
+              loading={trocandoModalidade}
+              onClick={handleTrocarModalidade}
+              disabled={!novaModalidade || novaModalidade === empresaContrato?.modalidadeOperacao}
+            >
+              Confirmar troca
+            </Button>
+          </>
+        }
+      >
+        {erroTrocaModalidade && <div className={styles.modalidadeAviso}>{erroTrocaModalidade}</div>}
+        <p className={styles.hint}>
+          Alterações gratuitas restantes: {Math.max(0, 2 - (empresaContrato?.trocasModalidadeGratisUsadas ?? 0))} de 2
+        </p>
+        <Select
+          label="Modalidade"
+          value={novaModalidade}
+          onChange={e => setNovaModalidade(e.target.value as 'MESAS' | 'DELIVERY')}
+        >
+          <option value="" disabled>Selecione...</option>
+          <option value="MESAS">Presencial (mesas e comandas)</option>
+          <option value="DELIVERY">Delivery</option>
+        </Select>
       </Modal>
 
       <ConfirmDialog

@@ -107,15 +107,17 @@ export function LandingPage() {
             {planos.map(p => (
               <div key={p.id} className={styles.planoCardWrap}>
                 <PlanoCard plano={p}>
-                  <Link to={`/registro?planoId=${p.id}`}>
-                    <Button
-                      fullWidth
-                      variant={p.destaque ? 'primary' : 'outline'}
-                      className={planoCardStyles.selecionarBtn}
-                    >
-                      Assinar
-                    </Button>
-                  </Link>
+                  {modalidade => (
+                    <Link to={`/registro?planoId=${p.id}${p.exigeModalidadeOperacao ? `&modalidade=${modalidade}` : ''}`}>
+                      <Button
+                        fullWidth
+                        variant={p.destaque ? 'primary' : 'outline'}
+                        className={planoCardStyles.selecionarBtn}
+                      >
+                        Assinar
+                      </Button>
+                    </Link>
+                  )}
                 </PlanoCard>
               </div>
             ))}
@@ -134,6 +136,11 @@ export function LandingPage() {
       <footer className={styles.footer}>
         <img src={logo} alt="Oia a Conta" className={styles.footerLogo} />
         <p>© {new Date().getFullYear()} Oia a Conta</p>
+        <div className={styles.footerDocs}>
+          <Link to="/contrato">Contrato de Adesão</Link>
+          <Link to="/termos-de-uso">Termos de Uso</Link>
+          <Link to="/privacidade">Política de Privacidade</Link>
+        </div>
         {(linkInstagram || linkWhatsapp) && (
           <div className={styles.footerLinks}>
             {linkInstagram && (

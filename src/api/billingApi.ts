@@ -49,6 +49,12 @@ export interface Contrato {
   dataProximoVencimento: string
   // Preenchida só quando plano.exigeModalidadeOperacao é true.
   modalidadeOperacao: 'MESAS' | 'DELIVERY' | null
+  // Trocas gratuitas de modalidade já usadas (máximo 2) — da 3ª em diante
+  // só o suporte pode trocar, e cada troca é cobrada (ver saldoEncargosModalidade).
+  trocasModalidadeGratisUsadas: number
+  // Encargos pendentes de trocas de modalidade além do limite gratuito,
+  // somados automaticamente no próximo pagamento registrado.
+  saldoEncargosModalidade: number
 }
 
 export interface Pagamento {
@@ -115,6 +121,11 @@ export const billingApi = {
   // Troca de modalidade pedida pelo dono via suporte — só SUPER_ADMIN.
   atualizarModalidadeContrato: (id: number, modalidadeOperacao: 'MESAS' | 'DELIVERY') =>
     api.put<Contrato>(`/api/contratos/${id}/modalidade`, { modalidadeOperacao }),
+  // Troca de modalidade/plano feita pelo próprio dono, direto no painel de Configurações.
+  alterarMinhaModalidade: (modalidadeOperacao: 'MESAS' | 'DELIVERY') =>
+    api.put<Contrato>('/api/contratos/meu/modalidade', { modalidadeOperacao }),
+  alterarMeuPlano: (planoId: number, modalidadeOperacao?: 'MESAS' | 'DELIVERY') =>
+    api.put<Contrato>('/api/contratos/meu/plano', { planoId, modalidadeOperacao }),
   pagamentoManual: (contratoId: number, valor: number, observacao = '') =>
     api.post<Pagamento>(`/api/contratos/${contratoId}/pagamento-manual`, { valor, observacao }),
   // Paginação real — usada na tela de detalhe de uma única empresa (GestorEmpresaDetalhe).

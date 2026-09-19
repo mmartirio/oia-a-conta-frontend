@@ -412,6 +412,23 @@
   opacity: 0.85;
 }
 
+.footerDocs {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  font-size: 0.8125rem;
+}
+
+.footerDocs a {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+}
+
+.footerDocs a:hover {
+  color: var(--color-primary);
+}
+
 .footerLinks {
   display: flex;
   gap: 1.25rem;
