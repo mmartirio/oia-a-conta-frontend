@@ -196,16 +196,56 @@
   max-width: 1400px;
 }
 
-/* 3 colunas fixas (não auto-fit) — o número de cards por fileira não deve
-   mudar conforme o espaço que sobra da imagem ao lado. justify-content
-   centraliza os cards na janela, já que o grid ocupa a linha inteira. */
-.recursosGrid {
+/* Carrossel horizontal (scroll-snap) — a janela mostra um card por vez
+   (largura da janela = largura do card), navega com as setas ou arrastando. */
+.recursosCarrosselWrap {
   position: relative;
   z-index: 1;
-  display: grid;
-  grid-template-columns: repeat(3, 250px);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 60vw;
+  /* Sem isso, em monitores bem largos o card (60vw) passa do espaço que
+     sobra ao lado das imagens de hambúrguer/açaí dentro da seção de 1400px. */
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.recursosCarrossel {
+  display: flex;
+  gap: 1.5rem;
+  width: 100%;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: 0.375rem 0.125rem 1rem;
+  /* Navegação é pelas setas ou arrastando — barra de rolagem nativa só
+     polui visualmente. */
+  scrollbar-width: none;
+}
+
+.recursosCarrossel::-webkit-scrollbar {
+  display: none;
+}
+
+.carrosselSeta {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
   justify-content: center;
-  gap: 1.25rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.carrosselSeta:hover {
+  background: var(--color-bg);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 /* Posicionada de forma independente (absolute) pra não interferir na
@@ -293,9 +333,18 @@
     flex-direction: column;
   }
 
-  .recursosGrid {
+  /* Sem isso o card ficava travado em 60vw (regra base) mesmo no mobile —
+     numa tela de 375px isso vira 225px, card minúsculo demais pra ler. */
+  .recursosCarrosselWrap {
     order: 0;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    width: calc(100vw - 3rem);
+    max-width: calc(100vw - 3rem);
+  }
+
+  /* No mobile o arraste por toque já resolve — as setas só ocupam espaço
+     que os cards precisam. */
+  .carrosselSeta {
+    display: none;
   }
 
   /* position: relative (não static) — a imagem dentro continua absolute e
@@ -330,7 +379,17 @@
 }
 
 .recursoCard {
-  text-align: left;
+  flex: 0 0 100%;
+  width: 100%;
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 2.25rem !important;
+  padding-bottom: 2.25rem !important;
+  scroll-snap-align: start;
+  text-align: center;
 }
 
 .recursoIcon {
@@ -343,16 +402,73 @@
 }
 
 .recursoTitulo {
-  font-size: 1.0625rem;
+  font-size: 1.625rem;
   font-weight: 700;
-  margin: 0 0 0.375rem;
+  margin: 0 0 0.625rem;
 }
 
 .recursoDesc {
-  font-size: 0.9375rem;
+  font-size: 1.1875rem;
   color: var(--color-text-secondary);
-  margin: 0;
-  line-height: 1.5;
+  margin: 0 0 1.125rem;
+  line-height: 1.6;
+  max-width: 680px;
+}
+
+/* Bloco centralizado no card, mas o texto de cada item continua alinhado à
+   esquerda — bullet centralizado item a item fica ilegível quando a frase
+   quebra linha. */
+.recursoLista {
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+  max-width: 620px;
+  font-size: 1.0625rem;
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+  text-align: left;
+}
+
+.recursoBulletIcon {
+  flex-shrink: 0;
+  margin-top: 0.2em;
+  color: var(--color-primary);
+}
+
+.carrosselIndicadores {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+.carrosselPonto {
+  width: 9px;
+  height: 9px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-border);
+  cursor: pointer;
+  transition: background 0.2s, width 0.2s;
+}
+
+.carrosselPonto:hover {
+  background: color-mix(in srgb, var(--color-primary) 50%, var(--color-border));
+}
+
+.carrosselPontoAtivo {
+  width: 22px;
+  border-radius: 999px;
+  background: var(--color-primary);
+}
+
+.recursoLista li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.4375rem;
 }
 
 /* ── Planos ─────────────────────────────────────────────── */
