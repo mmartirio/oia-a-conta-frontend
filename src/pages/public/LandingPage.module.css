@@ -317,6 +317,12 @@
     margin-bottom: 1.5rem;
   }
 
+  /* No desktop o left:40% é proposital (deixa a imagem vazar mais pra
+     direita, atrás dos cards) — no mobile isso só descentraliza. */
+  .recursosImagem img {
+    left: 50%;
+  }
+
   .recursosImagemEsquerda {
     order: 1;
     margin-top: 1.5rem;
