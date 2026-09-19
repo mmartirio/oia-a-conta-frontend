@@ -11,6 +11,8 @@ import { PlanoCard } from '../../components/PlanoCard'
 import planoCardStyles from '../../components/PlanoCard.module.css'
 import logo from '../../assets/logo/OIA A CONTA - LOGO.png'
 import hamburger from '../../assets/image/hamburger.png'
+import acai from '../../assets/image/acai.png'
+import chefFemale from '../../assets/image/chef_female.png'
 import styles from './LandingPage.module.css'
 
 const RECURSOS = [
@@ -68,6 +70,7 @@ export function LandingPage() {
             <a href="#planos"><Button size="lg" variant="ghost" className={styles.btnGhostHero}>Ver planos</Button></a>
           </div>
         </div>
+        <img src={chefFemale} alt="Chef" className={styles.heroImagem} />
       </section>
 
       <section id="recursos" className={`${styles.section} ${styles.recursosSection}`}>
@@ -84,6 +87,9 @@ export function LandingPage() {
           </div>
           <div className={styles.recursosImagem}>
             <img src={hamburger} alt="Hambúrguer" />
+          </div>
+          <div className={styles.recursosImagemEsquerda}>
+            <img src={acai} alt="Açaí" />
           </div>
         </div>
       </section>
