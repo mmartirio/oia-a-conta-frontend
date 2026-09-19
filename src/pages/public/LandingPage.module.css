@@ -100,7 +100,10 @@
   pointer-events: none;
 }
 
-@media (max-width: 960px) {
+/* Abaixo de ~1300px não sobra espaço lateral suficiente pra imagem (525px
+   de largura no tamanho máximo) sem sobrepor o texto centralizado — esconde
+   antes disso em vez de deixar os dois se atropelarem. */
+@media (max-width: 1300px) {
   .heroImagem {
     display: none;
   }
@@ -263,14 +266,38 @@
   pointer-events: none;
 }
 
+/* Entre o mobile (860px) e o desktop cheio (~1400px) não sobra espaço
+   lateral suficiente pros 750px de cards + as duas imagens de 320px sem
+   ficar tudo encavalado — encolhe as imagens nessa faixa intermediária. */
+@media (max-width: 1300px) {
+  .recursosImagem,
+  .recursosImagemEsquerda {
+    width: 180px;
+  }
+
+  .recursosImagem img {
+    width: 300px;
+  }
+
+  .recursosImagemEsquerda img {
+    width: 220px;
+  }
+}
+
 @media (max-width: 860px) {
   .recursosGrid {
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   }
 
+  /* position: relative (não static) — a imagem dentro continua absolute e
+     precisa desse container como referência, senão ela escapa pra se
+     posicionar em relação à .recursosRow inteira. */
   .recursosImagem,
   .recursosImagemEsquerda {
-    position: static;
+    position: relative;
+    top: auto;
+    right: auto;
+    left: auto;
     transform: none;
     width: 100%;
     height: 220px;
