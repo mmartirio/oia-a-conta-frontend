@@ -410,7 +410,7 @@
 .recursoDesc {
   font-size: 1.1875rem;
   color: var(--color-text-secondary);
-  margin: 0 0 1.125rem;
+  margin: 0 0 3rem;
   line-height: 1.6;
   max-width: 680px;
 }
