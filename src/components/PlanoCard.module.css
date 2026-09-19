@@ -145,6 +145,15 @@
   color: #fff !important;
 }
 
+/* No plano em destaque (PRO), o botão "Assinar" fica azul em vez de
+   vermelho no hover — maior especificidade (.card.destaque) que a regra
+   acima pra vencer só nesse card. */
+.card.destaque:hover .selecionarBtn {
+  background: var(--color-primary-selected) !important;
+  border-color: var(--color-primary-selected) !important;
+  color: #fff !important;
+}
+
 .funcList {
   list-style: none;
   padding: 0;
