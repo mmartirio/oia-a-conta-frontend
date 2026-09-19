@@ -14,6 +14,7 @@ import logo from '../../assets/logo/OIA A CONTA - LOGO.png'
 import hamburger from '../../assets/image/hamburger.png'
 import acai from '../../assets/image/acai.png'
 import chefFemale from '../../assets/image/chef_female.png'
+import chefMale from '../../assets/image/chef_male.png'
 import styles from './LandingPage.module.css'
 
 const RECURSOS = [
@@ -319,6 +320,7 @@ export function LandingPage() {
       </section>
 
       <section className={styles.ctaFinal}>
+        <img src={chefMale} alt="Chef" className={styles.ctaImagem} />
         <h2 className={styles.ctaTitle}>Pronto para simplificar a gestão do seu restaurante?</h2>
         <div className={styles.heroActions}>
           <Link to="/registro"><Button size="lg">Criar conta grátis</Button></Link>
