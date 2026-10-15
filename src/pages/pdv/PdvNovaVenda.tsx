@@ -82,6 +82,7 @@ export function PdvNovaVenda({ sessaoCaixa, modoInicial, onConcluida }: {
   const [saving, setSaving] = useState(false)
 
   // ── Delivery: cliente/endereço/frete ────────────────────
+  const [clienteNomeDelivery, setClienteNomeDelivery] = useState('')
   const [clienteTelefoneDelivery, setClienteTelefoneDelivery] = useState('')
   const [enderecoRua, setEnderecoRua] = useState('')
   const [enderecoNumero, setEnderecoNumero] = useState('')
@@ -292,6 +293,7 @@ export function PdvNovaVenda({ sessaoCaixa, modoInicial, onConcluida }: {
     setValorRecebido('')
     setCliente(null)
     setCupomAplicado(null)
+    setClienteNomeDelivery('')
     setClienteTelefoneDelivery('')
     setEnderecoRua('')
     setEnderecoNumero('')
@@ -416,7 +418,7 @@ export function PdvNovaVenda({ sessaoCaixa, modoInicial, onConcluida }: {
 
   const handleFinalizarDelivery = async () => {
     await entregaApi.criar({
-      clienteNome: cliente?.nome ?? 'Cliente balcão',
+      clienteNome: cliente?.nome ?? (clienteNomeDelivery || 'Cliente balcão'),
       clienteTelefone: cliente?.telefone ?? clienteTelefoneDelivery ?? undefined,
       enderecoRua,
       enderecoNumero,
@@ -683,6 +685,13 @@ export function PdvNovaVenda({ sessaoCaixa, modoInicial, onConcluida }: {
             <Card className={styles.reciboPagamento} padding="md">
               <h3 className={styles.sectionTitle}>Endereço de Entrega</h3>
               <div className={styles.fieldRow}>
+                <Input
+                  label="Nome do cliente"
+                  value={cliente ? cliente.nome : clienteNomeDelivery}
+                  onChange={e => setClienteNomeDelivery(e.target.value)}
+                  placeholder="Nome"
+                  disabled={!!cliente}
+                />
                 <Input
                   label="Telefone do cliente"
                   value={cliente ? cliente.telefone : clienteTelefoneDelivery}
