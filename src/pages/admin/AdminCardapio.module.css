@@ -316,6 +316,9 @@
 
 .formField { display: flex; flex-direction: column; gap: 0.375rem; }
 
+.formRow { display: flex; gap: 1rem; }
+.formRow > * { flex: 1; min-width: 0; }
+
 .label { font-size: 0.875rem; font-weight: 600; color: var(--color-text-secondary); }
 
 .select {

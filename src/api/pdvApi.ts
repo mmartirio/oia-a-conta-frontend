@@ -28,6 +28,8 @@ export const pdvApi = {
       produtoId?: number
       produtoNome?: string
       quantidade: number
+      pesoGramas?: number
+      volumeMililitros?: number
       precoUnitario?: number
       observacao?: string
       comboId?: number

@@ -13,6 +13,9 @@ export type StatusPedido = 'ENVIADO' | 'PREPARANDO' | 'PRONTO' | 'ENTREGUE' | 'C
 export type StatusComanda = 'ABERTA' | 'FECHADA'
 export type MetodoPagamento = 'DINHEIRO' | 'PIX' | 'CARTAO_CREDITO' | 'CARTAO_DEBITO'
 export type TipoNotificacao = 'NOVO_PEDIDO' | 'PEDIDO_PRONTO'
+export type TipoPreco = 'UNIDADE' | 'PESO' | 'VOLUME'
+export type UnidadeMedida = 'MG' | 'G' | 'KG'
+export type UnidadeVolume = 'ML' | 'L'
 
 export interface Usuario {
   id: number
@@ -68,6 +71,9 @@ export interface Produto {
   nome: string
   descricao?: string
   preco: number
+  // Ausente/UNIDADE em produtos já existentes — preco é por unidade. Em
+  // PESO, preco é por kg e a quantidade no pedido vira peso (ver ItemPedido).
+  tipoPreco?: TipoPreco
   imagemBase64: string | null
   numeroCardapio?: number | null
   ativo: boolean
@@ -198,6 +204,10 @@ export interface ItemPedido {
   produtoId: number
   produtoNome: string
   quantidade: number
+  // Só em produto por PESO — peso vendido em gramas (quantidade fica 1).
+  pesoGramas?: number | null
+  // Só em produto por VOLUME — volume vendido em mililitros (quantidade fica 1).
+  volumeMililitros?: number | null
   precoUnitario: number
   observacao?: string
   comboId?: number
@@ -260,6 +270,10 @@ export interface ItemPedidoRequest {
   produtoNome?: string
   precoUnitario?: number
   quantidade: number
+  // Só em produto por PESO — peso vendido em gramas (quantidade vai 1).
+  pesoGramas?: number
+  // Só em produto por VOLUME — volume vendido em mililitros (quantidade vai 1).
+  volumeMililitros?: number
   observacao?: string
   comboId?: number
   comboQuantidade?: number
@@ -333,6 +347,10 @@ export interface ItemEntrega {
   produtoId: number
   produtoNome: string
   quantidade: number
+  // Só em produto por PESO — peso vendido em gramas (quantidade fica 1).
+  pesoGramas?: number | null
+  // Só em produto por VOLUME — volume vendido em mililitros (quantidade fica 1).
+  volumeMililitros?: number | null
   precoUnitario: number
   observacao?: string
 }
@@ -374,6 +392,10 @@ export interface ItemEntregaRequest {
   produtoNome?: string
   precoUnitario?: number
   quantidade: number
+  // Só em produto por PESO — peso vendido em gramas (quantidade vai 1).
+  pesoGramas?: number
+  // Só em produto por VOLUME — volume vendido em mililitros (quantidade vai 1).
+  volumeMililitros?: number
   observacao?: string
   comboId?: number
   comboQuantidade?: number

@@ -1,10 +1,11 @@
 import api from './axios'
-import type { Produto } from '../types'
+import type { Produto, TipoPreco } from '../types'
 
 interface ProdutoPayload {
   nome: string
   descricao?: string
   preco: number
+  tipoPreco?: TipoPreco
   categoriaId: number
   ativo?: boolean
   // null/ausente = não altera a imagem atual; "" explícito = remove a imagem.

@@ -12,7 +12,7 @@ import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { useToast } from '../../contexts/ToastContext'
 import { formatCurrency } from '../../utils/formatters'
 import { comprimirImagem } from '../../utils/imageProcessing'
-import type { Categoria, Produto } from '../../types'
+import type { Categoria, Produto, TipoPreco } from '../../types'
 import styles from './AdminCardapio.module.css'
 
 type Tab = 'categorias' | 'produtos'
@@ -49,6 +49,9 @@ interface ProdForm {
   nome: string
   descricao: string
   preco: string
+  // UNIDADE: preco é por unidade. PESO: preco é por quilo, vendido por peso
+  // no caixa/cardápio (ver pesoItem.ts).
+  tipoPreco: TipoPreco
   categoriaId: string
   // null = sem foto; "" = remover a foto atual; data URI = foto nova ou já existente.
   imagemBase64: string | null
@@ -73,7 +76,7 @@ export function AdminCardapio() {
 
   const [prodModal, setProdModal] = useState(false)
   const [editProd, setEditProd] = useState<Produto | null>(null)
-  const [prodForm, setProdForm] = useState<ProdForm>({ nome: '', descricao: '', preco: '', categoriaId: '', imagemBase64: null, numeroCardapio: '' })
+  const [prodForm, setProdForm] = useState<ProdForm>({ nome: '', descricao: '', preco: '', tipoPreco: 'UNIDADE', categoriaId: '', imagemBase64: null, numeroCardapio: '' })
   const [savingProd, setSavingProd] = useState(false)
   const [prodError, setProdError] = useState('')
 
@@ -182,7 +185,7 @@ export function AdminCardapio() {
   const openCreateProd = () => {
     setEditProd(null)
     const categoriaPadrao = categorias.find(c => c.ativo) ?? categorias[0]
-    setProdForm({ nome: '', descricao: '', preco: '', categoriaId: String(categoriaPadrao?.id ?? ''), imagemBase64: null, numeroCardapio: '' })
+    setProdForm({ nome: '', descricao: '', preco: '', tipoPreco: 'UNIDADE', categoriaId: String(categoriaPadrao?.id ?? ''), imagemBase64: null, numeroCardapio: '' })
     setProdError('')
     setProdModal(true)
   }
@@ -193,6 +196,7 @@ export function AdminCardapio() {
       nome: p.nome,
       descricao: p.descricao ?? '',
       preco: String(p.preco),
+      tipoPreco: p.tipoPreco ?? 'UNIDADE',
       categoriaId: String(p.categoriaId),
       imagemBase64: p.imagemBase64 ?? null,
       numeroCardapio: p.numeroCardapio != null ? String(p.numeroCardapio) : ''
@@ -226,6 +230,7 @@ export function AdminCardapio() {
         nome: prodForm.nome,
         descricao: prodForm.descricao || undefined,
         preco: parseFloat(prodForm.preco),
+        tipoPreco: prodForm.tipoPreco,
         categoriaId: Number(prodForm.categoriaId),
         imagemBase64: prodForm.imagemBase64,
         numeroCardapio: prodForm.numeroCardapio.trim() ? Number(prodForm.numeroCardapio) : undefined
@@ -583,16 +588,41 @@ export function AdminCardapio() {
           <p className={styles.hint}>
             Número que o cliente digita no WhatsApp pra pedir esse produto (bate com a imagem do cardápio numerado enviada pelo bot). Deixe em branco se ele não aparece nessa imagem.
           </p>
-          <Input
-            label="Preço (R$)"
-            type="number"
-            step="0.01"
-            min="0.01"
-            value={prodForm.preco}
-            onChange={e => setProdForm(f => ({ ...f, preco: e.target.value }))}
-            required
-            placeholder="0,00"
-          />
+          <div className={styles.formRow}>
+            <div className={styles.formField}>
+              <label className={styles.label} htmlFor="prod-tipo-preco">Vendido por</label>
+              <select
+                id="prod-tipo-preco"
+                className={styles.select}
+                value={prodForm.tipoPreco}
+                onChange={e => setProdForm(f => ({ ...f, tipoPreco: e.target.value as TipoPreco }))}
+              >
+                <option value="UNIDADE">Unidade</option>
+                <option value="PESO">Peso (kg)</option>
+                <option value="VOLUME">Volume (litro)</option>
+              </select>
+            </div>
+            <Input
+              label={prodForm.tipoPreco === 'PESO' ? 'Preço por kg (R$)' : prodForm.tipoPreco === 'VOLUME' ? 'Preço por litro (R$)' : 'Preço (R$)'}
+              type="number"
+              step="0.01"
+              min="0.01"
+              value={prodForm.preco}
+              onChange={e => setProdForm(f => ({ ...f, preco: e.target.value }))}
+              required
+              placeholder="0,00"
+            />
+          </div>
+          {prodForm.tipoPreco === 'PESO' && (
+            <p className={styles.hint}>
+              No caixa, cardápio e pedidos, este produto é vendido digitando o peso (em mg, g ou kg) em vez de uma quantidade — o valor cobrado é calculado automaticamente a partir do preço por kg acima.
+            </p>
+          )}
+          {prodForm.tipoPreco === 'VOLUME' && (
+            <p className={styles.hint}>
+              No caixa, cardápio e pedidos, este produto é vendido digitando o volume (em ml ou litro) em vez de uma quantidade — o valor cobrado é calculado automaticamente a partir do preço por litro acima.
+            </p>
+          )}
 
           <div className={styles.formField}>
             <label className={styles.label}>Foto do produto (opcional)</label>

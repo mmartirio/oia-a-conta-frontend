@@ -9,6 +9,8 @@ import { Pagination } from '../../components/ui/Pagination'
 import { useToast } from '../../contexts/ToastContext'
 import { useNotification } from '../../contexts/NotificationContext'
 import { formatCurrency, formatDateTime, METODO_PAGAMENTO_LABEL } from '../../utils/formatters'
+import { formatarPeso, subtotalItem } from '../../utils/pesoItem'
+import { formatarVolume } from '../../utils/volumeItem'
 import type { Entrega, MetodoPagamento } from '../../types'
 import styles from './GarconDeliveryLista.module.css'
 
@@ -409,8 +411,8 @@ export function GarconDeliveryLista() {
           <p className={styles.reciboLinhaDivisoria}>--------------------------------</p>
           {imprimindo.itens.map(item => (
             <div key={item.id} className={styles.reciboLinha}>
-              <span>{item.quantidade}x {item.produtoNome}</span>
-              <span>{formatCurrency(item.precoUnitario * item.quantidade)}</span>
+              <span>{item.pesoGramas != null ? formatarPeso(item.pesoGramas) : item.volumeMililitros != null ? formatarVolume(item.volumeMililitros) : `${item.quantidade}x`} {item.produtoNome}</span>
+              <span>{formatCurrency(subtotalItem(item.precoUnitario, item.quantidade, item.pesoGramas, item.volumeMililitros))}</span>
             </div>
           ))}
           {!!imprimindo.valorFrete && (

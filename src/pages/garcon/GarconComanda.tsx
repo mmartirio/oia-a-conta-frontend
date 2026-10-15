@@ -11,6 +11,8 @@ import { Modal } from '../../components/ui/Modal'
 import { Card } from '../../components/ui/Card'
 import { Input } from '../../components/ui/Input'
 import { formatCurrency, formatTime, formatPhone, STATUS_PEDIDO_LABEL, METODO_PAGAMENTO_LABEL } from '../../utils/formatters'
+import { formatarPeso, subtotalItem } from '../../utils/pesoItem'
+import { formatarVolume } from '../../utils/volumeItem'
 import { useToast } from '../../contexts/ToastContext'
 import type { Comanda, Cliente, MetodoPagamento, Pedido } from '../../types'
 import styles from './GarconComanda.module.css'
@@ -252,7 +254,9 @@ export function GarconComanda() {
               <ul className={styles.itensList}>
                 {p.itens.map(item => (
                   <li key={item.id} className={styles.item}>
-                    <span className={styles.itemQtd}>{item.quantidade}x</span>
+                    <span className={styles.itemQtd}>
+                      {item.pesoGramas != null ? formatarPeso(item.pesoGramas) : item.volumeMililitros != null ? formatarVolume(item.volumeMililitros) : `${item.quantidade}x`}
+                    </span>
                     <span className={styles.itemNome}>
                       {item.produtoNome}
                       {item.comboNome && <em> ({item.comboNome})</em>}
@@ -260,7 +264,7 @@ export function GarconComanda() {
                     {item.observacao && (
                       <span className={styles.itemObs}>({item.observacao})</span>
                     )}
-                    <span className={styles.itemPreco}>{formatCurrency(item.precoUnitario * item.quantidade)}</span>
+                    <span className={styles.itemPreco}>{formatCurrency(subtotalItem(item.precoUnitario, item.quantidade, item.pesoGramas, item.volumeMililitros))}</span>
                   </li>
                 ))}
               </ul>

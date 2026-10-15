@@ -16,8 +16,10 @@ import { Modal } from '../../components/ui/Modal'
 import { Input } from '../../components/ui/Input'
 import { useToast } from '../../contexts/ToastContext'
 import { formatCurrency, formatPhone } from '../../utils/formatters'
+import { formatarPeso, paraGramas, subtotalItem } from '../../utils/pesoItem'
+import { formatarVolume, paraMililitros } from '../../utils/volumeItem'
 import { geocodificarEndereco, type Coordenada } from '../../utils/geocoding'
-import type { Categoria, Produto, Combo, Estoque, Cliente, MetodoPagamento, FreteCalculado } from '../../types'
+import type { Categoria, Produto, Combo, Estoque, Cliente, MetodoPagamento, FreteCalculado, UnidadeMedida, UnidadeVolume } from '../../types'
 import styles from './PdvNovaVenda.module.css'
 
 interface CartItem {
@@ -27,6 +29,12 @@ interface CartItem {
   nome: string
   preco: number
   quantidade: number
+  // Só em produto por peso (Produto.tipoPreco PESO) — peso vendido em
+  // gramas; quantidade acima fica fixa em 1 nesse caso.
+  pesoGramas?: number
+  // Só em produto por volume (Produto.tipoPreco VOLUME) — volume vendido em
+  // mililitros; quantidade acima fica fixa em 1 nesse caso.
+  volumeMililitros?: number
 }
 
 export type ModoVenda = 'BALCAO' | 'DELIVERY'
@@ -93,6 +101,11 @@ export function PdvNovaVenda({ sessaoCaixa, modoInicial, onConcluida }: {
   const [clienteNovoNome, setClienteNovoNome] = useState('')
   const [clienteSalvando, setClienteSalvando] = useState(false)
   const [clienteError, setClienteError] = useState('')
+
+  // ── Produto vendido por peso ou volume (ex: sorveteria, bebidas a granel) ──
+  const [fracaoModalProduto, setFracaoModalProduto] = useState<Produto | null>(null)
+  const [fracaoValor, setFracaoValor] = useState('')
+  const [fracaoUnidade, setFracaoUnidade] = useState<UnidadeMedida | UnidadeVolume>('G')
 
   // ── Cupom / desconto ────────────────────────────────────
   const [descontoModal, setDescontoModal] = useState(false)
@@ -164,6 +177,10 @@ export function PdvNovaVenda({ sessaoCaixa, modoInicial, onConcluida }: {
   const getQty = (key: string) => cart.find(i => i.key === key)?.quantidade ?? 0
 
   const addProdutoToCart = (produto: Produto) => {
+    if (produto.tipoPreco === 'PESO' || produto.tipoPreco === 'VOLUME') {
+      abrirFracaoModal(produto)
+      return
+    }
     const max = maxQtdProduto(produto.id)
     const key = `p-${produto.id}`
     if (getQty(key) >= max) {
@@ -175,6 +192,57 @@ export function PdvNovaVenda({ sessaoCaixa, modoInicial, onConcluida }: {
       if (existing) return prev.map(i => i.key === key ? { ...i, quantidade: i.quantidade + 1 } : i)
       return [...prev, { key, produtoId: produto.id, nome: produto.nome, preco: produto.preco, quantidade: 1 }]
     })
+  }
+
+  // ── Produto por peso ou volume: abre o modal pra digitar a fração
+  // (mg/g/kg ou ml/L, conforme produto.tipoPreco), pré-carregando o valor já
+  // no carrinho se o produto for clicado de novo (editar em vez de duplicar
+  // a linha).
+  const abrirFracaoModal = (produto: Produto) => {
+    const existente = cart.find(i => i.key === `p-${produto.id}`)
+    if (produto.tipoPreco === 'PESO') {
+      if (existente?.pesoGramas) {
+        const unidade: UnidadeMedida = existente.pesoGramas >= 1000 ? 'KG' : 'G'
+        setFracaoUnidade(unidade)
+        setFracaoValor(String(unidade === 'KG' ? existente.pesoGramas / 1000 : existente.pesoGramas))
+      } else {
+        setFracaoUnidade('G')
+        setFracaoValor('')
+      }
+    } else {
+      if (existente?.volumeMililitros) {
+        const unidade: UnidadeVolume = existente.volumeMililitros >= 1000 ? 'L' : 'ML'
+        setFracaoUnidade(unidade)
+        setFracaoValor(String(unidade === 'L' ? existente.volumeMililitros / 1000 : existente.volumeMililitros))
+      } else {
+        setFracaoUnidade('ML')
+        setFracaoValor('')
+      }
+    }
+    setFracaoModalProduto(produto)
+  }
+
+  const confirmarFracao = () => {
+    const produto = fracaoModalProduto
+    const valor = Number(fracaoValor.replace(',', '.'))
+    if (!produto || !valor || valor <= 0) return
+    const key = `p-${produto.id}`
+    if (produto.tipoPreco === 'PESO') {
+      const gramas = paraGramas(valor, fracaoUnidade as UnidadeMedida)
+      setCart(prev => {
+        const existing = prev.find(i => i.key === key)
+        if (existing) return prev.map(i => i.key === key ? { ...i, pesoGramas: gramas } : i)
+        return [...prev, { key, produtoId: produto.id, nome: produto.nome, preco: produto.preco, quantidade: 1, pesoGramas: gramas }]
+      })
+    } else {
+      const mililitros = paraMililitros(valor, fracaoUnidade as UnidadeVolume)
+      setCart(prev => {
+        const existing = prev.find(i => i.key === key)
+        if (existing) return prev.map(i => i.key === key ? { ...i, volumeMililitros: mililitros } : i)
+        return [...prev, { key, produtoId: produto.id, nome: produto.nome, preco: produto.preco, quantidade: 1, volumeMililitros: mililitros }]
+      })
+    }
+    setFracaoModalProduto(null)
   }
 
   const addComboToCart = (combo: Combo) => {
@@ -203,7 +271,7 @@ export function PdvNovaVenda({ sessaoCaixa, modoInicial, onConcluida }: {
 
   const removeFromCart = (key: string) => setCart(prev => prev.filter(i => i.key !== key))
 
-  const subtotal = cart.reduce((acc, i) => acc + i.preco * i.quantidade, 0)
+  const subtotal = cart.reduce((acc, i) => acc + subtotalItem(i.preco, i.quantidade, i.pesoGramas, i.volumeMililitros), 0)
 
   const descontoAplicado = (() => {
     if (!cupomAplicado?.valido || cupomAplicado.valorDesconto == null) return 0
@@ -336,7 +404,7 @@ export function PdvNovaVenda({ sessaoCaixa, modoInicial, onConcluida }: {
     await pdvApi.criarVenda({
       itens: cart.map(i => i.comboId
         ? { comboId: i.comboId, comboQuantidade: i.quantidade, quantidade: i.quantidade }
-        : { produtoId: i.produtoId, produtoNome: i.nome, quantidade: i.quantidade, precoUnitario: i.preco }),
+        : { produtoId: i.produtoId, produtoNome: i.nome, quantidade: i.quantidade, pesoGramas: i.pesoGramas, volumeMililitros: i.volumeMililitros, precoUnitario: i.preco }),
       metodoPagamento: metodo,
       parcelas: metodo === 'CARTAO_CREDITO' ? parcelas : undefined,
       observacao: observacao || undefined,
@@ -362,7 +430,7 @@ export function PdvNovaVenda({ sessaoCaixa, modoInicial, onConcluida }: {
       observacao: observacao || undefined,
       itens: cart.map(i => i.comboId
         ? { comboId: i.comboId, comboQuantidade: i.quantidade, produtoNome: i.nome, precoUnitario: i.preco, quantidade: i.quantidade }
-        : { produtoId: i.produtoId, produtoNome: i.nome, precoUnitario: i.preco, quantidade: i.quantidade }),
+        : { produtoId: i.produtoId, produtoNome: i.nome, precoUnitario: i.preco, quantidade: i.quantidade, pesoGramas: i.pesoGramas, volumeMililitros: i.volumeMililitros }),
       origemPdv: true,
     })
     toast.success('Delivery registrado com sucesso!')
@@ -488,10 +556,32 @@ export function PdvNovaVenda({ sessaoCaixa, modoInicial, onConcluida }: {
                     {esgotado && <Badge variant="danger" size="sm">Esgotado</Badge>}
                     {!esgotado && poucasUnidades && <Badge variant="warning" size="sm">Últimas {estoque!.quantidade}</Badge>}
                     <div className={styles.prodNome}>{p.nome}</div>
-                    <div className={styles.prodPreco}>{formatCurrency(p.preco)}</div>
+                    <div className={styles.prodPreco}>
+                      {formatCurrency(p.preco)}{p.tipoPreco === 'PESO' ? ' /kg' : p.tipoPreco === 'VOLUME' ? ' /L' : ''}
+                    </div>
                     <div className={styles.prodControls}>
                       {esgotado ? (
                         <Button size="sm" disabled fullWidth>Esgotado</Button>
+                      ) : p.tipoPreco === 'PESO' ? (
+                        cart.find(i => i.key === key)?.pesoGramas ? (
+                          <>
+                            <button className={styles.qtyBtn} onClick={() => removeFromCart(key)}><FiTrash2 size={14} /></button>
+                            <span className={styles.qty}>{formatarPeso(cart.find(i => i.key === key)!.pesoGramas)}</span>
+                            <button className={styles.qtyBtn} onClick={() => abrirFracaoModal(p)}>✎</button>
+                          </>
+                        ) : (
+                          <button className={styles.addBtn} onClick={() => addProdutoToCart(p)}>Pesar</button>
+                        )
+                      ) : p.tipoPreco === 'VOLUME' ? (
+                        cart.find(i => i.key === key)?.volumeMililitros ? (
+                          <>
+                            <button className={styles.qtyBtn} onClick={() => removeFromCart(key)}><FiTrash2 size={14} /></button>
+                            <span className={styles.qty}>{formatarVolume(cart.find(i => i.key === key)!.volumeMililitros)}</span>
+                            <button className={styles.qtyBtn} onClick={() => abrirFracaoModal(p)}>✎</button>
+                          </>
+                        ) : (
+                          <button className={styles.addBtn} onClick={() => addProdutoToCart(p)}>Medir</button>
+                        )
                       ) : qty > 0 ? (
                         <>
                           <button className={styles.qtyBtn} onClick={() => decrementCart({ key, produtoId: p.id, nome: p.nome, preco: p.preco, quantidade: qty })}>−</button>
@@ -548,12 +638,18 @@ export function PdvNovaVenda({ sessaoCaixa, modoInicial, onConcluida }: {
                     <div className={styles.reciboLinhaInfo}>
                       <span className={styles.reciboLinhaNome}>{item.nome}</span>
                     </div>
-                    <div className={styles.reciboLinhaControls}>
-                      <button className={styles.reciboQtyBtn} onClick={() => decrementCart(item)}>−</button>
-                      <span className={styles.reciboQty}>{item.quantidade}</span>
-                      <button className={styles.reciboQtyBtn} onClick={() => incrementCart(item)}>+</button>
-                    </div>
-                    <span className={styles.reciboLinhaValor}>{formatCurrency(item.preco * item.quantidade)}</span>
+                    {item.pesoGramas != null ? (
+                      <span className={styles.reciboQty}>{formatarPeso(item.pesoGramas)}</span>
+                    ) : item.volumeMililitros != null ? (
+                      <span className={styles.reciboQty}>{formatarVolume(item.volumeMililitros)}</span>
+                    ) : (
+                      <div className={styles.reciboLinhaControls}>
+                        <button className={styles.reciboQtyBtn} onClick={() => decrementCart(item)}>−</button>
+                        <span className={styles.reciboQty}>{item.quantidade}</span>
+                        <button className={styles.reciboQtyBtn} onClick={() => incrementCart(item)}>+</button>
+                      </div>
+                    )}
+                    <span className={styles.reciboLinhaValor}>{formatCurrency(subtotalItem(item.preco, item.quantidade, item.pesoGramas, item.volumeMililitros))}</span>
                     <button className={styles.reciboRemoveBtn} onClick={() => removeFromCart(item.key)}><FiX size={16} /></button>
                   </div>
                 ))}
@@ -713,6 +809,65 @@ export function PdvNovaVenda({ sessaoCaixa, modoInicial, onConcluida }: {
                 Cadastrar e selecionar
               </Button>
             </>
+          )}
+        </div>
+      </Modal>
+
+      {/* Modal Peso/Volume (produto vendido por kg ou por litro) */}
+      <Modal
+        isOpen={!!fracaoModalProduto}
+        onClose={() => setFracaoModalProduto(null)}
+        title={fracaoModalProduto ? `${fracaoModalProduto.tipoPreco === 'PESO' ? 'Pesar' : 'Medir'} — ${fracaoModalProduto.nome}` : ''}
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setFracaoModalProduto(null)}>Cancelar</Button>
+            <Button onClick={confirmarFracao} disabled={!fracaoValor || Number(fracaoValor.replace(',', '.')) <= 0}>
+              Adicionar
+            </Button>
+          </>
+        }
+      >
+        <div className={styles.modalForm}>
+          <p className={styles.modalHint}>
+            Preço: {fracaoModalProduto && formatCurrency(fracaoModalProduto.preco)} por {fracaoModalProduto?.tipoPreco === 'PESO' ? 'kg' : 'litro'}
+          </p>
+          <div className={styles.fieldRow}>
+            <Input
+              label={fracaoModalProduto?.tipoPreco === 'PESO' ? 'Peso' : 'Volume'}
+              type="number"
+              min="0"
+              step="0.001"
+              value={fracaoValor}
+              onChange={e => setFracaoValor(e.target.value)}
+              placeholder="0"
+              autoFocus
+            />
+            <div className={styles.formField}>
+              <label>Unidade</label>
+              <select value={fracaoUnidade} onChange={e => setFracaoUnidade(e.target.value as UnidadeMedida | UnidadeVolume)}>
+                {fracaoModalProduto?.tipoPreco === 'PESO' ? (
+                  <>
+                    <option value="MG">mg</option>
+                    <option value="G">g</option>
+                    <option value="KG">kg</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="ML">ml</option>
+                    <option value="L">L</option>
+                  </>
+                )}
+              </select>
+            </div>
+          </div>
+          {fracaoModalProduto && fracaoValor && Number(fracaoValor.replace(',', '.')) > 0 && (
+            <p className={styles.modalHint}>
+              Total: {formatCurrency(
+                fracaoModalProduto.tipoPreco === 'PESO'
+                  ? subtotalItem(fracaoModalProduto.preco, 1, paraGramas(Number(fracaoValor.replace(',', '.')), fracaoUnidade as UnidadeMedida))
+                  : subtotalItem(fracaoModalProduto.preco, 1, null, paraMililitros(Number(fracaoValor.replace(',', '.')), fracaoUnidade as UnidadeVolume))
+              )}
+            </p>
           )}
         </div>
       </Modal>

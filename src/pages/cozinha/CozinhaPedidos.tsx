@@ -6,6 +6,8 @@ import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { formatTime } from '../../utils/formatters'
+import { formatarPeso } from '../../utils/pesoItem'
+import { formatarVolume } from '../../utils/volumeItem'
 import { useWebSocket } from '../../contexts/WebSocketContext'
 import { useAuth } from '../../contexts/AuthContext'
 import type { Pedido } from '../../types'
@@ -273,7 +275,7 @@ export function CozinhaPedidos() {
           <p className={styles.reciboLinhaDivisoria}>--------------------------------</p>
           {imprimindo.itens.map(item => (
             <p key={item.id} className={styles.reciboItem}>
-              {item.quantidade}x {item.produtoNome}
+              {item.pesoGramas != null ? formatarPeso(item.pesoGramas) : item.volumeMililitros != null ? formatarVolume(item.volumeMililitros) : `${item.quantidade}x`} {item.produtoNome}
               {item.observacao && <span className={styles.reciboItemObs}> — {item.observacao}</span>}
             </p>
           ))}
