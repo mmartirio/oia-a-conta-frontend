@@ -1,0 +1,30 @@
+.wrap { display: flex; flex-direction: column; gap: 0.875rem; width: 100%; }
+
+.resumo {
+  background: color-mix(in srgb, var(--color-info) 10%, white);
+  border: 1px solid color-mix(in srgb, var(--color-info) 30%, white);
+  border-radius: var(--radius-lg);
+  padding: 0.875rem 1rem;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  color: var(--color-text);
+}
+
+.erro {
+  background: color-mix(in srgb, var(--color-danger) 12%, white);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 35%, white);
+  border-radius: var(--radius-lg);
+  padding: 0.75rem 1rem;
+  color: color-mix(in srgb, var(--color-danger) 70%, black);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.carregando { color: var(--color-text-secondary); font-size: 0.9375rem; margin: 0; text-align: center; }
+
+.seguranca { color: var(--color-text-secondary); font-size: 0.8125rem; margin: 0; text-align: center; }
+
+.pular {
+  align-self: center; background: none; border: none; cursor: pointer;
+  color: var(--color-primary); font-weight: 600; font-size: 0.9375rem; padding: 0.25rem;
+}

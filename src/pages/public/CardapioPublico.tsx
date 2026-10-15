@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
+import { PagamentoOnlinePedido } from '../../components/PagamentoOnlinePedido'
 import { publicApi, type CategoriaPublico, type ComboPublico, type ProdutoPublico, type RestaurantePublico } from '../../api/publicApi'
 import { pausaApi, type PausaStatus } from '../../api/pausaApi'
 import { formatPhone } from '../../utils/formatters'
@@ -31,7 +32,7 @@ function chavePedidoAnterior(restauranteId: number) {
   return `oiaaconta_ultimo_pedido_${restauranteId}`
 }
 
-type Tela = 'cardapio' | 'checkout' | 'sucesso'
+type Tela = 'cardapio' | 'checkout' | 'pagamento' | 'sucesso'
 
 function formatBRL(v: number) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -153,6 +154,12 @@ export function CardapioPublico({ slugProp }: { slugProp?: string } = {}) {
   const [observacao, setObservacao] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [erroCheckout, setErroCheckout] = useState('')
+  // Pagamento online (Mercado Pago do restaurante) — só aparece se o
+  // restaurante conectou a conta dele no painel.
+  const [pagamentoOnline, setPagamentoOnline] = useState<{ publicKey: string } | null>(null)
+  const [pedidoPagamento, setPedidoPagamento] = useState<{
+    entregaId: number; token: string; total: number; metodo: 'PIX' | 'CARTAO_CREDITO'
+  } | null>(null)
 
   useEffect(() => {
     if (!slug) return
@@ -164,6 +171,9 @@ export function CardapioPublico({ slugProp }: { slugProp?: string } = {}) {
         document.title = r.data.nome
         restauranteIdCarregado = r.data.id
         pausaApi.status(r.data.id).then(sr => setPausaStatus(sr.data)).catch(() => {})
+        publicApi.pagamentoOnlineConfig(r.data.id)
+          .then(pr => setPagamentoOnline(pr.data.disponivel && pr.data.publicKey ? { publicKey: pr.data.publicKey } : null))
+          .catch(() => setPagamentoOnline(null))
         return publicApi.getCardapio(r.data.id)
       })
       .then(r => {
@@ -332,13 +342,19 @@ export function CardapioPublico({ slugProp }: { slugProp?: string } = {}) {
     if (!isJidContact && !telefone.trim()) { setErroCheckout('Informe seu WhatsApp.'); return }
     if (!endereco.trim()) { setErroCheckout('Informe o endereço de entrega.'); return }
     if (!metodoPagamento) { setErroCheckout('Escolha a forma de pagamento.'); return }
+    // PIX_ONLINE/CARTAO_ONLINE são só valores do select — pro backend vão
+    // como PIX/CARTAO_CREDITO + pagamentoOnline.
+    const online = metodoPagamento === 'PIX_ONLINE' || metodoPagamento === 'CARTAO_ONLINE'
+    const metodoBackend = metodoPagamento === 'PIX_ONLINE' ? 'PIX'
+      : metodoPagamento === 'CARTAO_ONLINE' ? 'CARTAO_CREDITO' : metodoPagamento
     setEnviando(true)
     try {
-      await publicApi.fazerPedido(restaurante!.id, {
+      const { data: pedido } = await publicApi.fazerPedido(restaurante!.id, {
         clienteNome: nome.trim(),
         telefone: telefone.trim(),
         endereco: endereco.trim(),
-        metodoPagamento,
+        metodoPagamento: metodoBackend,
+        pagamentoOnline: online || undefined,
         observacao: observacao.trim() || undefined,
         itens: cart.map(i => i.comboId
           ? { comboId: i.comboId, comboQuantidade: i.quantidade, produtoNome: i.produtoNome, precoUnitario: i.precoUnitario, quantidade: i.quantidade }
@@ -357,9 +373,21 @@ export function CardapioPublico({ slugProp }: { slugProp?: string } = {}) {
           } satisfies PedidoAnteriorStorage))
         }
       } catch { /* localStorage indisponível — não é crítico */ }
-      setTela('sucesso')
-    } catch {
-      setErroCheckout('Erro ao enviar pedido. Tente novamente.')
+      if (online && pedido.pagamentoOnlineToken) {
+        setPedidoPagamento({
+          entregaId: pedido.entregaId,
+          token: pedido.pagamentoOnlineToken,
+          total: pedido.total ?? total,
+          metodo: metodoBackend as 'PIX' | 'CARTAO_CREDITO',
+        })
+        setTela('pagamento')
+      } else {
+        setPedidoPagamento(null)
+        setTela('sucesso')
+      }
+    } catch (err) {
+      const msg = (err as { response?: { data?: { erro?: string } } }).response?.data?.erro
+      setErroCheckout(msg ?? 'Erro ao enviar pedido. Tente novamente.')
     } finally {
       setEnviando(false)
     }
@@ -391,21 +419,59 @@ export function CardapioPublico({ slugProp }: { slugProp?: string } = {}) {
       <div className={styles.sucessoPage}>
         <div className={styles.sucessoCard}>
           <div className={styles.sucessoIcon}>✅</div>
-          <h1 className={styles.sucessoTitle}>Pedido enviado!</h1>
-          <p className={styles.sucessoDesc}>
-            Seu pedido foi enviado com sucesso para o restaurante.<br />
-            Enviamos a confirmação para o seu WhatsApp<br />
-            <strong>{telefone}</strong><br /><br />
-            Acompanhe as atualizações por lá.
-          </p>
+          <h1 className={styles.sucessoTitle}>{pedidoPagamento ? 'Pagamento confirmado!' : 'Pedido enviado!'}</h1>
+          {pedidoPagamento ? (
+            <p className={styles.sucessoDesc}>
+              O restaurante já recebeu seu pedido pago.<br />
+              Você será avisado no WhatsApp<br />
+              <strong>{telefone}</strong><br />
+              assim que ele for aceito.
+            </p>
+          ) : (
+            <p className={styles.sucessoDesc}>
+              Seu pedido foi enviado com sucesso para o restaurante.<br />
+              Enviamos a confirmação para o seu WhatsApp<br />
+              <strong>{telefone}</strong><br /><br />
+              Acompanhe as atualizações por lá.
+            </p>
+          )}
           {link && (
             <a className={styles.btnPedido} href={link}>
               Voltar para o WhatsApp
             </a>
           )}
-          <button className={styles.btnVoltar} onClick={() => { setTela('cardapio'); setCart([]) }}>
+          <button className={styles.btnVoltar} onClick={() => { setTela('cardapio'); setCart([]); setPedidoPagamento(null) }}>
             Fazer novo pedido
           </button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Tela de pagamento online ───────────────────────────────────────────────
+  if (tela === 'pagamento' && pedidoPagamento && pagamentoOnline) {
+    return (
+      <div className={styles.page} style={corVars(restaurante)}>
+        <BackgroundLayer restaurante={restaurante} />
+        <header className={styles.header}>
+          <button className={styles.btnBack} onClick={() => setTela('checkout')}>← Voltar</button>
+          <h1 className={styles.headerTitle}>{restaurante.nome}</h1>
+        </header>
+        <div className={styles.checkoutWrapper}>
+          <h2 className={styles.checkoutTitle}>
+            {pedidoPagamento.metodo === 'PIX' ? 'Pagar com PIX' : 'Pagar com cartão'}
+          </h2>
+          <p className={styles.inputHint}>
+            O pedido vai para o restaurante assim que o pagamento for confirmado.
+          </p>
+          <PagamentoOnlinePedido
+            entregaId={pedidoPagamento.entregaId}
+            token={pedidoPagamento.token}
+            total={pedidoPagamento.total}
+            metodo={pedidoPagamento.metodo}
+            publicKey={pagamentoOnline.publicKey}
+            onPago={() => { setCart([]); setTela('sucesso') }}
+          />
         </div>
       </div>
     )
@@ -504,12 +570,18 @@ export function CardapioPublico({ slugProp }: { slugProp?: string } = {}) {
               onChange={e => setMetodoPagamento(e.target.value)}
             >
               <option value="">Selecione...</option>
-              <option value="DINHEIRO">Dinheiro</option>
-              <option value="PIX">PIX</option>
-              {!pausaStatus?.entregadorExterno && (
-                <option value="CARTAO_CREDITO">Cartão de Crédito</option>
+              {pagamentoOnline && (
+                <>
+                  <option value="PIX_ONLINE">PIX — pague agora</option>
+                  <option value="CARTAO_ONLINE">Cartão de crédito — pague agora</option>
+                </>
               )}
-              <option value="CARTAO_DEBITO">Cartão de Débito</option>
+              <option value="DINHEIRO">Dinheiro</option>
+              {!pagamentoOnline && <option value="PIX">PIX</option>}
+              {!pausaStatus?.entregadorExterno && (
+                <option value="CARTAO_CREDITO">Cartão de Crédito{pagamentoOnline ? ' (na entrega)' : ''}</option>
+              )}
+              <option value="CARTAO_DEBITO">Cartão de Débito{pagamentoOnline ? ' (na entrega)' : ''}</option>
             </select>
           </div>
 
@@ -531,7 +603,10 @@ export function CardapioPublico({ slugProp }: { slugProp?: string } = {}) {
             onClick={handleCheckout}
             disabled={enviando || cart.length === 0}
           >
-            {enviando ? 'Enviando...' : `Fazer pedido — ${formatBRL(total)}`}
+            {enviando ? 'Enviando...'
+              : metodoPagamento === 'PIX_ONLINE' || metodoPagamento === 'CARTAO_ONLINE'
+                ? `Continuar para o pagamento — ${formatBRL(total)}`
+                : `Fazer pedido — ${formatBRL(total)}`}
           </button>
         </div>
       </div>

@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { billingApi, type Contrato, type Pagamento } from '../../api/billingApi'
+import { CartaoAssinatura } from '../../components/CartaoAssinatura'
+import { useAuth } from '../../contexts/AuthContext'
 import styles from './AdminAssinatura.module.css'
 
 const STATUS_LABEL: Record<string, string> = {
@@ -27,6 +29,7 @@ function fmtData(s: string) {
 }
 
 export function AdminAssinatura() {
+  const { user } = useAuth()
   const [contrato, setContrato] = useState<Contrato | null>(null)
   const [pagamentos, setPagamentos] = useState<Pagamento[]>([])
   const [loading, setLoading] = useState(true)
@@ -118,6 +121,23 @@ export function AdminAssinatura() {
           <p className={styles.dataLabel}>Próximo vencimento</p>
           <p className={styles.dataValor}>{fmtData(contrato.dataProximoVencimento)}</p>
         </div>
+      </div>
+
+      {/* Cartão da assinatura (cobrança mensal automática no Mercado Pago) */}
+      <div className={styles.section}>
+        <h2 className={styles.sectionTitle}>Forma de pagamento</h2>
+        {contrato.mpPreapprovalId ? (
+          <div className={styles.cartaoOk}>
+            💳 Cartão cadastrado — a mensalidade é cobrada automaticamente todo mês.
+          </div>
+        ) : (
+          <div className={styles.planoCard}>
+            <CartaoAssinatura
+              emailPadrao={user?.email}
+              onSucesso={novo => setContrato(c => (c ? { ...c, ...novo, plano: c.plano } : novo))}
+            />
+          </div>
+        )}
       </div>
 
       {/* Histórico de pagamentos */}

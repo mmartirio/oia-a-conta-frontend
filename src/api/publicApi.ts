@@ -88,7 +88,30 @@ export const publicApi = {
     metodoPagamento: string
     observacao?: string
     itens: ItemPedido[]
-  }) => api.post<{ mensagem: string; telefone: string; entregaId: number }>(
+    pagamentoOnline?: boolean
+  }) => api.post<{ mensagem: string; telefone: string; entregaId: number; pagamentoOnlineToken?: string; total?: number }>(
     `/api/whatsapp/publico/${restauranteId}/pedido`, data
   ),
+
+  // Pagamento online (Mercado Pago da conta do restaurante) — ver
+  // PagamentoOnlineService no order-service.
+  pagamentoOnlineConfig: (restauranteId: number) =>
+    api.get<{ disponivel: boolean; publicKey?: string }>(`/api/pagamento-online/publico/restaurantes/${restauranteId}`),
+  pagarPedido: (entregaId: number, token: string, data: Record<string, unknown>) =>
+    api.post<PagamentoOnlineResumo>(`/api/pagamento-online/publico/entregas/${entregaId}/pagamento`, data, { params: { token } }),
+  statusPagamentoPedido: (entregaId: number, token: string) =>
+    api.get<PagamentoOnlineResumo>(`/api/pagamento-online/publico/entregas/${entregaId}/status`, { params: { token } }),
+}
+
+export interface PagamentoOnlineResumo {
+  entregaId: number
+  total: number
+  metodo: 'PIX' | 'CARTAO_CREDITO'
+  pago: boolean
+  cancelado: boolean
+  status: string | null
+  pixQrCode?: string
+  pixQrCodeBase64?: string
+  pixExpiraEm?: string
+  motivo?: string
 }

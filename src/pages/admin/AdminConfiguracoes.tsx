@@ -22,6 +22,7 @@ import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { Switch } from '../../components/ui/Switch'
 import { Tabs } from '../../components/ui/Tabs'
 import { QrCodeLink } from '../../components/ui/QrCodeLink'
+import { MercadoPagoConexao } from '../../components/MercadoPagoConexao'
 import { comprimirImagem, removerFundoBranco, extrairPaletaCores } from '../../utils/imageProcessing'
 import { playAlertaPedidoCliente, OPCOES_ALERTA_PEDIDO, type TipoAlertaPedido } from '../../utils/audio'
 import { publicMenuUrl, PUBLIC_MENU_DOMAIN } from '../../utils/publicMenuUrl'
@@ -936,6 +937,8 @@ export function AdminConfiguracoes() {
 
       {aba === 'pagamento' && (
       <div className={styles.form}>
+        {(user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') && <MercadoPagoConexao />}
+
         {temPermissao('CONFIG_PIX') && (
         <div className={styles.group}>
           <label className={styles.label}>Chave PIX do Restaurante</label>

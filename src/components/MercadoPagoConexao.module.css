@@ -1,0 +1,20 @@
+.card {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+.header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; }
+.titulo { margin: 0 0 0.25rem; font-size: 1.05rem; font-weight: 700; }
+.descricao { margin: 0; color: var(--color-text-secondary); font-size: 0.9rem; line-height: 1.45; max-width: 560px; }
+.badgeConectado {
+  font-size: 0.8rem; font-weight: 700; padding: 0.25rem 0.625rem; border-radius: 99px; white-space: nowrap;
+  background: color-mix(in srgb, var(--color-success) 15%, white);
+  color: color-mix(in srgb, var(--color-success) 70%, black);
+}
+.acoes { display: flex; align-items: center; gap: 0.875rem; flex-wrap: wrap; }
+.hint { color: var(--color-text-secondary); font-size: 0.85rem; }
+.erro { margin: 0; color: color-mix(in srgb, var(--color-danger) 75%, black); font-weight: 600; font-size: 0.9rem; }

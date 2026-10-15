@@ -126,7 +126,9 @@ export function PedidoPendenteAlerta() {
           {pedido.observacao && <p className={styles.obs}>📝 {pedido.observacao}</p>}
 
           <div className={styles.rodape}>
-            <span className={styles.pagamento}>{pedido.metodoPagamento}</span>
+            <span className={styles.pagamento}>
+              {pedido.metodoPagamento}{pedido.pagamentoOnline ? ' · ✓ pago online' : ''}
+            </span>
             <span className={styles.total}>{formatCurrency(pedido.total)}</span>
           </div>
         </div>
@@ -170,7 +172,7 @@ export function PedidoPendenteAlerta() {
             >
               ✕
             </button>
-            {pedido.metodoPagamento === 'PIX' ? (
+            {pedido.metodoPagamento === 'PIX' && !pedido.pagamentoPixValidado ? (
               <button
                 className={styles.btnAceitar}
                 onClick={handleValidarPix}

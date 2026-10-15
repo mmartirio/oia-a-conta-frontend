@@ -8,6 +8,7 @@ import { billingApi, type Plano } from '../api/billingApi'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { PlanoCard } from '../components/PlanoCard'
+import { CartaoAssinatura } from '../components/CartaoAssinatura'
 import planoCardStyles from '../components/PlanoCard.module.css'
 import { formatPhone } from '../utils/formatters'
 import { VERSAO_CONTRATO } from '../constants/legal'
@@ -20,8 +21,9 @@ const STEP_LABEL: Record<Step, string> = {
   modalidade: 'Modalidade',
   form: 'Dados',
   verificacao: 'Confirmação',
+  pagamento: 'Pagamento',
 }
-const STEP_ORDER: Step[] = ['plano', 'modalidade', 'form', 'verificacao']
+const STEP_ORDER: Step[] = ['plano', 'modalidade', 'form', 'verificacao', 'pagamento']
 
 function ProgressoWizard({ atual, claro }: { atual: Step; claro?: boolean }) {
   const idxAtual = STEP_ORDER.indexOf(atual)
@@ -51,7 +53,7 @@ function gerarSenha(): string {
     .join('')
 }
 
-type Step = 'plano' | 'modalidade' | 'form' | 'verificacao'
+type Step = 'plano' | 'modalidade' | 'form' | 'verificacao' | 'pagamento'
 type ModalidadeOperacao = 'MESAS' | 'DELIVERY'
 
 export function Registro() {
@@ -227,6 +229,15 @@ export function Registro() {
     setLoading(true)
     try {
       const usuario = await verificarEmail(emailPendente, codigo)
+      // Conta criada e logada — com plano escolhido, o último passo é
+      // cadastrar o cartão da assinatura (precisa estar logado: o contrato
+      // só existe depois da verificação, e o token do cartão expira rápido
+      // demais pra guardar no registro pendente).
+      if (planoSelecionado && usuario.role === 'ADMIN') {
+        setError('')
+        setStep('pagamento')
+        return
+      }
       navigate(usuario.role === 'ADMIN' ? '/admin' : `/${usuario.role.toLowerCase()}`, { replace: true })
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })
@@ -248,6 +259,31 @@ export function Registro() {
     } finally {
       setReenvioLoading(false)
     }
+  }
+
+  // ── Etapa 4: cartão da assinatura ────────────────────────────────────────
+  if (step === 'pagamento') {
+    return (
+      <div className={styles.page}>
+        <div className={`${styles.card} ${reg.formCard}`}>
+          <div className={styles.logo}>
+            <img src={logo} alt="Oia a Conta" />
+          </div>
+          <h2 className={styles.title}>Cadastre o cartão da assinatura</h2>
+          <p className={styles.subtitle}>
+            Conta criada! Falta só o cartão para a cobrança mensal do plano <strong>{planoSelecionado?.nome}</strong>.
+          </p>
+
+          <ProgressoWizard atual={step} claro />
+
+          <CartaoAssinatura
+            emailPadrao={emailPendente}
+            onSucesso={() => navigate('/admin', { replace: true })}
+            onIndisponivel={() => navigate('/admin', { replace: true })}
+          />
+        </div>
+      </div>
+    )
   }
 
   // ── Etapa 3: verificação de e-mail ────────────────────────────────────────

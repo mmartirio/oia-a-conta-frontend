@@ -7,7 +7,7 @@ export interface Page<T> {
 }
 
 export type Role = 'SUPER_ADMIN' | 'ADMIN' | 'GARCON' | 'COZINHA'
-export type StatusEntrega = 'AGUARDANDO' | 'CONFIRMADA' | 'ACEITA' | 'PRONTO_PARA_ENTREGA' | 'SAIU_PARA_ENTREGA' | 'ENTREGUE' | 'CANCELADA'
+export type StatusEntrega = 'AGUARDANDO_PAGAMENTO' | 'AGUARDANDO' | 'CONFIRMADA' | 'ACEITA' | 'PRONTO_PARA_ENTREGA' | 'SAIU_PARA_ENTREGA' | 'ENTREGUE' | 'CANCELADA'
 export type StatusMesa = 'DISPONIVEL' | 'OCUPADA' | 'AGUARDANDO_PAGAMENTO'
 export type StatusPedido = 'ENVIADO' | 'PREPARANDO' | 'PRONTO' | 'ENTREGUE' | 'CANCELADO'
 export type StatusComanda = 'ABERTA' | 'FECHADA'
@@ -376,6 +376,9 @@ export interface Entrega {
   origemIfood?: boolean
   pagamentoConfirmadoCaixa?: boolean
   pagamentoPixValidado?: boolean
+  // Pago online no cardápio (Mercado Pago do restaurante).
+  pagamentoOnline?: boolean
+  pagamentoOnlineStatus?: string | null
   criadoEm: string
   entregueEm?: string | null
   latitude?: number | null

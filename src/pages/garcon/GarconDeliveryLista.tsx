@@ -217,7 +217,9 @@ export function GarconDeliveryLista() {
 
                     <p className={styles.cardPagamento}>
                       💳 {METODO_PAGAMENTO_LABEL[e.metodoPagamento as MetodoPagamento] ?? e.metodoPagamento}
-                      {e.metodoPagamento === 'PIX' && (
+                      {e.pagamentoOnline ? (
+                        e.pagamentoOnlineStatus === 'refunded' ? ' — estornado' : ' — ✓ pago online'
+                      ) : e.metodoPagamento === 'PIX' && (
                         e.pagamentoPixValidado
                           ? ' — ✓ pago'
                           : ' — pagamento não validado'
@@ -252,7 +254,7 @@ export function GarconDeliveryLista() {
                         </button>
                         {e.status === 'AGUARDANDO' ? (
                           <>
-                            {e.metodoPagamento === 'PIX' ? (
+                            {e.metodoPagamento === 'PIX' && !e.pagamentoPixValidado ? (
                               // Validar PIX já aceita e manda pra cozinha —
                               // não faz sentido ter "Confirmar" também.
                               <Button

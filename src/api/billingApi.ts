@@ -55,6 +55,9 @@ export interface Contrato {
   // Encargos pendentes de trocas de modalidade além do limite gratuito,
   // somados automaticamente no próximo pagamento registrado.
   saldoEncargosModalidade: number
+  // Assinatura no Mercado Pago (cartão cadastrado, cobrança mensal
+  // automática) — null enquanto o dono não cadastrou o cartão.
+  mpPreapprovalId: string | null
 }
 
 export interface Pagamento {
@@ -126,6 +129,12 @@ export const billingApi = {
     api.put<Contrato>('/api/contratos/meu/modalidade', { modalidadeOperacao }),
   alterarMeuPlano: (planoId: number, modalidadeOperacao?: 'MESAS' | 'DELIVERY') =>
     api.put<Contrato>('/api/contratos/meu/plano', { planoId, modalidadeOperacao }),
+  // Assinatura com cartão (Mercado Pago) — config traz a public key pro
+  // Card Payment Brick e a data/valor da primeira cobrança.
+  configAssinatura: () =>
+    api.get<{ publicKey: string; valor: number; primeiraCobranca: string }>('/api/contratos/meu/assinatura/config'),
+  criarAssinatura: (cardTokenId: string, payerEmail: string) =>
+    api.post<Contrato>('/api/contratos/meu/assinatura', { cardTokenId, payerEmail }),
   pagamentoManual: (contratoId: number, valor: number, observacao = '') =>
     api.post<Pagamento>(`/api/contratos/${contratoId}/pagamento-manual`, { valor, observacao }),
   // Paginação real — usada na tela de detalhe de uma única empresa (GestorEmpresaDetalhe).

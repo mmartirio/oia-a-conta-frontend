@@ -58,6 +58,7 @@ import { AdminMarketing } from './pages/admin/AdminMarketing'
 import { AdminFinanceiro } from './pages/admin/AdminFinanceiro'
 import { AdminAssinatura } from './pages/admin/AdminAssinatura'
 import { AdminConfiguracoes } from './pages/admin/AdminConfiguracoes'
+import { AdminMercadoPagoCallback } from './pages/admin/AdminMercadoPagoCallback'
 import { AdminSuporte } from './pages/admin/AdminSuporte'
 import { AdminWhatsapp } from './pages/admin/AdminWhatsapp'
 import { AdminIfood } from './pages/admin/AdminIfood'
@@ -171,6 +172,7 @@ export function App() {
                     <Route path="/admin/assinatura" element={<AdminAssinatura />} />
                     <Route element={<RequirePermission permission={['CONFIG_STATUS_LOJA', 'CONFIG_ALERTA_PEDIDO', 'CONFIG_DADOS_EMPRESA', 'CONFIG_PIX', 'CONFIG_COMISSOES', 'CONFIG_LOGO', 'CONFIG_CORES', 'CONFIG_BACKGROUND', 'CONFIG_HORARIOS', 'CONFIG_PAUSAS', 'CONFIG_FRETE']} />}>
                       <Route path="/admin/configuracoes" element={<AdminConfiguracoes />} />
+                      <Route path="/admin/mercadopago/callback" element={<AdminMercadoPagoCallback />} />
                     </Route>
                     <Route element={<RequirePermission permission="SUPORTE" />}>
                       <Route path="/admin/suporte" element={<AdminSuporte />} />
