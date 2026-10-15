@@ -101,6 +101,68 @@
 .cardFooter { display: flex; align-items: center; justify-content: space-between; margin-top: 0.75rem; padding-top: 0.625rem; border-top: 1px solid var(--color-border); }
 .total { font-size: 1.25rem; font-weight: 800; color: var(--color-text); }
 
+/* Vendas Realizadas — lista das comandas/entregas já pagas na sessão de
+   caixa aberta, abaixo da fila de quem ainda aguarda pagamento. */
+.vendasRealizadas { margin-top: 1.75rem; }
+.vendasRealizadasTitulo { font-size: 1.0625rem; font-weight: 700; color: var(--color-text); margin: 0 0 0.75rem; }
+.vendasRealizadasLista {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.vendaRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 1.125rem;
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--color-border);
+}
+.vendaRow:last-child { border-bottom: none; }
+.vendaHora { color: var(--color-text-secondary); font-family: monospace; min-width: 3.25rem; }
+.vendaDescricao { flex: 1; color: var(--color-text); }
+.vendaMetodo { color: var(--color-text-secondary); }
+.vendaTotal { font-weight: 700; color: var(--color-text); min-width: 5.5rem; text-align: right; }
+
+/* Campo de data da página de Histórico de Vendas (PdvHistoricoVendas). */
+.historicoData {
+  width: 100%;
+  padding: 0.625rem;
+  margin-bottom: 1rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.9375rem;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.vendaDetalhesBtn {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 6px);
+  padding: 0.25rem 0.625rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+.vendaDetalhesBtn:hover { background: var(--color-bg); color: var(--color-text); }
+
+/* Modal de Detalhes da venda */
+.detalhesVendaLista { display: flex; flex-direction: column; gap: 0.625rem; margin: 1rem 0; }
+.detalhesVendaLinha {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.9375rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+.detalhesVendaLinha:last-child { border-bottom: none; padding-bottom: 0; }
+.detalhesVendaLinha span:first-child { color: var(--color-text-secondary); }
+.detalhesVendaLinha span:last-child { color: var(--color-text); font-weight: 600; text-align: right; }
+
 /* Modal de pagamento / abrir-fechar caixa */
 .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 1rem; }
 .modal {

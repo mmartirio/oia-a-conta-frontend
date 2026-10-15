@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { FiLock, FiUnlock } from 'react-icons/fi'
 import { pdvApi } from '../../api/pdvApi'
-import { caixaApi, type SessaoCaixa } from '../../api/caixaApi'
+import { caixaApi, type SessaoCaixa, type Venda } from '../../api/caixaApi'
 import { useToast } from '../../contexts/ToastContext'
 import { Button } from '../../components/ui/Button'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
@@ -25,6 +26,18 @@ const METODO_LABEL: Record<string, string> = {
   CARTAO_DEBITO: 'Cartão Débito',
 }
 
+const BANDEIRAS: { value: string; label: string }[] = [
+  { value: 'VISA', label: 'Visa' },
+  { value: 'MASTERCARD', label: 'Master' },
+  { value: 'ELO', label: 'Elo' },
+  { value: 'BANESECARD', label: 'BaneseCard' },
+  { value: 'ALELO', label: 'Alelo' },
+  { value: 'VR', label: 'VR' },
+  { value: 'HIPERCARD', label: 'Hipercard' },
+]
+
+const BANDEIRA_LABEL: Record<string, string> = Object.fromEntries(BANDEIRAS.map(b => [b.value, b.label]))
+
 type ItemFila =
   | { tipo: 'GARCOM'; id: number; horario: string; comanda: Comanda }
   | { tipo: 'DELIVERY'; id: number; horario: string; entrega: Entrega }
@@ -38,6 +51,7 @@ export function PdvSalao() {
   const [metodo, setMetodo] = useState<MetodoPagamento>('PIX')
   const [parcelas, setParcelas] = useState(1)
   const [valorRecebido, setValorRecebido] = useState('')
+  const [bandeira, setBandeira] = useState('')
   const [confirmando, setConfirmando] = useState(false)
   const [copiado, setCopiado] = useState(false)
   const [entregaConfirmando, setEntregaConfirmando] = useState<Entrega | null>(null)
@@ -50,6 +64,7 @@ export function PdvSalao() {
   const [aba, setAba] = useState<Aba>('FILA')
   const [modoVendaInicial, setModoVendaInicial] = useState<ModoVenda>('BALCAO')
   const toast = useToast()
+  const navigate = useNavigate()
 
   // ── Sessão de Caixa (abrir/fechar) ──
   const [sessaoCaixa, setSessaoCaixa] = useState<SessaoCaixa | null>(null)
@@ -60,6 +75,8 @@ export function PdvSalao() {
   const [processandoCaixa, setProcessandoCaixa] = useState(false)
   const [resumoCaixa, setResumoCaixa] = useState<ResumoFinanceiro | null>(null)
   const [carregandoResumoCaixa, setCarregandoResumoCaixa] = useState(false)
+  const [vendas, setVendas] = useState<Venda[]>([])
+  const [detalhesVenda, setDetalhesVenda] = useState<Venda | null>(null)
 
   const carregar = async () => {
     setLoading(true)
@@ -74,6 +91,12 @@ export function PdvSalao() {
       setConfig(r2.data)
       setSessaoCaixa(r3.data)
       setEntregas(r4.data.content)
+
+      if (r3.data) {
+        caixaApi.vendas().then(r => setVendas(r.data)).catch(() => setVendas([]))
+      } else {
+        setVendas([])
+      }
     } finally {
       setLoading(false)
     }
@@ -153,6 +176,7 @@ export function PdvSalao() {
     setMetodo('PIX')
     setParcelas(1)
     setValorRecebido('')
+    setBandeira('')
     setCopiado(false)
   }
 
@@ -166,6 +190,8 @@ export function PdvSalao() {
       await pdvApi.confirmarPagamentoComanda(selecionada.id, {
         metodoPagamento: metodo,
         parcelas: metodo === 'CARTAO_CREDITO' ? parcelas : undefined,
+        valorRecebido: metodo === 'DINHEIRO' && valorRecebido ? Number(valorRecebido) : undefined,
+        bandeiraCartao: (metodo === 'CARTAO_CREDITO' || metodo === 'CARTAO_DEBITO') && bandeira ? bandeira : undefined,
       })
       setSelecionada(null)
       await carregar()
@@ -204,6 +230,20 @@ export function PdvSalao() {
     : null
   const dinheiroInsuficiente = metodo === 'DINHEIRO' && (troco === null || troco < 0)
 
+  const renderVenda = (v: Venda) => (
+    <div key={`${v.tipo}-${v.id}`} className={styles.vendaRow}>
+      <span className={styles.vendaHora}>{formatHora(v.horario)}</span>
+      <span className={styles.vendaDescricao}>{v.descricao}</span>
+      <span className={styles.vendaMetodo}>{METODO_LABEL[v.metodoPagamento] ?? v.metodoPagamento}</span>
+      <span className={styles.vendaTotal}>{formatMoeda(v.total)}</span>
+      {v.tipo === 'COMANDA' && (
+        <button className={styles.vendaDetalhesBtn} onClick={() => setDetalhesVenda(v)}>
+          Detalhes
+        </button>
+      )}
+    </div>
+  )
+
   const formatHora = (iso: string) =>
     new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 
@@ -217,6 +257,11 @@ export function PdvSalao() {
       <div className={styles.header}>
         <h1 className={styles.title}>Caixa (PDV)</h1>
         <div className={styles.headerActions}>
+          {aba === 'FILA' && (
+            <Button variant="outline" onClick={() => navigate('/pdv/historico-vendas')}>
+              Histórico
+            </Button>
+          )}
           {aba === 'FILA' && <Button variant="outline" onClick={carregar}>Atualizar</Button>}
         </div>
       </div>
@@ -314,6 +359,21 @@ export function PdvSalao() {
         </div>
       ))}
 
+      {aba === 'FILA' && sessaoCaixa && (
+        <div className={styles.vendasRealizadas}>
+          <h2 className={styles.vendasRealizadasTitulo}>
+            Vendas Realizadas Hoje{vendas.length > 0 ? ` (${vendas.length})` : ''}
+          </h2>
+          {vendas.length === 0 ? (
+            <p className={styles.empty}>Nenhuma venda registrada hoje ainda.</p>
+          ) : (
+            <div className={styles.vendasRealizadasLista}>
+              {vendas.map(renderVenda)}
+            </div>
+          )}
+        </div>
+      )}
+
       {selecionada && (
         <div className={styles.overlay} onClick={fecharModal}>
           <div className={styles.modal} onClick={e => e.stopPropagation()}>
@@ -341,6 +401,22 @@ export function PdvSalao() {
                     {copiado ? 'Copiado!' : 'Copiar chave'}
                   </button>
                 )}
+              </div>
+            )}
+
+            {(metodo === 'CARTAO_CREDITO' || metodo === 'CARTAO_DEBITO') && (
+              <div className={styles.parcelasWrap}>
+                <label className={styles.parcelasLabel}>Bandeira</label>
+                <select
+                  className={styles.parcelasSelect}
+                  value={bandeira}
+                  onChange={e => setBandeira(e.target.value)}
+                >
+                  <option value="">Selecione</option>
+                  {BANDEIRAS.map(b => (
+                    <option key={b.value} value={b.value}>{b.label}</option>
+                  ))}
+                </select>
               </div>
             )}
 
@@ -565,6 +641,50 @@ export function PdvSalao() {
             </div>
             <div className={styles.modalActions}>
               <Button variant="outline" onClick={() => setPixEntregaView(null)}>Fechar</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {detalhesVenda && (
+        <div className={styles.overlay} onClick={() => setDetalhesVenda(null)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <h2 className={styles.modalTitle}>
+              {detalhesVenda.mesaNumero ? `Mesa ${detalhesVenda.mesaNumero}` : 'Venda'}
+            </h2>
+            <div className={styles.modalTotal}>{formatMoeda(detalhesVenda.total)}</div>
+
+            <div className={styles.detalhesVendaLista}>
+              <div className={styles.detalhesVendaLinha}>
+                <span>Produtos</span>
+                <span>{detalhesVenda.itensDescricao}</span>
+              </div>
+              <div className={styles.detalhesVendaLinha}>
+                <span>Forma de pagamento</span>
+                <span>{METODO_LABEL[detalhesVenda.metodoPagamento] ?? detalhesVenda.metodoPagamento}</span>
+              </div>
+              {detalhesVenda.troco != null && (
+                <div className={styles.detalhesVendaLinha}>
+                  <span>Troco</span>
+                  <span>{formatMoeda(detalhesVenda.troco)}</span>
+                </div>
+              )}
+              {detalhesVenda.parcelas != null && (
+                <div className={styles.detalhesVendaLinha}>
+                  <span>Parcelas</span>
+                  <span>{detalhesVenda.parcelas}x</span>
+                </div>
+              )}
+              {detalhesVenda.bandeiraCartao && (
+                <div className={styles.detalhesVendaLinha}>
+                  <span>Bandeira</span>
+                  <span>{BANDEIRA_LABEL[detalhesVenda.bandeiraCartao] ?? detalhesVenda.bandeiraCartao}</span>
+                </div>
+              )}
+            </div>
+
+            <div className={styles.modalActions}>
+              <Button variant="outline" onClick={() => setDetalhesVenda(null)}>Fechar</Button>
             </div>
           </div>
         </div>

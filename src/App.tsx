@@ -75,6 +75,7 @@ import { CozinhaPedidos } from './pages/cozinha/CozinhaPedidos'
 
 // PDV
 import { PdvSalao } from './pages/pdv/PdvSalao'
+import { PdvHistoricoVendas } from './pages/pdv/PdvHistoricoVendas'
 
 // Entregador
 import { EntregadorPainel } from './pages/entregador/EntregadorPainel'
@@ -204,6 +205,9 @@ export function App() {
                       <Route path="/pdv/nova-venda" element={<Navigate to="/pdv" replace />} />
                       <Route path="/pdv/delivery" element={<Navigate to="/pdv" replace />} />
                       <Route path="/pdv/delivery/novo" element={<Navigate to="/pdv" replace />} />
+                      {/* Página própria (navega na mesma aba, ver botão em
+                          PdvSalao) — não faz parte da tela única do PDV acima. */}
+                      <Route path="/pdv/historico-vendas" element={<PdvHistoricoVendas />} />
                     </Route>
                     <Route element={<RequirePermission permission="ENTREGADOR" modalidade="DELIVERY" />}>
                       <Route path="/entregador" element={<EntregadorPainel />} />

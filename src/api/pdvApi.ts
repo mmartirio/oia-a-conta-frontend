@@ -5,7 +5,12 @@ export const pdvApi = {
   listarAguardandoPagamento: () =>
     api.get<Comanda[]>('/api/comandas/aguardando-pagamento'),
 
-  confirmarPagamentoComanda: (id: number, data: { metodoPagamento: string; parcelas?: number }) =>
+  confirmarPagamentoComanda: (id: number, data: {
+    metodoPagamento: string
+    parcelas?: number
+    valorRecebido?: number
+    bandeiraCartao?: string
+  }) =>
     api.put<Comanda>(`/api/comandas/${id}/confirmar-pagamento`, data),
 
   // Paginação real — ver components/ui/Pagination.

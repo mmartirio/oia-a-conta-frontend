@@ -330,26 +330,28 @@ export function LandingPage() {
 
       <footer className={styles.footer}>
         <img src={logo} alt="Oia a Conta" className={styles.footerLogo} />
-        <p>© {new Date().getFullYear()} Oia a Conta</p>
         <div className={styles.footerDocs}>
           <Link to="/contrato">Contrato de Adesão</Link>
           <Link to="/termos-de-uso">Termos de Uso</Link>
           <Link to="/privacidade">Política de Privacidade</Link>
         </div>
-        {(linkInstagram || linkWhatsapp) && (
-          <div className={styles.footerLinks}>
-            {linkInstagram && (
-              <a href={linkInstagram.url} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-                <FaInstagram size={22} />
-              </a>
-            )}
-            {linkWhatsapp && (
-              <a href={linkWhatsapp.url} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
-                <FaWhatsapp size={22} />
-              </a>
-            )}
-          </div>
-        )}
+        <div className={styles.footerTextoSocial}>
+          <p>© {new Date().getFullYear()} Oia a Conta</p>
+          {(linkInstagram || linkWhatsapp) && (
+            <div className={styles.footerLinks}>
+              {linkInstagram && (
+                <a href={linkInstagram.url} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                  <FaInstagram size={22} />
+                </a>
+              )}
+              {linkWhatsapp && (
+                <a href={linkWhatsapp.url} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+                  <FaWhatsapp size={22} />
+                </a>
+              )}
+            </div>
+          )}
+        </div>
       </footer>
     </div>
   )
