@@ -1,0 +1,32 @@
+/* Estado "fora da tela": cada efeito define de onde o elemento vem. Ao
+   entrar (.visivel) volta pro lugar com uma curva de desaceleração; ao sair,
+   volta pro estado inicial sem atraso, pronto pra animar de novo. */
+.reveal {
+  opacity: 0;
+  transition:
+    opacity 0.6s ease,
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: 0ms;
+  will-change: opacity, transform;
+}
+
+.subir    { transform: translateY(40px); }
+.esquerda { transform: translateX(-56px); }
+.direita  { transform: translateX(56px); }
+.zoom     { transform: scale(0.88); }
+.fade     { transform: none; }
+
+.visivel {
+  opacity: 1;
+  transform: none;
+  transition-delay: var(--reveal-atraso, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .reveal.visivel {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
