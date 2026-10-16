@@ -314,7 +314,8 @@ export function AdminUsuarios() {
             value={form.senha}
             onChange={e => setForm(f => ({ ...f, senha: e.target.value }))}
             required={!editing}
-            minLength={editing ? 0 : 6}
+            minLength={8}
+            placeholder="Mínimo 8 caracteres"
           />
 
           <div className={styles.formField}>

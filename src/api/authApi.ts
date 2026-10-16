@@ -39,24 +39,6 @@ export const authApi = {
   reenviarCodigo: (email: string) =>
     api.post<{ mensagem: string }>('/api/auth/reenviar-codigo', { email }),
 
-  registro: (data: {
-    restauranteNome: string
-    adminNome: string
-    email: string
-    senha: string
-    telefone?: string
-    planoId?: number
-    modalidadeOperacao?: 'MESAS' | 'DELIVERY'
-  }) => api.post<AuthResponse>('/api/auth/registro', {
-    nomeRestaurante: data.restauranteNome,
-    nomeAdmin: data.adminNome,
-    email: data.email,
-    senha: data.senha,
-    telefone: data.telefone,
-    planoId: data.planoId,
-    modalidadeOperacao: data.modalidadeOperacao,
-  }),
-
   me: () =>
     api.get<Usuario>('/api/auth/me')
 }

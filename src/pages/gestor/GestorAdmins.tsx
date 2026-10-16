@@ -164,7 +164,8 @@ export function GestorAdmins() {
               </div>
               <div className={styles.formRow}>
                 <label>{modal === 'criar' ? 'Senha' : 'Nova senha (deixe em branco pra manter a atual)'}</label>
-                <input type="password" value={form.senha} onChange={e => setForm(f => ({ ...f, senha: e.target.value }))} />
+                <input type="password" value={form.senha} minLength={12} placeholder="Mínimo 12 caracteres"
+                  onChange={e => setForm(f => ({ ...f, senha: e.target.value }))} />
               </div>
             </div>
 

@@ -550,8 +550,8 @@ export function Registro() {
             value={form.senha}
             onChange={set('senha')}
             required
-            minLength={6}
-            placeholder={viaGoogle ? 'Gerada automaticamente' : 'Mínimo 6 caracteres'}
+            minLength={8}
+            placeholder={viaGoogle ? 'Gerada automaticamente' : 'Mínimo 8 caracteres'}
             disabled={viaGoogle}
           />
           {viaGoogle && (

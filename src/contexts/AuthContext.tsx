@@ -14,14 +14,6 @@ interface AuthContextValue {
   modalidadeOperacao: ModalidadeOperacao
   login: (email: string, senha: string) => Promise<Usuario>
   loginGoogle: (credential: string) => Promise<Usuario>
-  registro: (data: {
-    restauranteNome: string
-    adminNome: string
-    email: string
-    senha: string
-    telefone?: string
-    planoId?: number
-  }) => Promise<Usuario>
   verificarEmail: (email: string, codigo: string) => Promise<Usuario>
   logout: () => void
 }
@@ -85,21 +77,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return data.usuario
   }
 
-  const registro = async (formData: {
-    restauranteNome: string
-    adminNome: string
-    email: string
-    senha: string
-    telefone?: string
-    planoId?: number
-  }): Promise<Usuario> => {
-    const { data } = await authApi.registro(formData)
-    localStorage.setItem('token', data.token)
-    setUser(data.usuario)
-    await loadModalidade(data.usuario)
-    return data.usuario
-  }
-
   const verificarEmail = async (email: string, codigo: string): Promise<Usuario> => {
     const { data } = await authApi.verificarEmail(email, codigo)
     localStorage.setItem('token', data.token)
@@ -118,7 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={{
       user, loading, restringeModalidade, modalidadeOperacao,
-      login, loginGoogle, registro, verificarEmail, logout,
+      login, loginGoogle, verificarEmail, logout,
     }}>
       {children}
     </AuthContext.Provider>
