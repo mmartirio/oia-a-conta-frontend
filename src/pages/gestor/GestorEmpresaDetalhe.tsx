@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { FiArrowLeft } from 'react-icons/fi'
 import { billingApi, type Contrato, type Pagamento } from '../../api/billingApi'
+import { gestorApi, type RestauranteCadastro, type UsuarioAdmin } from '../../api/gestorApi'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Pagination } from '../../components/ui/Pagination'
@@ -37,6 +38,17 @@ export function GestorEmpresaDetalhe() {
     setPagamentos(p.data.content)
     setTotalPages(p.data.totalPages)
   }
+
+  // Dados cadastrais (auth-service) — independem do contrato: carregam
+  // mesmo se a empresa não tiver contrato.
+  const [cadastro, setCadastro] = useState<RestauranteCadastro | null>(null)
+  const [usuarios, setUsuarios] = useState<UsuarioAdmin[]>([])
+
+  useEffect(() => {
+    if (!restauranteId) return
+    gestorApi.buscarRestaurante(restauranteId).then(r => setCadastro(r.data)).catch(() => setCadastro(null))
+    gestorApi.listarUsuariosPorRestaurante(restauranteId).then(r => setUsuarios(r.data)).catch(() => setUsuarios([]))
+  }, [restauranteId])
 
   const carregar = async () => {
     setLoading(true)
@@ -97,7 +109,57 @@ export function GestorEmpresaDetalhe() {
         <FiArrowLeft size={15} /> Voltar para Empresas
       </Button>
 
-      <h1 className={styles.pageTitle}>Empresa #{restauranteId}</h1>
+      <h1 className={styles.pageTitle}>
+        {cadastro?.nome ?? `Empresa #${restauranteId}`}
+        {cadastro && <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.6em', marginLeft: '0.6rem', fontWeight: 600 }}>#{restauranteId}</span>}
+      </h1>
+
+      {cadastro && (
+        <div className={styles.relatorioCard} style={{ marginBottom: '1.25rem' }}>
+          <h2 className={styles.sectionTitle} style={{ marginTop: 0 }}>Dados cadastrais</h2>
+          <div className={styles.relatorioGrid}>
+            {([
+              ['Nome', cadastro.nome],
+              ['CNPJ', cadastro.cnpj],
+              ['Telefone', cadastro.telefone],
+              ['E-mail do responsável', cadastro.emailResponsavel],
+              ['Endereço', [
+                [cadastro.enderecoRua, cadastro.enderecoNumero].filter(Boolean).join(', '),
+                cadastro.enderecoBairro, cadastro.enderecoCidade, cadastro.enderecoComplemento,
+              ].filter(Boolean).join(' — ')],
+              ['Cardápio (slug)', cadastro.slug],
+              ['Situação', cadastro.ativo ? 'Ativa' : `Bloqueada${cadastro.dataBloqueio ? ' desde ' + new Date(cadastro.dataBloqueio).toLocaleDateString('pt-BR') : ''}`],
+              ['WhatsApp', cadastro.whatsappConfigurado ? 'Instância criada' : 'Não configurado'],
+              ['Cadastrada em', cadastro.createdAt ? new Date(cadastro.createdAt).toLocaleDateString('pt-BR') : null],
+            ] as [string, string | null][]).map(([label, valor]) => (
+              <div key={label} className={styles.relatorioMetric}>
+                <div className={styles.relatorioMetricLabel}>{label}</div>
+                <div style={{ fontWeight: 600, wordBreak: 'break-word' }}>{valor || '—'}</div>
+              </div>
+            ))}
+          </div>
+          {usuarios.length > 0 && (
+            <>
+              <h3 className={styles.sectionTitle} style={{ fontSize: '0.95rem', marginTop: '1rem' }}>Usuários ({usuarios.length})</h3>
+              <div className={styles.tableWrapper}>
+                <table className={styles.table}>
+                  <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Status</th></tr></thead>
+                  <tbody>
+                    {usuarios.map(u => (
+                      <tr key={u.id}>
+                        <td>{u.nome}</td>
+                        <td>{u.email}</td>
+                        <td>{u.role}</td>
+                        <td>{u.ativo ? 'Ativo' : 'Inativo'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {loading ? (
         <p className={styles.loading}>Carregando...</p>

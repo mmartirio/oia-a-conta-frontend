@@ -13,6 +13,8 @@ export function GestorEmpresas() {
   const [totalPages, setTotalPages] = useState(0)
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  // id → nome da empresa (auth-service); a lista de contratos só tem o id.
+  const [nomes, setNomes] = useState<Record<number, string>>({})
 
   // Modal reset senha
   const [resetModal, setResetModal] = useState<Contrato | null>(null)
@@ -27,6 +29,14 @@ export function GestorEmpresas() {
   const [savingStatus, setSavingStatus] = useState(false)
 
   useEffect(() => {
+    gestorApi.listarRestaurantes()
+      .then(r => setNomes(Object.fromEntries(r.data.map(x => [x.id, x.nome]))))
+      .catch(() => setNomes({}))
+  }, [])
+
+  const nomeEmpresa = (id: number) => nomes[id] ?? `Empresa #${id}`
+
+  useEffect(() => {
     setLoading(true)
     billingApi.listarContratos(page)
       .then(r => {
@@ -39,6 +49,7 @@ export function GestorEmpresas() {
   const filtrados = contratos.filter(c =>
     search === '' ||
     String(c.restauranteId).includes(search) ||
+    (nomes[c.restauranteId] ?? '').toLowerCase().includes(search.toLowerCase()) ||
     c.plano?.nome?.toLowerCase().includes(search.toLowerCase()) ||
     c.status.toLowerCase().includes(search.toLowerCase())
   )
@@ -87,7 +98,7 @@ export function GestorEmpresas() {
 
       <div className={styles.toolbar}>
         <input className={styles.searchInput}
-          placeholder="Buscar por ID, plano ou status..."
+          placeholder="Buscar por nome, ID, plano ou status..."
           value={search} onChange={e => setSearch(e.target.value)} />
       </div>
 
@@ -96,7 +107,7 @@ export function GestorEmpresas() {
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>Restaurante ID</th>
+                <th>Empresa</th>
                 <th>Plano</th>
                 <th>Status</th>
                 <th>Início</th>
@@ -113,7 +124,8 @@ export function GestorEmpresas() {
                       onClick={() => navigate(`/gestor/empresas/${c.restauranteId}`)}
                       title="Ver detalhes da empresa"
                     >
-                      <strong>#{c.restauranteId}</strong>
+                      <strong>{nomeEmpresa(c.restauranteId)}</strong>
+                      <span style={{ color: 'var(--color-text-secondary)', marginLeft: '0.4rem', fontSize: '0.85em' }}>#{c.restauranteId}</span>
                     </button>
                   </td>
                   <td>{c.plano?.nome ?? '—'}</td>
@@ -150,7 +162,7 @@ export function GestorEmpresas() {
       {resetModal && (
         <div className={styles.overlay}>
           <div className={styles.modal}>
-            <h2 className={styles.modalTitle}>Reset de senha — Empresa #{resetModal.restauranteId}</h2>
+            <h2 className={styles.modalTitle}>Reset de senha — {nomeEmpresa(resetModal.restauranteId)} (#{resetModal.restauranteId})</h2>
 
             {loadingAdmins ? (
               <p className={styles.loading}>Carregando administradores...</p>
@@ -200,7 +212,7 @@ export function GestorEmpresas() {
       {statusModal && (
         <div className={styles.overlay}>
           <div className={styles.modal}>
-            <h2 className={styles.modalTitle}>Alterar status — Empresa #{statusModal.restauranteId}</h2>
+            <h2 className={styles.modalTitle}>Alterar status — {nomeEmpresa(statusModal.restauranteId)} (#{statusModal.restauranteId})</h2>
             <div className={styles.formRow}>
               <label>Novo status</label>
               <select value={novoStatus} onChange={e => setNovoStatus(e.target.value)}>
