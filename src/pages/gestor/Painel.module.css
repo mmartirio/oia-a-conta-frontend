@@ -1,0 +1,155 @@
+/* Painel do gestor — base visual compartilhada (ver painelUi.tsx). */
+
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+.pageTitle { font-size: 1.6rem; font-weight: 800; color: var(--color-text); margin: 0; line-height: 1.2; }
+.pageSubtitle { margin: 0.35rem 0 0; color: var(--color-text-secondary); font-size: 0.9375rem; }
+.pageActions { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+
+/* ── Indicadores ── */
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.kpi {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 1rem 1.15rem;
+  border-left-width: 4px;
+}
+.kpi_neutro { border-left-color: var(--color-border); }
+.kpi_bom { border-left-color: var(--color-success); }
+.kpi_alerta { border-left-color: var(--color-warning); }
+.kpi_critico { border-left-color: var(--color-danger); }
+.kpiRotulo { font-size: 0.8rem; font-weight: 600; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.03em; }
+.kpiValor { font-size: 1.65rem; font-weight: 800; color: var(--color-text); margin-top: 0.3rem; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.kpiDetalhe { font-size: 0.8125rem; color: var(--color-text-secondary); margin-top: 0.25rem; }
+
+/* ── Seções (cards) ── */
+.secao {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  margin-bottom: 1.25rem;
+  overflow: hidden;
+}
+.secaoHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.9rem 1.15rem;
+  border-bottom: 1px solid var(--color-border);
+}
+.secaoTitulo { margin: 0; font-size: 1rem; font-weight: 700; color: var(--color-text); }
+.secaoCorpo { padding: 1.15rem; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem; }
+.grid2 > .secao { margin-bottom: 0; }
+.vazio { margin: 0; padding: 1.5rem 1rem; text-align: center; color: var(--color-text-muted); font-size: 0.9375rem; }
+
+/* ── Tabela ── */
+.tabelaWrap { overflow-x: auto; }
+.tabela { width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width: 560px; }
+.tabela th {
+  text-align: left; font-size: 0.75rem; font-weight: 700; color: var(--color-text-secondary);
+  text-transform: uppercase; letter-spacing: 0.04em; padding: 0.65rem 1rem;
+  background: var(--color-bg); border-bottom: 1px solid var(--color-border); white-space: nowrap;
+}
+.tabela td { padding: 0.7rem 1rem; border-bottom: 1px solid var(--color-border); color: var(--color-text); vertical-align: middle; }
+.tabela tr:last-child td { border-bottom: none; }
+.linhaClicavel { cursor: pointer; }
+.linhaClicavel:hover td { background: color-mix(in srgb, var(--color-primary) 5%, transparent); }
+.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.secundario { color: var(--color-text-secondary); font-size: 0.85em; }
+.empresaNome { font-weight: 700; color: var(--color-text); }
+
+/* ── Selos de status (sempre ícone + texto) ── */
+.selo {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.55rem;
+  border-radius: 999px; white-space: nowrap; border: 1px solid transparent;
+}
+.selo_bom { background: color-mix(in srgb, var(--color-success) 12%, white); color: color-mix(in srgb, var(--color-success) 75%, black); border-color: color-mix(in srgb, var(--color-success) 30%, white); }
+.selo_info { background: color-mix(in srgb, var(--color-info) 12%, white); color: color-mix(in srgb, var(--color-info) 75%, black); border-color: color-mix(in srgb, var(--color-info) 30%, white); }
+.selo_alerta { background: color-mix(in srgb, var(--color-warning) 14%, white); color: color-mix(in srgb, var(--color-warning) 60%, black); border-color: color-mix(in srgb, var(--color-warning) 35%, white); }
+.selo_critico { background: color-mix(in srgb, var(--color-danger) 12%, white); color: color-mix(in srgb, var(--color-danger) 75%, black); border-color: color-mix(in srgb, var(--color-danger) 30%, white); }
+.selo_neutro { background: var(--color-bg); color: var(--color-text-secondary); border-color: var(--color-border); }
+
+/* ── Filtros ── */
+.filtros { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; }
+.busca {
+  flex: 1; min-width: 220px; max-width: 380px;
+  padding: 0.6rem 0.9rem; border: 1px solid var(--color-border); border-radius: 10px;
+  font-size: 0.9375rem; background: var(--color-surface); color: var(--color-text);
+}
+.busca:focus { outline: 2px solid color-mix(in srgb, var(--color-primary) 40%, transparent); border-color: var(--color-primary); }
+.chips { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.chip {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.4rem 0.8rem; border-radius: 999px; border: 1px solid var(--color-border);
+  background: var(--color-surface); color: var(--color-text-secondary);
+  font-size: 0.85rem; font-weight: 600; cursor: pointer;
+}
+.chip:hover { border-color: var(--color-primary); color: var(--color-text); }
+.chipAtivo { background: var(--color-text); color: #fff; border-color: var(--color-text); }
+.chipAtivo:hover { color: #fff; }
+.chipContagem { font-size: 0.75rem; opacity: 0.75; font-variant-numeric: tabular-nums; }
+
+/* ── Abas da página ── */
+.abas { display: flex; gap: 0.25rem; border-bottom: 1px solid var(--color-border); margin-bottom: 1.25rem; overflow-x: auto; }
+.aba {
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  padding: 0.7rem 1rem; border: none; background: none; cursor: pointer;
+  font-size: 0.9375rem; font-weight: 600; color: var(--color-text-secondary);
+  border-bottom: 3px solid transparent; margin-bottom: -1px; white-space: nowrap;
+}
+.aba:hover { color: var(--color-text); }
+.abaAtiva { color: var(--color-text); border-bottom-color: var(--color-primary); }
+.abaBadge {
+  font-size: 0.7rem; font-weight: 800; background: var(--color-primary); color: #fff;
+  border-radius: 999px; padding: 0.05rem 0.45rem; min-width: 1.2rem; text-align: center;
+}
+
+/* ── Lista de "atenção" ── */
+.lista { list-style: none; margin: 0; padding: 0; }
+.listaItem {
+  display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;
+  padding: 0.75rem 1.15rem; border-bottom: 1px solid var(--color-border); cursor: pointer;
+}
+.listaItem:last-child { border-bottom: none; }
+.listaItem:hover { background: color-mix(in srgb, var(--color-primary) 5%, transparent); }
+.listaPrincipal { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+.listaTitulo { font-weight: 700; color: var(--color-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.listaSub { font-size: 0.8125rem; color: var(--color-text-secondary); }
+
+/* ── Ficha (pares rótulo/valor) ── */
+.ficha { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem 1.5rem; }
+.fichaRotulo { font-size: 0.75rem; font-weight: 700; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+.fichaValor { margin-top: 0.2rem; font-weight: 600; color: var(--color-text); word-break: break-word; }
+
+/* ── Formulários em linha ── */
+.formLinha { display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap; }
+.campo { display: flex; flex-direction: column; gap: 0.3rem; }
+.campo label { font-size: 0.8125rem; font-weight: 600; color: var(--color-text-secondary); }
+.campo input, .campo select {
+  padding: 0.55rem 0.75rem; border: 1px solid var(--color-border); border-radius: 10px;
+  font-size: 0.9375rem; background: var(--color-surface); color: var(--color-text);
+}
+.nota { margin: 0 0 0.9rem; color: var(--color-text-secondary); font-size: 0.875rem; line-height: 1.45; }
+.alerta { color: color-mix(in srgb, var(--color-warning) 60%, black); }
+
+@media (max-width: 640px) {
+  .pageTitle { font-size: 1.35rem; }
+  .kpiValor { font-size: 1.35rem; }
+  .busca { max-width: none; }
+}

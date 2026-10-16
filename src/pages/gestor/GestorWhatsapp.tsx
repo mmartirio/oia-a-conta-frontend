@@ -13,7 +13,8 @@ const ESTADO_LABEL: Record<string, string> = {
   ERRO: 'Erro',
 }
 
-export function GestorWhatsapp() {
+// embutido = aba dentro de Suporte (sem o título da página).
+export function GestorWhatsapp({ embutido = false }: { embutido?: boolean }) {
   const [status, setStatus] = useState<WhatsappStatus | null>(null)
   const [loadingStatus, setLoadingStatus] = useState(true)
   const [loadingConectar, setLoadingConectar] = useState(false)
@@ -79,7 +80,7 @@ export function GestorWhatsapp() {
 
   return (
     <div>
-      <h1 className={styles.pageTitle}>WhatsApp de Suporte</h1>
+      {!embutido && <h1 className={styles.pageTitle}>WhatsApp de Suporte</h1>}
       <p className={styles.loading} style={{ marginTop: 0 }}>
         Número usado pra receber chamados dos administradores dos restaurantes — cada mensagem
         recebida aqui vira (ou atualiza) um ticket em <strong>Suporte</strong>, e a resposta dada

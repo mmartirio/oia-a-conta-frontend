@@ -1,233 +1,114 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { FiCreditCard } from 'react-icons/fi'
 import { billingApi, type Contrato } from '../../api/billingApi'
-import { gestorApi, type UsuarioAdmin } from '../../api/gestorApi'
-import { Button } from '../../components/ui/Button'
-import { Pagination } from '../../components/ui/Pagination'
-import styles from './Gestor.module.css'
+import {
+  Chips, PageHeader, ROTULO_STATUS_CONTRATO, SeloContrato, Secao, Vazio, data, moeda, ui, useNomesEmpresas,
+} from './painelUi'
+
+type FiltroStatus = 'TODOS' | Contrato['status']
 
 export function GestorEmpresas() {
   const navigate = useNavigate()
+  const nomeEmpresa = useNomesEmpresas()
+  const [params, setParams] = useSearchParams()
   const [contratos, setContratos] = useState<Contrato[]>([])
-  const [page, setPage] = useState(0)
-  const [totalPages, setTotalPages] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  // id → nome da empresa (auth-service); a lista de contratos só tem o id.
-  const [nomes, setNomes] = useState<Record<number, string>>({})
-
-  // Modal reset senha
-  const [resetModal, setResetModal] = useState<Contrato | null>(null)
-  const [admins, setAdmins] = useState<UsuarioAdmin[]>([])
-  const [loadingAdmins, setLoadingAdmins] = useState(false)
-  const [resetResult, setResetResult] = useState<{ nome: string; novaSenha: string } | null>(null)
-  const [resetting, setResetting] = useState(false)
-
-  // Modal status
-  const [statusModal, setStatusModal] = useState<Contrato | null>(null)
-  const [novoStatus, setNovoStatus] = useState('')
-  const [savingStatus, setSavingStatus] = useState(false)
+  const [busca, setBusca] = useState('')
+  const filtro = (params.get('status') as FiltroStatus) || 'TODOS'
 
   useEffect(() => {
-    gestorApi.listarRestaurantes()
-      .then(r => setNomes(Object.fromEntries(r.data.map(x => [x.id, x.nome]))))
-      .catch(() => setNomes({}))
+    billingApi.listarTodosContratos()
+      .then(r => setContratos(r.data))
+      .finally(() => setLoading(false))
   }, [])
 
-  const nomeEmpresa = (id: number) => nomes[id] ?? `Empresa #${id}`
+  const contagem = useMemo(() => {
+    const c: Record<string, number> = {}
+    contratos.forEach(x => { c[x.status] = (c[x.status] ?? 0) + 1 })
+    return c
+  }, [contratos])
 
-  useEffect(() => {
-    setLoading(true)
-    billingApi.listarContratos(page)
-      .then(r => {
-        setContratos(r.data.content)
-        setTotalPages(r.data.totalPages)
-      })
-      .finally(() => setLoading(false))
-  }, [page])
+  const termo = busca.trim().toLowerCase()
+  const visiveis = contratos
+    .filter(c => filtro === 'TODOS' || c.status === filtro)
+    .filter(c => !termo
+      || nomeEmpresa(c.restauranteId).toLowerCase().includes(termo)
+      || String(c.restauranteId).includes(termo)
+      || (c.plano?.nome ?? '').toLowerCase().includes(termo))
+    .sort((a, b) => nomeEmpresa(a.restauranteId).localeCompare(nomeEmpresa(b.restauranteId), 'pt-BR'))
 
-  const filtrados = contratos.filter(c =>
-    search === '' ||
-    String(c.restauranteId).includes(search) ||
-    (nomes[c.restauranteId] ?? '').toLowerCase().includes(search.toLowerCase()) ||
-    c.plano?.nome?.toLowerCase().includes(search.toLowerCase()) ||
-    c.status.toLowerCase().includes(search.toLowerCase())
-  )
-
-  const abrirReset = async (c: Contrato) => {
-    setResetModal(c)
-    setResetResult(null)
-    setLoadingAdmins(true)
-    try {
-      const r = await gestorApi.listarUsuariosPorRestaurante(c.restauranteId)
-      setAdmins(r.data.filter(u => u.role === 'ADMIN'))
-    } catch {
-      setAdmins([])
-    } finally {
-      setLoadingAdmins(false)
-    }
-  }
-
-  const handleResetSenha = async (admin: UsuarioAdmin) => {
-    setResetting(true)
-    try {
-      const r = await gestorApi.resetSenha(admin.id)
-      setResetResult({ nome: admin.nome, novaSenha: r.data.novaSenha })
-    } finally {
-      setResetting(false)
-    }
-  }
-
-  const handleSalvarStatus = async () => {
-    if (!statusModal || !novoStatus) return
-    setSavingStatus(true)
-    try {
-      await billingApi.atualizarStatusContrato(statusModal.id, novoStatus)
-      setContratos(prev => prev.map(c =>
-        c.id === statusModal.id ? { ...c, status: novoStatus as Contrato['status'] } : c
-      ))
-      setStatusModal(null)
-    } finally {
-      setSavingStatus(false)
-    }
-  }
+  const opcoes = [
+    { id: 'TODOS' as FiltroStatus, rotulo: 'Todas', contagem: contratos.length },
+    ...(['ATIVO', 'TRIAL', 'INADIMPLENTE', 'BLOQUEADO', 'CANCELADO'] as const)
+      .filter(s => contagem[s])
+      .map(s => ({ id: s as FiltroStatus, rotulo: ROTULO_STATUS_CONTRATO[s], contagem: contagem[s] })),
+  ]
 
   return (
     <div>
-      <h1 className={styles.pageTitle}>Empresas cadastradas</h1>
+      <PageHeader
+        titulo="Empresas"
+        subtitulo="Todos os restaurantes da plataforma. Clique numa empresa para ver a ficha completa."
+      />
 
-      <div className={styles.toolbar}>
-        <input className={styles.searchInput}
-          placeholder="Buscar por nome, ID, plano ou status..."
-          value={search} onChange={e => setSearch(e.target.value)} />
+      <div className={ui.filtros}>
+        <input
+          className={ui.busca}
+          placeholder="Buscar por nome, ID ou plano..."
+          value={busca}
+          onChange={e => setBusca(e.target.value)}
+        />
+        <Chips
+          opcoes={opcoes}
+          valor={filtro}
+          onChange={v => setParams(v === 'TODOS' ? {} : { status: v }, { replace: true })}
+        />
       </div>
 
-      {loading ? <p className={styles.loading}>Carregando...</p> : (
-        <div className={styles.tableWrapper}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Empresa</th>
-                <th>Plano</th>
-                <th>Status</th>
-                <th>Início</th>
-                <th>Próx. vencimento</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtrados.map(c => (
-                <tr key={c.id}>
-                  <td>
-                    <button
-                      className={styles.linkButton}
-                      onClick={() => navigate(`/gestor/empresas/${c.restauranteId}`)}
-                      title="Ver detalhes da empresa"
-                    >
-                      <strong>{nomeEmpresa(c.restauranteId)}</strong>
-                      <span style={{ color: 'var(--color-text-secondary)', marginLeft: '0.4rem', fontSize: '0.85em' }}>#{c.restauranteId}</span>
-                    </button>
-                  </td>
-                  <td>{c.plano?.nome ?? '—'}</td>
-                  <td>
-                    <span className={`${styles.badge} ${styles[`status${c.status}`]}`}>{c.status}</span>
-                  </td>
-                  <td>{c.dataInicio ? new Date(c.dataInicio).toLocaleDateString('pt-BR') : '—'}</td>
-                  <td>{c.dataProximoVencimento ? new Date(c.dataProximoVencimento).toLocaleDateString('pt-BR') : '—'}</td>
-                  <td style={{ display: 'flex', gap: '0.5rem' }}>
-                    <Button size="sm" variant="ghost" onClick={() => navigate(`/gestor/empresas/${c.restauranteId}`)}>
-                      Detalhes
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => {
-                      setStatusModal(c); setNovoStatus(c.status)
-                    }}>
-                      Status
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => abrirReset(c)}>
-                      Reset senha
-                    </Button>
-                  </td>
+      <Secao semPadding>
+        {loading ? <Vazio>Carregando...</Vazio> : visiveis.length === 0 ? <Vazio>Nenhuma empresa encontrada.</Vazio> : (
+          <div className={ui.tabelaWrap}>
+            <table className={ui.tabela}>
+              <thead>
+                <tr>
+                  <th>Empresa</th>
+                  <th>Plano</th>
+                  <th className={ui.num}>Mensalidade</th>
+                  <th>Status</th>
+                  <th>Cobrança</th>
+                  <th>Próx. vencimento</th>
                 </tr>
-              ))}
-              {filtrados.length === 0 && (
-                <tr><td colSpan={6} className={styles.emptyRow}>Nenhuma empresa encontrada</td></tr>
-              )}
-            </tbody>
-          </table>
-          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-        </div>
-      )}
-
-      {/* Modal reset senha */}
-      {resetModal && (
-        <div className={styles.overlay}>
-          <div className={styles.modal}>
-            <h2 className={styles.modalTitle}>Reset de senha — {nomeEmpresa(resetModal.restauranteId)} (#{resetModal.restauranteId})</h2>
-
-            {loadingAdmins ? (
-              <p className={styles.loading}>Carregando administradores...</p>
-            ) : admins.length === 0 ? (
-              <p style={{ color: '#64748b' }}>Nenhum administrador encontrado nesta empresa.</p>
-            ) : (
-              <div className={styles.tableWrapper} style={{ marginBottom: '1rem' }}>
-                <table className={styles.table}>
-                  <thead>
-                    <tr><th>Nome</th><th>E-mail</th><th></th></tr>
-                  </thead>
-                  <tbody>
-                    {admins.map(a => (
-                      <tr key={a.id}>
-                        <td>{a.nome}</td>
-                        <td>{a.email}</td>
-                        <td>
-                          <Button size="sm" loading={resetting} onClick={() => handleResetSenha(a)}>
-                            Resetar
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {resetResult && (
-              <div className={styles.resetResult}>
-                <div className={styles.resetResultLabel}>Senha temporária enviada para {resetResult.nome}:</div>
-                <div className={styles.resetResultPass}>{resetResult.novaSenha}</div>
-                <p style={{ fontSize: '0.8125rem', color: '#16a34a', margin: '0.5rem 0 0' }}>
-                  E-mail enviado com a nova senha. Anote-a agora — não será exibida novamente.
-                </p>
-              </div>
-            )}
-
-            <div className={styles.modalActions}>
-              <Button variant="ghost" onClick={() => { setResetModal(null); setResetResult(null) }}>Fechar</Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal status */}
-      {statusModal && (
-        <div className={styles.overlay}>
-          <div className={styles.modal}>
-            <h2 className={styles.modalTitle}>Alterar status — {nomeEmpresa(statusModal.restauranteId)} (#{statusModal.restauranteId})</h2>
-            <div className={styles.formRow}>
-              <label>Novo status</label>
-              <select value={novoStatus} onChange={e => setNovoStatus(e.target.value)}>
-                {['ATIVO', 'TRIAL', 'INADIMPLENTE', 'BLOQUEADO', 'CANCELADO'].map(s => (
-                  <option key={s} value={s}>{s}</option>
+              </thead>
+              <tbody>
+                {visiveis.map(c => (
+                  <tr
+                    key={c.id}
+                    className={ui.linhaClicavel}
+                    onClick={() => navigate(`/gestor/empresas/${c.restauranteId}`)}
+                    tabIndex={0}
+                    onKeyDown={e => { if (e.key === 'Enter') navigate(`/gestor/empresas/${c.restauranteId}`) }}
+                  >
+                    <td>
+                      <span className={ui.empresaNome}>{nomeEmpresa(c.restauranteId)}</span>{' '}
+                      <span className={ui.secundario}>#{c.restauranteId}</span>
+                    </td>
+                    <td>{c.plano?.nome ?? '—'}</td>
+                    <td className={ui.num}>{moeda(c.plano?.precoMensal)}</td>
+                    <td><SeloContrato status={c.status} /></td>
+                    <td>
+                      {c.mpPreapprovalId
+                        ? <span title="Assinatura com cobrança automática no cartão"><FiCreditCard size={13} /> Cartão</span>
+                        : <span className={ui.secundario}>Manual</span>}
+                    </td>
+                    <td>{data(c.dataProximoVencimento)}</td>
+                  </tr>
                 ))}
-              </select>
-            </div>
-            <div className={styles.modalActions}>
-              <Button variant="ghost" onClick={() => setStatusModal(null)}>Cancelar</Button>
-              <Button loading={savingStatus} onClick={handleSalvarStatus}>Confirmar</Button>
-            </div>
+              </tbody>
+            </table>
           </div>
-        </div>
-      )}
+        )}
+      </Secao>
     </div>
   )
 }

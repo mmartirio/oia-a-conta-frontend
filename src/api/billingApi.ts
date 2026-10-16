@@ -2,7 +2,7 @@ import api from './axios'
 import type { AxiosResponse } from 'axios'
 import type { Page } from '../types'
 
-// Alguns usos (agregações client-side em GestorPagamentos/Cobrancas/Dashboard, que juntam
+// Alguns usos (agregações client-side que juntam
 // pagamentos de todos os contratos numa lista única ordenada) precisam da lista completa,
 // não de uma página — mantemos esse helper só para esses casos específicos.
 function unwrapPage<T>(promise: Promise<AxiosResponse<Page<T>>>): Promise<AxiosResponse<T[]>> {
@@ -112,7 +112,7 @@ export const billingApi = {
   listarContratos: (page = 0) =>
     api.get<Page<Contrato>>('/api/contratos', { params: { page } }),
   // Lista completa (sem paginação visível) — usada onde o contrato é só um dado de apoio
-  // para agregações client-side (GestorPagamentos, GestorCobrancas, GestorDashboard).
+  // para agregações client-side (ex: lista de Empresas do painel do gestor).
   listarTodosContratos: () =>
     unwrapPage(api.get<Page<Contrato>>('/api/contratos?size=1000')),
   meuContrato: () => api.get<Contrato>('/api/contratos/meu'),

@@ -1,219 +1,124 @@
-import { useState, useEffect } from 'react'
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
-  PieChart, Pie, Cell,
-  LineChart, Line,
-  RadialBarChart, RadialBar,
-} from 'recharts'
-import { billingApi, type Contrato, type Pagamento, type Plano } from '../../api/billingApi'
-import styles from './Gestor.module.css'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { gestorApi, type ContratoAtencao, type ResumoPainel } from '../../api/gestorApi'
+import { Button } from '../../components/ui/Button'
+import { Kpi, PageHeader, SeloContrato, Secao, Vazio, corTema, data, moeda, ui, useNomesEmpresas } from './painelUi'
 
-const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4']
-
-function nomeMes(isoDate: string) {
-  return new Date(isoDate).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
+function nomeMes(yyyyMm: string) {
+  const [a, m] = yyyyMm.split('-').map(Number)
+  return new Date(a, m - 1, 15).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }).replace('.', '')
 }
 
 export function GestorDashboard() {
-  const [contratos, setContratos] = useState<Contrato[]>([])
-  const [planos, setPlanos] = useState<Plano[]>([])
-  const [pagamentos, setPagamentos] = useState<Pagamento[]>([])
-  const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
+  const nomeEmpresa = useNomesEmpresas()
+  const [resumo, setResumo] = useState<ResumoPainel | null>(null)
+  const [erro, setErro] = useState('')
 
-  const load = async () => {
-    try {
-      const [c, p] = await Promise.all([
-        billingApi.listarTodosContratos(),
-        billingApi.listarTodosPlanos(),
-      ])
-      setContratos(c.data)
-      setPlanos(p.data)
-      const allPags: Pagamento[] = []
-      await Promise.allSettled(c.data.map(async cont => {
-        const pag = await billingApi.listarTodosPagamentos(cont.id)
-        allPags.push(...pag.data)
-      }))
-      setPagamentos(allPags)
-    } finally {
-      setLoading(false)
-    }
-  }
+  useEffect(() => {
+    gestorApi.resumo().then(r => setResumo(r.data)).catch(() => setErro('Não foi possível carregar o painel.'))
+  }, [])
 
-  useEffect(() => { load() }, [])
+  if (erro) return <><PageHeader titulo="Painel" /><Vazio>{erro}</Vazio></>
+  if (!resumo) return <><PageHeader titulo="Painel" /><Vazio>Carregando...</Vazio></>
 
-  // ── Métricas rápidas
-  const total = contratos.length
-  const ativos = contratos.filter(c => c.status === 'ATIVO' || c.status === 'TRIAL').length
-  const inadimplentes = contratos.filter(c => c.status === 'INADIMPLENTE').length
-  const bloqueados = contratos.filter(c => c.status === 'BLOQUEADO').length
-  const mrr = contratos
-    .filter(c => c.status === 'ATIVO')
-    .reduce((sum, c) => sum + (c.plano?.precoMensal ?? 0), 0)
+  const s = resumo.porStatus
+  const variacao = resumo.receitaMesAnterior > 0
+    ? ((resumo.receitaMesAtual - resumo.receitaMesAnterior) / resumo.receitaMesAnterior) * 100
+    : null
+  const serie = resumo.serieReceita.map(p => ({ mes: nomeMes(p.mes), receita: Number(p.receita) }))
 
-  // ── Gráfico de pizza: distribuição de planos
-  const distPlanos = planos.map(p => ({
-    name: p.nome,
-    value: contratos.filter(c => c.plano?.id === p.id).length,
-  })).filter(d => d.value > 0)
-
-  // ── Gráfico de anel: status dos contratos
-  const statusData = [
-    { name: 'Ativo', value: contratos.filter(c => c.status === 'ATIVO').length, fill: '#10b981' },
-    { name: 'Trial', value: contratos.filter(c => c.status === 'TRIAL').length, fill: '#6366f1' },
-    { name: 'Inadimplente', value: inadimplentes, fill: '#f59e0b' },
-    { name: 'Bloqueado', value: bloqueados, fill: '#ef4444' },
-    { name: 'Cancelado', value: contratos.filter(c => c.status === 'CANCELADO').length, fill: '#94a3b8' },
-  ].filter(d => d.value > 0)
-
-  // ── Gráfico de barras: receita mensal (últimos 6 meses)
-  const receitaMensal = (() => {
-    const mapa: Record<string, number> = {}
-    const pagos = pagamentos.filter(p => p.status === 'PAGO')
-    pagos.forEach(p => {
-      const key = nomeMes(p.dataPagamento || p.createdAt)
-      mapa[key] = (mapa[key] ?? 0) + Number(p.valor)
-    })
-    const ultimos = Array.from({ length: 6 }, (_, i) => {
-      const d = new Date()
-      d.setMonth(d.getMonth() - (5 - i))
-      return d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
-    })
-    return ultimos.map(m => ({ mes: m, receita: mapa[m] ?? 0 }))
-  })()
-
-  // ── Gráfico de linha: crescimento de empresas (acumulado por mês)
-  const crescimento = (() => {
-    const contratosOrdenados = [...contratos].sort(
-      (a, b) => new Date(a.dataInicio).getTime() - new Date(b.dataInicio).getTime()
-    )
-    const mapa: Record<string, number> = {}
-    contratosOrdenados.forEach(c => {
-      if (!c.dataInicio) return
-      const key = nomeMes(c.dataInicio)
-      mapa[key] = (mapa[key] ?? 0) + 1
-    })
-    let acumulado = 0
-    return Object.entries(mapa).map(([mes, novos]) => {
-      acumulado += novos
-      return { mes, total: acumulado, novos }
-    }).slice(-8)
-  })()
-
-  if (loading) {
-    return <div className={styles.loading}>Carregando dashboard...</div>
-  }
+  const ItemAtencao = ({ c, detalhe }: { c: ContratoAtencao; detalhe: string }) => (
+    <li className={ui.listaItem} onClick={() => navigate(`/gestor/empresas/${c.restauranteId}`)}>
+      <div className={ui.listaPrincipal}>
+        <span className={ui.listaTitulo}>{nomeEmpresa(c.restauranteId)}</span>
+        <span className={ui.listaSub}>{c.planoNome} · {moeda(c.valor)} · {detalhe}</span>
+      </div>
+      <SeloContrato status={c.status} />
+    </li>
+  )
 
   return (
     <div>
-      <h1 className={styles.pageTitle}>Dashboard</h1>
+      <PageHeader
+        titulo="Painel"
+        subtitulo="Visão geral da base de clientes, receita e do que precisa de atenção."
+      />
 
-      {/* Métricas */}
-      <div className={styles.metricsRow}>
-        {[
-          { label: 'Total de empresas', value: total, color: '#6366f1' },
-          { label: 'Ativas / Trial', value: ativos, color: '#10b981' },
-          { label: 'Inadimplentes', value: inadimplentes, color: '#f59e0b' },
-          { label: 'Bloqueadas', value: bloqueados, color: '#ef4444' },
-          { label: 'MRR (R$)', value: mrr.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), color: '#06b6d4' },
-        ].map(m => (
-          <div key={m.label} className={styles.metricCard}>
-            <div className={styles.metricValue} style={{ color: m.color }}>{m.value}</div>
-            <div className={styles.metricLabel}>{m.label}</div>
-          </div>
-        ))}
+      <div className={ui.kpiGrid}>
+        <Kpi rotulo="Receita recorrente (MRR)" valor={moeda(resumo.mrr)} detalhe={`${s.ATIVO ?? 0} empresas pagando`} tom="bom" />
+        <Kpi
+          rotulo="Receita do mês"
+          valor={moeda(resumo.receitaMesAtual)}
+          detalhe={variacao == null ? `Mês anterior: ${moeda(resumo.receitaMesAnterior)}`
+            : `${variacao >= 0 ? '▲' : '▼'} ${Math.abs(variacao).toFixed(0)}% vs. mês anterior`}
+          tom="neutro"
+        />
+        <Kpi rotulo="Empresas" valor={resumo.totalEmpresas} detalhe={`${s.TRIAL ?? 0} em período de teste`} tom="neutro" />
+        <Kpi
+          rotulo="Inadimplentes / bloqueadas"
+          valor={(s.INADIMPLENTE ?? 0) + (s.BLOQUEADO ?? 0)}
+          detalhe={`${s.INADIMPLENTE ?? 0} inadimplentes · ${s.BLOQUEADO ?? 0} bloqueadas`}
+          tom={(s.INADIMPLENTE ?? 0) + (s.BLOQUEADO ?? 0) > 0 ? 'critico' : 'bom'}
+        />
+        <Kpi rotulo="Assinaturas no cartão" valor={resumo.assinaturasCartao} detalhe="Cobrança automática (Mercado Pago)" tom="neutro" />
+        <Kpi
+          rotulo="Tickets em aberto"
+          valor={resumo.ticketsAbertos}
+          detalhe={resumo.pagamentosFalhos30d > 0 ? `${resumo.pagamentosFalhos30d} cobrança(s) recusada(s) em 30 dias` : 'Abertos ou em andamento'}
+          tom={resumo.ticketsAbertos > 0 ? 'alerta' : 'bom'}
+        />
       </div>
 
-      {/* Gráficos — linha 1 */}
-      <div className={styles.chartsRow}>
-
-        {/* Barras: receita mensal */}
-        <div className={styles.chartCard}>
-          <h2 className={styles.chartTitle}>Receita mensal</h2>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={receitaMensal} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="mes" tick={{ fontSize: 12 }} />
-              <YAxis tickFormatter={(v: number) => `R$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 12 }} />
-              <Tooltip formatter={(v: number | string) => (typeof v === 'number' ? v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '')} />
-              <Bar dataKey="receita" fill="#6366f1" radius={[4, 4, 0, 0]} name="Receita" />
+      <Secao titulo="Receita recebida — últimos 12 meses" acoes={
+        <Button size="sm" variant="ghost" onClick={() => navigate('/gestor/financeiro')}>Ver financeiro</Button>
+      }>
+        <div style={{ width: '100%', height: 260 }}>
+          <ResponsiveContainer>
+            <BarChart data={serie} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} barCategoryGap="28%">
+              <CartesianGrid vertical={false} stroke={corTema('--color-border', '#e5ded6')} />
+              <XAxis dataKey="mes" tick={{ fontSize: 12, fill: corTema('--color-text-secondary', '#64748b') }} axisLine={false} tickLine={false} />
+              <YAxis
+                width={64}
+                tick={{ fontSize: 12, fill: corTema('--color-text-secondary', '#64748b') }}
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={(v: number) => v >= 1000 ? `R$ ${(v / 1000).toFixed(1)}k` : `R$ ${v}`}
+              />
+              <Tooltip
+                cursor={{ fill: 'rgba(0,0,0,0.04)' }}
+                formatter={(v: number | string) => [moeda(Number(v)), 'Receita']}
+              />
+              <Bar dataKey="receita" fill={corTema('--color-primary', '#CF4622')} radius={[4, 4, 0, 0]} maxBarSize={48} />
             </BarChart>
           </ResponsiveContainer>
         </div>
+      </Secao>
 
-        {/* Linha: crescimento de empresas */}
-        <div className={styles.chartCard}>
-          <h2 className={styles.chartTitle}>Crescimento de empresas</h2>
-          <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={crescimento} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="mes" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="total" stroke="#10b981" strokeWidth={2} dot={{ r: 4 }} name="Total acumulado" />
-              <Line type="monotone" dataKey="novos" stroke="#6366f1" strokeWidth={2} strokeDasharray="4 2" dot={{ r: 3 }} name="Novas no mês" />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Gráficos — linha 2 */}
-      <div className={styles.chartsRow}>
-
-        {/* Pizza: distribuição de planos */}
-        <div className={styles.chartCard}>
-          <h2 className={styles.chartTitle}>Distribuição de planos</h2>
-          {distPlanos.length === 0 ? (
-            <p className={styles.emptyChart}>Nenhum contrato ativo</p>
-          ) : (
-            <ResponsiveContainer width="100%" height={240}>
-              <PieChart>
-                <Pie
-                  data={distPlanos}
-                  cx="50%" cy="50%"
-                  outerRadius={90}
-                  dataKey="value"
-                  label={({ name, percent }: { name?: string; percent?: number }) => `${name ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%`}
-                  labelLine={true}
-                >
-                  {distPlanos.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(v: number | string) => { const n = typeof v === 'number' ? v : 0; return `${n} empresa${n !== 1 ? 's' : ''}` }} />
-              </PieChart>
-            </ResponsiveContainer>
+      <div className={ui.grid2}>
+        <Secao titulo={`Em atraso (${resumo.atrasados.length})`} semPadding acoes={
+          resumo.atrasados.length > 0
+            ? <Button size="sm" variant="ghost" onClick={() => navigate('/gestor/financeiro?aba=inadimplencia')}>Cobrar</Button>
+            : undefined
+        }>
+          {resumo.atrasados.length === 0 ? <Vazio>Nenhuma empresa em atraso.</Vazio> : (
+            <ul className={ui.lista}>
+              {resumo.atrasados.slice(0, 8).map(c => (
+                <ItemAtencao key={c.contratoId} c={c} detalhe={`venceu ${data(c.dataVencimento)}`} />
+              ))}
+            </ul>
           )}
-        </div>
-
-        {/* Anel: status dos contratos */}
-        <div className={styles.chartCard}>
-          <h2 className={styles.chartTitle}>Status dos contratos</h2>
-          {statusData.length === 0 ? (
-            <p className={styles.emptyChart}>Sem dados</p>
-          ) : (
-            <>
-              <ResponsiveContainer width="100%" height={200}>
-                <RadialBarChart
-                  innerRadius="30%" outerRadius="90%"
-                  data={statusData}
-                  startAngle={180} endAngle={-180}
-                >
-                  <RadialBar dataKey="value" label={{ position: 'insideStart', fill: '#fff', fontSize: 11 }} />
-                  <Tooltip formatter={(v: number | string, name: string) => { const n = typeof v === 'number' ? v : 0; return [`${n} empresa${n !== 1 ? 's' : ''}`, name] }} />
-                </RadialBarChart>
-              </ResponsiveContainer>
-              <div className={styles.legend}>
-                {statusData.map(s => (
-                  <span key={s.name} className={styles.legendItem}>
-                    <span style={{ background: s.fill }} className={styles.legendDot} />
-                    {s.name}: {s.value}
-                  </span>
-                ))}
-              </div>
-            </>
+        </Secao>
+        <Secao titulo={`Vencendo em 7 dias (${resumo.vencendo7dias.length})`} semPadding>
+          {resumo.vencendo7dias.length === 0 ? <Vazio>Nenhum vencimento sem cartão nos próximos 7 dias.</Vazio> : (
+            <ul className={ui.lista}>
+              {resumo.vencendo7dias.slice(0, 8).map(c => (
+                <ItemAtencao key={c.contratoId} c={c} detalhe={`vence ${data(c.dataVencimento)}`} />
+              ))}
+            </ul>
           )}
-        </div>
+        </Secao>
       </div>
     </div>
   )

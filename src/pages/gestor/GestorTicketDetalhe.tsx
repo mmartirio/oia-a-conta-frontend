@@ -1,12 +1,19 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { FiArrowLeft, FiMessageCircle } from 'react-icons/fi'
 import { billingApi, type Ticket, type MensagemTicket } from '../../api/billingApi'
 import { Button } from '../../components/ui/Button'
+import { useToast } from '../../contexts/ToastContext'
+import { PageHeader, ROTULO_STATUS_TICKET, SeloTicket, Secao, Vazio, ui, useNomesEmpresas } from './painelUi'
 import styles from './Gestor.module.css'
+
+const STATUS = ['ABERTO', 'EM_ANDAMENTO', 'RESOLVIDO', 'FECHADO'] as const
 
 export function GestorTicketDetalhe() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const toast = useToast()
+  const nomeEmpresa = useNomesEmpresas()
   const [ticket, setTicket] = useState<Ticket | null>(null)
   const [loading, setLoading] = useState(true)
   const [resposta, setResposta] = useState('')
@@ -16,6 +23,7 @@ export function GestorTicketDetalhe() {
   const carregar = () => {
     billingApi.buscarTicket(Number(id))
       .then(r => setTicket(r.data))
+      .catch(() => setTicket(null))
       .finally(() => setLoading(false))
   }
 
@@ -25,8 +33,12 @@ export function GestorTicketDetalhe() {
   }, [ticket?.mensagens])
 
   const handleStatus = async (status: string) => {
-    await billingApi.atualizarStatusTicket(Number(id), status)
-    carregar()
+    try {
+      await billingApi.atualizarStatusTicket(Number(id), status)
+      carregar()
+    } catch {
+      toast.error('Erro ao alterar o status')
+    }
   }
 
   const handleResponder = async () => {
@@ -35,67 +47,85 @@ export function GestorTicketDetalhe() {
     try {
       await billingApi.adicionarMensagem(Number(id), resposta)
       setResposta('')
+      // Responder um ticket aberto já o coloca em andamento.
+      if (ticket?.status === 'ABERTO') await billingApi.atualizarStatusTicket(Number(id), 'EM_ANDAMENTO')
       carregar()
+    } catch {
+      toast.error('Erro ao enviar a resposta')
     } finally {
       setSending(false)
     }
   }
 
-  if (loading) return <p className={styles.loading}>Carregando...</p>
-  if (!ticket) return <p className={styles.loading}>Ticket não encontrado</p>
+  const voltar = (
+    <Button variant="ghost" size="sm" onClick={() => navigate('/gestor/suporte')} style={{ marginBottom: '0.75rem' }}>
+      <FiArrowLeft size={15} /> Suporte
+    </Button>
+  )
+
+  if (loading) return <>{voltar}<Vazio>Carregando...</Vazio></>
+  if (!ticket) return <>{voltar}<Vazio>Ticket não encontrado.</Vazio></>
+
+  const solicitante = ticket.origem === 'WHATSAPP'
+    ? <><FiMessageCircle size={13} /> {ticket.whatsappNome || ticket.whatsappTelefone} (WhatsApp)</>
+    : ticket.restauranteId != null
+      ? <a href={`/gestor/empresas/${ticket.restauranteId}`} onClick={e => { e.preventDefault(); navigate(`/gestor/empresas/${ticket.restauranteId}`) }}>
+          {nomeEmpresa(ticket.restauranteId)}
+        </a>
+      : (ticket.restauranteNome || '—')
 
   return (
     <div>
-      <div className={styles.toolbar}>
-        <Button variant="ghost" onClick={() => navigate('/gestor/tickets')}>← Voltar</Button>
-        <h1 className={styles.pageTitle} style={{ margin: 0 }}>Ticket #{ticket.id}</h1>
-      </div>
+      {voltar}
+      <PageHeader
+        titulo={<>{ticket.titulo} <span className={ui.secundario}>#{ticket.id}</span></>}
+        subtitulo={<><SeloTicket status={ticket.status} /> &nbsp;{solicitante} · aberto em {new Date(ticket.createdAt).toLocaleString('pt-BR')}</>}
+      />
 
-      <div className={styles.metricCard} style={{ marginBottom: '1.5rem', textAlign: 'left' }}>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-          <div style={{ flex: 1 }}>
-            <h2 style={{ margin: '0 0 0.25rem', fontSize: '1.125rem' }}>{ticket.titulo}</h2>
-            <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: '0.9375rem' }}>{ticket.descricao}</p>
-            {ticket.origem === 'WHATSAPP' && (
-              <p style={{ margin: '0.375rem 0 0', color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>
-                📱 Via WhatsApp — respostas aqui são enviadas de volta pro contato ({ticket.whatsappNome || ticket.whatsappTelefone})
-              </p>
-            )}
-          </div>
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            {['ABERTO', 'EM_ANDAMENTO', 'RESOLVIDO', 'FECHADO'].map(s => (
-              <Button key={s} size="sm" variant={ticket.status === s ? 'primary' : 'ghost'}
-                onClick={() => handleStatus(s)}>
-                {s.replace('_', ' ')}
-              </Button>
-            ))}
-          </div>
+      <Secao titulo="Descrição" acoes={
+        <div className={ui.chips}>
+          {STATUS.map(s => (
+            <button
+              key={s}
+              type="button"
+              className={`${ui.chip} ${ticket.status === s ? ui.chipAtivo : ''}`}
+              onClick={() => ticket.status !== s && handleStatus(s)}
+            >
+              {ROTULO_STATUS_TICKET[s]}
+            </button>
+          ))}
         </div>
-      </div>
-
-      <h2 className={styles.sectionTitle}>Conversa</h2>
-      <div ref={threadRef} className={styles.thread} style={{ maxHeight: '400px', overflowY: 'auto', padding: '0.5rem' }}>
-        {ticket.mensagens?.map((m: MensagemTicket) => (
-          <div key={m.id} className={`${styles.message} ${m.remetenteTipo === 'SUPORTE' ? styles.messageSuporte : styles.messageCliente}`}>
-            <div className={styles.messageHeader}>{m.remetenteNome} · {new Date(m.createdAt).toLocaleString('pt-BR')}</div>
-            <div className={styles.messageText}>{m.mensagem}</div>
-          </div>
-        ))}
-        {(!ticket.mensagens || ticket.mensagens.length === 0) && (
-          <p style={{ color: 'var(--color-text-secondary)', textAlign: 'center' }}>Nenhuma mensagem ainda</p>
+      }>
+        <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{ticket.descricao || '—'}</p>
+        {ticket.origem === 'WHATSAPP' && (
+          <p className={ui.nota} style={{ marginTop: '0.75rem', marginBottom: 0 }}>
+            Chamado via WhatsApp — as respostas daqui são enviadas de volta para o contato.
+          </p>
         )}
-      </div>
+      </Secao>
 
-      <div className={styles.replyBox}>
-        <textarea
-          className={styles.replyInput}
-          placeholder="Digite sua resposta..."
-          value={resposta}
-          onChange={e => setResposta(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter' && e.ctrlKey) handleResponder() }}
-        />
-        <Button loading={sending} onClick={handleResponder}>Enviar</Button>
-      </div>
+      <Secao titulo="Conversa">
+        <div ref={threadRef} className={styles.thread} style={{ maxHeight: '420px', overflowY: 'auto' }}>
+          {ticket.mensagens?.map((m: MensagemTicket) => (
+            <div key={m.id} className={`${styles.message} ${m.remetenteTipo === 'SUPORTE' ? styles.messageSuporte : styles.messageCliente}`}>
+              <div className={styles.messageHeader}>{m.remetenteNome} · {new Date(m.createdAt).toLocaleString('pt-BR')}</div>
+              <div className={styles.messageText}>{m.mensagem}</div>
+            </div>
+          ))}
+          {(!ticket.mensagens || ticket.mensagens.length === 0) && <Vazio>Nenhuma mensagem ainda.</Vazio>}
+        </div>
+
+        <div className={styles.replyBox}>
+          <textarea
+            className={styles.replyInput}
+            placeholder="Digite sua resposta... (Ctrl+Enter envia)"
+            value={resposta}
+            onChange={e => setResposta(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && e.ctrlKey) handleResponder() }}
+          />
+          <Button loading={sending} onClick={handleResponder} disabled={!resposta.trim()}>Enviar</Button>
+        </div>
+      </Secao>
     </div>
   )
 }

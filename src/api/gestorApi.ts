@@ -33,7 +33,52 @@ export interface RestauranteCadastro extends RestauranteResumo {
   createdAt: string | null
 }
 
+// Painel do gestor — números agregados calculados no billing-service.
+export interface ContratoAtencao {
+  contratoId: number
+  restauranteId: number
+  planoNome: string
+  valor: number
+  status: string
+  dataVencimento: string | null
+  cartao: boolean
+}
+
+export interface ResumoPainel {
+  totalEmpresas: number
+  porStatus: Record<string, number>
+  mrr: number
+  receitaMesAtual: number
+  receitaMesAnterior: number
+  serieReceita: { mes: string; receita: number }[]
+  assinaturasCartao: number
+  pagamentosFalhos30d: number
+  ticketsAbertos: number
+  vencendo7dias: ContratoAtencao[]
+  atrasados: ContratoAtencao[]
+}
+
+export interface PagamentoPainel {
+  id: number
+  valor: number
+  status: 'PENDENTE' | 'PAGO' | 'ESTORNADO' | 'FALHOU'
+  metodo: string | null
+  observacao: string | null
+  dataPagamento: string | null
+  createdAt: string
+  contratoId: number
+  restauranteId: number
+  planoNome: string
+}
+
 export const gestorApi = {
+  resumo: () => api.get<ResumoPainel>('/api/financeiro/billing/resumo'),
+  todosPagamentos: () => api.get<PagamentoPainel[]>('/api/financeiro/billing/pagamentos'),
+  // Todos os tickets de uma vez (filtro/busca no navegador — volume pequeno).
+  todosTickets: () =>
+    api.get<{ content: import('./billingApi').Ticket[] }>('/api/tickets', { params: { size: 500 } }),
+  ticketsDaEmpresa: (restauranteId: number) =>
+    api.get<import('./billingApi').Ticket[]>(`/api/tickets/restaurante/${restauranteId}`),
   listarRestaurantes: () => api.get<RestauranteResumo[]>('/api/restaurantes/nomes'),
   buscarRestaurante: (id: number) => api.get<RestauranteCadastro>(`/api/restaurantes/${id}`),
   listarAdmins: () => api.get<UsuarioAdmin[]>('/api/usuarios/admins'),

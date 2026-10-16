@@ -86,16 +86,12 @@ import { GestorDashboard } from './pages/gestor/GestorDashboard'
 import { GestorPlanos } from './pages/gestor/GestorPlanos'
 import { GestorEmpresas } from './pages/gestor/GestorEmpresas'
 import { GestorEmpresaDetalhe } from './pages/gestor/GestorEmpresaDetalhe'
-import { GestorCobrancas } from './pages/gestor/GestorCobrancas'
-import { GestorRelatorios } from './pages/gestor/GestorRelatorios'
-import { GestorPagamentos } from './pages/gestor/GestorPagamentos'
-import { GestorTickets } from './pages/gestor/GestorTickets'
+import { GestorSuporte, RedirectTicketAntigo } from './pages/gestor/GestorSuporte'
 import { GestorTicketDetalhe } from './pages/gestor/GestorTicketDetalhe'
 import { GestorFinanceiro } from './pages/gestor/GestorFinanceiro'
 import { GestorLogs } from './pages/gestor/GestorLogs'
 import { GestorSocial } from './pages/gestor/GestorSocial'
 import { GestorAdmins } from './pages/gestor/GestorAdmins'
-import { GestorWhatsapp } from './pages/gestor/GestorWhatsapp'
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ''
 
@@ -129,16 +125,19 @@ export function App() {
                     <Route path="/gestor/planos" element={<GestorPlanos />} />
                     <Route path="/gestor/empresas" element={<GestorEmpresas />} />
                     <Route path="/gestor/empresas/:id" element={<GestorEmpresaDetalhe />} />
-                    <Route path="/gestor/cobrancas" element={<GestorCobrancas />} />
-                    <Route path="/gestor/pagamentos" element={<GestorPagamentos />} />
-                    <Route path="/gestor/tickets" element={<GestorTickets />} />
-                    <Route path="/gestor/tickets/:id" element={<GestorTicketDetalhe />} />
                     <Route path="/gestor/financeiro" element={<GestorFinanceiro />} />
+                    <Route path="/gestor/suporte" element={<GestorSuporte />} />
+                    <Route path="/gestor/suporte/:id" element={<GestorTicketDetalhe />} />
                     <Route path="/gestor/logs" element={<GestorLogs />} />
-                    <Route path="/gestor/relatorios" element={<GestorRelatorios />} />
                     <Route path="/gestor/social" element={<GestorSocial />} />
                     <Route path="/gestor/admins" element={<GestorAdmins />} />
-                    <Route path="/gestor/whatsapp" element={<GestorWhatsapp />} />
+                    {/* Endereços antigos do painel — telas unificadas em Financeiro e Suporte. */}
+                    <Route path="/gestor/cobrancas" element={<Navigate to="/gestor/financeiro?aba=inadimplencia" replace />} />
+                    <Route path="/gestor/pagamentos" element={<Navigate to="/gestor/financeiro?aba=pagamentos" replace />} />
+                    <Route path="/gestor/relatorios" element={<Navigate to="/gestor/financeiro" replace />} />
+                    <Route path="/gestor/tickets" element={<Navigate to="/gestor/suporte" replace />} />
+                    <Route path="/gestor/tickets/:id" element={<RedirectTicketAntigo />} />
+                    <Route path="/gestor/whatsapp" element={<Navigate to="/gestor/suporte?aba=whatsapp" replace />} />
                   </Route>
                 </Route>
 

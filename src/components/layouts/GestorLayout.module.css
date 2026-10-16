@@ -1,7 +1,7 @@
 .layout {
   display: flex;
   min-height: 100vh;
-  background: #f1f5f9;
+  background: var(--color-bg);
 }
 
 .mobileTopBar { display: none; }
@@ -49,7 +49,7 @@
   margin-top: 0.3rem;
   font-size: 0.6875rem;
   font-weight: 700;
-  background: #6366f1;
+  background: var(--color-primary);
   color: #fff;
   padding: 0.15rem 0.6rem;
   border-radius: 999px;
@@ -62,11 +62,21 @@
   padding: 0.75rem 0;
 }
 
+.grupo { padding: 0.35rem 0 0.5rem; }
+.grupoTitulo {
+  padding: 0.6rem 1.25rem 0.3rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
 .navItem {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem 1.25rem;
+  padding: 0.6rem 1.25rem;
   color: #94a3b8;
   text-decoration: none;
   font-size: 0.9375rem;
@@ -82,9 +92,9 @@
 }
 
 .navItem.active {
-  background: rgba(99,102,241,0.15);
-  color: #a5b4fc;
-  border-left-color: #6366f1;
+  background: rgba(var(--color-primary-rgb), 0.18);
+  color: #fff;
+  border-left-color: var(--color-primary);
   font-weight: 700;
 }
 
@@ -93,6 +103,15 @@
 .footer {
   padding: 1rem 1.25rem;
   border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.usuario {
+  font-size: 0.8125rem;
+  color: #cbd5e1;
+  margin-bottom: 0.6rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .logoutBtn {
@@ -115,6 +134,8 @@
   overflow: auto;
   padding: 2rem 2.5rem;
 }
+
+.conteudo { max-width: 1280px; margin: 0 auto; }
 
 /* ── Mobile: sidebar vira um menu hamburguer em drawer ── */
 @media (max-width: 900px) {
