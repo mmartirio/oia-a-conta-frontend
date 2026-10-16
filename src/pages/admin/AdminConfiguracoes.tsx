@@ -29,12 +29,13 @@ import { publicMenuUrl, PUBLIC_MENU_DOMAIN } from '../../utils/publicMenuUrl'
 import type { DiaSemana, HorarioFuncionamento } from '../../types'
 import styles from './AdminConfiguracoes.module.css'
 
-type AbaConfiguracao = 'geral' | 'pagamento' | 'cardapio-publico' | 'horarios' | 'pausas' | 'frete'
+type AbaConfiguracao = 'geral' | 'pagamento' | 'cardapio-publico' | 'horarios' | 'pausas' | 'frete' | 'tempo-preparo'
 
 const ABAS: { id: AbaConfiguracao; label: string; permissoes: string[] }[] = [
   { id: 'geral', label: 'Geral', permissoes: ['CONFIG_STATUS_LOJA', 'CONFIG_ALERTA_PEDIDO', 'CONFIG_DADOS_EMPRESA'] },
   { id: 'pagamento', label: 'Pagamento & Comissões', permissoes: ['CONFIG_PIX', 'CONFIG_COMISSOES'] },
   { id: 'frete', label: 'Frete', permissoes: ['CONFIG_FRETE'] },
+  { id: 'tempo-preparo', label: 'Tempo de Preparo', permissoes: ['CONFIG_ALERTA_PEDIDO'] },
   { id: 'cardapio-publico', label: 'Link do Cardápio', permissoes: ['CONFIG_DADOS_EMPRESA', 'CONFIG_LOGO', 'CONFIG_CORES', 'CONFIG_BACKGROUND'] },
   { id: 'horarios', label: 'Horário de Funcionamento', permissoes: ['CONFIG_HORARIOS'] },
   { id: 'pausas', label: 'Pausas de Funcionamento', permissoes: ['CONFIG_PAUSAS'] },
@@ -118,6 +119,11 @@ export function AdminConfiguracoes() {
   // preencheu — qualquer edição manual depois de aceitar a sugestão derruba
   // a indicação, porque o valor deixou de ser "só o que o sistema sugeriu".
   const [freteSugestaoAplicada, setFreteSugestaoAplicada] = useState(false)
+
+  // ── Tempo de Preparo (padrão do restaurante) ──
+  const [tempoPreparoPadraoMinutos, setTempoPreparoPadraoMinutos] = useState('15')
+  const [salvandoTempoPreparo, setSalvandoTempoPreparo] = useState(false)
+  const [tempoPreparoSalvo, setTempoPreparoSalvo] = useState(false)
 
   const [pausas, setPausas] = useState<Pausa[]>([])
   const [pausaTitulo, setPausaTitulo] = useState('')
@@ -220,6 +226,7 @@ export function AdminConfiguracoes() {
         setEntregadorExterno(r.data.entregadorExterno ?? false)
         setFreteTaxaBase(String(r.data.freteTaxaBase ?? 0))
         setFreteValorPorKm(String(r.data.freteValorPorKm ?? 0))
+        setTempoPreparoPadraoMinutos(String(r.data.tempoPreparoPadraoMinutos ?? 15))
       })
       .finally(() => setLoading(false))
     carregarPausas()
@@ -369,6 +376,20 @@ export function AdminConfiguracoes() {
       toast.error('Erro ao salvar o frete')
     } finally {
       setSalvandoFrete(false)
+    }
+  }
+
+  const handleSalvarTempoPreparo = async () => {
+    setSalvandoTempoPreparo(true)
+    setTempoPreparoSalvo(false)
+    try {
+      await configuracaoApi.atualizarTempoPreparo(Number(tempoPreparoPadraoMinutos))
+      setTempoPreparoSalvo(true)
+      setTimeout(() => setTempoPreparoSalvo(false), 3000)
+    } catch {
+      toast.error('Erro ao salvar o tempo de preparo')
+    } finally {
+      setSalvandoTempoPreparo(false)
     }
   }
 
@@ -1082,6 +1103,36 @@ export function AdminConfiguracoes() {
         <div className={styles.actions}>
           <Button loading={salvandoFrete} onClick={handleSalvarFrete}>Salvar Frete</Button>
           {freteSalvo && <span className={styles.success}>Salvo com sucesso!</span>}
+        </div>
+      </div>
+      )}
+
+      {aba === 'tempo-preparo' && (
+      <div className={styles.form}>
+        <div className={styles.group}>
+          <label className={styles.label}>Tempo de Preparo Padrão</label>
+          <p className={styles.hint}>
+            Usado no cronômetro do painel de Delivery pra qualquer produto que não tiver um tempo
+            próprio configurado. Cada produto pode ter seu próprio tempo (e até um tempo diferente
+            a partir de uma certa quantidade no pedido) — isso é configurado direto na tela de
+            Cardápio, ao editar o produto.
+          </p>
+          <div className={styles.comissoesGrid}>
+            <div className={styles.comissaoItem}>
+              <label className={styles.hint}>Tempo padrão (minutos)</label>
+              <input
+                className={styles.input}
+                type="number"
+                min="1"
+                value={tempoPreparoPadraoMinutos}
+                onChange={e => setTempoPreparoPadraoMinutos(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+        <div className={styles.actions}>
+          <Button loading={salvandoTempoPreparo} onClick={handleSalvarTempoPreparo}>Salvar Tempo de Preparo</Button>
+          {tempoPreparoSalvo && <span className={styles.success}>Salvo com sucesso!</span>}
         </div>
       </div>
       )}

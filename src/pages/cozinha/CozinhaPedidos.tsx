@@ -173,7 +173,8 @@ export function CozinhaPedidos() {
                 pedidosPorStatus(col.key).map(p => (
                   <Card key={p.id} className={styles.pedidoCard} padding="sm">
                     <div className={styles.pedidoTop}>
-                      <span className={styles.pedidoId}>#{p.id}</span>
+                      <span className={styles.pedidoId}>#{p.origemIfood && p.ifoodDisplayId ? p.ifoodDisplayId : p.id}</span>
+                      {p.origemIfood && <Badge variant="danger" size="sm">iFood</Badge>}
                       <span className={styles.pedidoTime}>{formatTime(p.criadoEm)}</span>
                       <button
                         className={styles.btnImprimir}
@@ -255,7 +256,7 @@ export function CozinhaPedidos() {
       <ConfirmDialog
         isOpen={!!cancelando}
         title="Cancelar pedido"
-        message={`Cancelar o pedido #${cancelando?.id}? Essa ação não pode ser desfeita.`}
+        message={`Cancelar o pedido #${cancelando?.origemIfood && cancelando?.ifoodDisplayId ? cancelando.ifoodDisplayId : cancelando?.id}? Essa ação não pode ser desfeita.`}
         confirmLabel="Cancelar Pedido"
         danger
         loading={cancelLoading}
@@ -268,7 +269,7 @@ export function CozinhaPedidos() {
           recibo de caixa (PdvSalao) e da comanda de entrega (GarconDeliveryLista). */}
       {imprimindo && (
         <div className={styles.reciboImpressao}>
-          <p className={styles.reciboCentro}>*** PEDIDO #{imprimindo.id} ***</p>
+          <p className={styles.reciboCentro}>*** PEDIDO #{imprimindo.origemIfood && imprimindo.ifoodDisplayId ? imprimindo.ifoodDisplayId : imprimindo.id} ***</p>
           <p>{imprimindo.entregaId ? 'DELIVERY' : imprimindo.mesaNumero != null ? `Mesa ${imprimindo.mesaNumero}` : ''}</p>
           {imprimindo.garconNome && <p>Garçom: {imprimindo.garconNome}</p>}
           <p>Horário: {formatTime(imprimindo.criadoEm)}</p>

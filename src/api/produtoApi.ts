@@ -11,6 +11,9 @@ interface ProdutoPayload {
   // null/ausente = não altera a imagem atual; "" explícito = remove a imagem.
   imagemBase64?: string | null
   numeroCardapio?: number
+  tempoPreparoMinutos?: number
+  tempoPreparoQuantidadeLimite?: number
+  tempoPreparoMinutosAcimaLimite?: number
 }
 
 export const produtoApi = {

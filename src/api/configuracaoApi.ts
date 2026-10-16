@@ -25,4 +25,7 @@ export const configuracaoApi = {
 
   atualizarFrete: (data: { freteTaxaBase: number; freteValorPorKm: number }) =>
     api.put<RestauranteConfig>('/api/configuracoes/frete', data),
+
+  atualizarTempoPreparo: (tempoPreparoPadraoMinutos: number) =>
+    api.put<RestauranteConfig>('/api/configuracoes/tempo-preparo', { tempoPreparoPadraoMinutos }),
 }

@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
-import { ifoodApi, type IfoodStatus, type IfoodVinculoIniciar, type IfoodVinculoStatusValor, type IfoodCatalogoSync } from '../../api/ifoodApi'
+import { useEffect, useState } from 'react'
+import { ifoodApi, type IfoodStatus, type IfoodLojaDisponivel, type IfoodCatalogoSync } from '../../api/ifoodApi'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
+import { Select } from '../../components/ui/Select'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { useToast } from '../../contexts/ToastContext'
 import styles from './AdminIfood.module.css'
@@ -14,13 +15,13 @@ function formatarData(iso?: string) {
 export function AdminIfood() {
   const [status, setStatus] = useState<IfoodStatus | null>(null)
   const [loadingStatus, setLoadingStatus] = useState(true)
+  const [escolhendoLoja, setEscolhendoLoja] = useState(false)
+  const [lojas, setLojas] = useState<IfoodLojaDisponivel[] | null>(null)
+  const [lojaEscolhida, setLojaEscolhida] = useState('')
   const [vinculando, setVinculando] = useState(false)
-  const [vinculo, setVinculo] = useState<IfoodVinculoIniciar | null>(null)
-  const [vinculoStatus, setVinculoStatus] = useState<IfoodVinculoStatusValor | null>(null)
   const [sincronizando, setSincronizando] = useState(false)
   const [ultimaSync, setUltimaSync] = useState<IfoodCatalogoSync | null>(null)
   const [confirmDesconectar, setConfirmDesconectar] = useState(false)
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const toast = useToast()
 
   const carregarStatus = async () => {
@@ -34,48 +35,44 @@ export function AdminIfood() {
 
   useEffect(() => {
     carregarStatus()
-    return () => { if (pollRef.current) clearInterval(pollRef.current) }
   }, [])
 
-  const pararPoll = () => {
-    if (pollRef.current) clearInterval(pollRef.current)
-    pollRef.current = null
-  }
-
-  const handleConectar = async () => {
-    setVinculando(true)
-    setVinculoStatus(null)
+  // Aplicação Centralizada: o dono autoriza a loja pelo Portal do Parceiro
+  // do iFood (fora daqui); esta tela só lista as lojas já autorizadas e
+  // ainda não vinculadas a nenhum restaurante, pro admin escolher a dele.
+  const handleAbrirEscolha = async () => {
+    setEscolhendoLoja(true)
+    setLojas(null)
+    setLojaEscolhida('')
     try {
-      const r = await ifoodApi.vincular()
-      setVinculo(r.data)
-      pollRef.current = setInterval(async () => {
-        try {
-          const s = await ifoodApi.vincularStatus()
-          setVinculoStatus(s.data.status)
-          if (s.data.status === 'CONECTADO') {
-            pararPoll()
-            setVinculo(null)
-            toast.success('Loja conectada ao iFood')
-            carregarStatus()
-          } else if (s.data.status === 'EXPIRADO') {
-            pararPoll()
-            toast.error('O código expirou — tente conectar de novo')
-          }
-        } catch {
-          // ignora falhas isoladas do poll, tenta de novo no próximo tick
-        }
-      }, 4000)
+      const r = await ifoodApi.lojasDisponiveis()
+      setLojas(r.data)
     } catch {
-      toast.error('Erro ao iniciar o vínculo com o iFood')
-    } finally {
-      setVinculando(false)
+      toast.error('Erro ao buscar lojas disponíveis no iFood')
+      setEscolhendoLoja(false)
     }
   }
 
   const cancelarVinculo = () => {
-    pararPoll()
-    setVinculo(null)
-    setVinculoStatus(null)
+    setEscolhendoLoja(false)
+    setLojas(null)
+    setLojaEscolhida('')
+  }
+
+  const handleVincular = async () => {
+    if (!lojaEscolhida) return
+    setVinculando(true)
+    try {
+      await ifoodApi.vincular(lojaEscolhida)
+      cancelarVinculo()
+      toast.success('Loja conectada ao iFood')
+      await carregarStatus()
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } }).response?.data?.message
+      toast.error(msg ?? 'Erro ao conectar a loja')
+    } finally {
+      setVinculando(false)
+    }
   }
 
   const handleDesconectar = async () => {
@@ -132,38 +129,44 @@ export function AdminIfood() {
           </>
         )}
 
-        {!status?.conectado && vinculo && (
+        {!status?.conectado && escolhendoLoja && (
           <div className={styles.vinculoBox}>
             <p className={styles.vinculoInstrucao}>
-              Clique no link abaixo — ele abre o site do <strong>próprio iFood</strong>, não este sistema.
-              Faça login lá com o e-mail e senha da sua conta de Parceiro iFood (não tem relação com o login
-              daqui) e informe o código abaixo quando for pedido, pra autorizar esta aplicação a acessar sua loja:
+              Antes de escolher aqui, a loja precisa já estar autorizada pra esta aplicação no{' '}
+              <strong>Portal do Parceiro do iFood</strong> (Integrações). Depois de autorizar lá, ela aparece
+              na lista abaixo.
             </p>
-            <div className={styles.vinculoCodigo}>{vinculo.userCode}</div>
-            <a
-              className={styles.vinculoLink}
-              href={vinculo.verificationUrlComplete || vinculo.verificationUrl}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Abrir painel do iFood
-            </a>
-            <p className={styles.vinculoInstrucao}>
-              Sua senha do iFood nunca passa por aqui — você digita ela só no site deles. Depois que você
-              autorizar lá, esta tela detecta automaticamente e conclui a conexão.
-            </p>
-            <p className={styles.vinculoPolling}>
-              {vinculoStatus === 'EXPIRADO'
-                ? 'Código expirado — clique em "Conectar ao iFood" pra gerar um novo.'
-                : 'Verificando automaticamente a cada 4 segundos...'}
-            </p>
-            <button className={styles.btnCancelar} onClick={cancelarVinculo}>Cancelar</button>
+            {lojas === null ? (
+              <p className={styles.vinculoPolling}>Buscando lojas autorizadas...</p>
+            ) : lojas.length === 0 ? (
+              <p className={styles.vinculoPolling}>
+                Nenhuma loja nova autorizada encontrada. Autorize esta aplicação pra sua loja no Portal do
+                Parceiro do iFood e tente de novo.
+              </p>
+            ) : (
+              <Select
+                label="Loja no iFood"
+                value={lojaEscolhida}
+                onChange={e => setLojaEscolhida(e.target.value)}
+              >
+                <option value="" disabled>Selecione...</option>
+                {lojas.map(l => (
+                  <option key={l.id} value={l.id}>{l.name}{l.corporateName ? ` — ${l.corporateName}` : ''}</option>
+                ))}
+              </Select>
+            )}
+            <div className={styles.actions}>
+              <Button loading={vinculando} onClick={handleVincular} disabled={!lojaEscolhida}>
+                Conectar esta loja
+              </Button>
+              <button className={styles.btnCancelar} onClick={cancelarVinculo}>Cancelar</button>
+            </div>
           </div>
         )}
 
         <div className={styles.actions}>
-          {!status?.conectado && !vinculo && (
-            <Button loading={vinculando} onClick={handleConectar}>Conectar ao iFood</Button>
+          {!status?.conectado && !escolhendoLoja && (
+            <Button onClick={handleAbrirEscolha}>Conectar ao iFood</Button>
           )}
           {status?.conectado && (
             <Button variant="danger" onClick={() => setConfirmDesconectar(true)}>Desconectar</Button>
@@ -175,8 +178,9 @@ export function AdminIfood() {
         <section className={styles.card}>
           <h2 className={styles.sectionTitle}>Cardápio</h2>
           <p className={styles.sectionHint}>
-            Envia categorias, produtos e combos ativos pro catálogo do iFood. Roda automaticamente a cada
-            30 minutos, ou você pode forçar agora.
+            O cardápio cadastrado aqui no Oia a Conta envia categorias, produtos e combos daqui pro iFood
+            na sincronização. O que for removido ou desativado aqui é pausado automaticamente lá. Roda a
+            cada 30 minutos, ou você pode forçar agora.
           </p>
           <div className={styles.statusRow}>
             <span className={styles.statusLabel}>Última sincronização:</span>

@@ -231,7 +231,8 @@ export function EntregadorPainel() {
                   {minhas.length > 1 && (
                     <Badge variant="primary" size="sm">{ordem}ª entrega</Badge>
                   )}
-                  <span className={styles.cardId}>Entrega #{e.id}</span>
+                  <span className={styles.cardId}>Entrega #{e.origemIfood && e.ifoodDisplayId ? e.ifoodDisplayId : e.id}</span>
+                  {e.origemIfood && <Badge variant="danger" size="sm">iFood</Badge>}
                   <button type="button" className={styles.verBtn} onClick={() => alternarExpandido(e.id)}>
                     Ver detalhes
                   </button>
@@ -245,7 +246,8 @@ export function EntregadorPainel() {
                     {minhas.length > 1 && (
                       <Badge variant="primary" size="sm">{ordem}ª entrega</Badge>
                     )}
-                    <span className={styles.cardId}>Entrega #{e.id}</span>
+                    <span className={styles.cardId}>Entrega #{e.origemIfood && e.ifoodDisplayId ? e.ifoodDisplayId : e.id}</span>
+                    {e.origemIfood && <Badge variant="danger" size="sm">iFood</Badge>}
                     <Badge variant={e.status === 'SAIU_PARA_ENTREGA' ? 'warning' : e.status === 'PRONTO_PARA_ENTREGA' ? 'success' : 'info'} size="sm">
                       {STATUS_LABEL[e.status]}
                     </Badge>
@@ -315,7 +317,8 @@ export function EntregadorPainel() {
           aguardando.map(e => (
             <Card key={e.id} className={styles.card}>
               <div className={styles.cardHeader}>
-                <span className={styles.cardId}>Entrega #{e.id}</span>
+                <span className={styles.cardId}>Entrega #{e.origemIfood && e.ifoodDisplayId ? e.ifoodDisplayId : e.id}</span>
+                {e.origemIfood && <Badge variant="danger" size="sm">iFood</Badge>}
                 <Badge variant="info" size="sm">Disponível</Badge>
                 <span className={styles.cardTime}>{formatDateTime(e.criadoEm)}</span>
               </div>

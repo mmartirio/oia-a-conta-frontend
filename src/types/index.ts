@@ -70,6 +70,7 @@ export interface Produto {
   id: number
   nome: string
   descricao?: string
+  // Por unidade (padrão) ou por quilo — ver tipoPreco.
   preco: number
   // Ausente/UNIDADE em produtos já existentes — preco é por unidade. Em
   // PESO, preco é por kg e a quantidade no pedido vira peso (ver ItemPedido).
@@ -79,6 +80,9 @@ export interface Produto {
   ativo: boolean
   categoriaId: number
   restauranteId: number
+  tempoPreparoMinutos?: number | null
+  tempoPreparoQuantidadeLimite?: number | null
+  tempoPreparoMinutosAcimaLimite?: number | null
 }
 
 export interface Cliente {
@@ -209,6 +213,7 @@ export interface ItemPedido {
   // Só em produto por VOLUME — volume vendido em mililitros (quantidade fica 1).
   volumeMililitros?: number | null
   precoUnitario: number
+  subtotal?: number
   observacao?: string
   comboId?: number
   comboNome?: string
@@ -225,6 +230,8 @@ export interface Pedido {
   total: number
   observacao?: string
   criadoEm: string
+  origemIfood?: boolean
+  ifoodDisplayId?: string
 }
 
 export interface Comanda {
@@ -296,6 +303,7 @@ export interface RestauranteConfig {
   freteTaxaBase?: number
   freteValorPorKm?: number
   entregadorExterno?: boolean
+  tempoPreparoPadraoMinutos?: number
 }
 
 export interface DadosEmpresa {
@@ -353,6 +361,8 @@ export interface ItemEntrega {
   volumeMililitros?: number | null
   precoUnitario: number
   observacao?: string
+  comboId?: number | null
+  comboNome?: string | null
 }
 
 export interface Entrega {
@@ -374,6 +384,8 @@ export interface Entrega {
   entregadorId?: number
   origemWhatsapp?: boolean
   origemIfood?: boolean
+  ifoodOrderId?: string
+  ifoodDisplayId?: string
   pagamentoConfirmadoCaixa?: boolean
   pagamentoPixValidado?: boolean
   // Pago online no cardápio (Mercado Pago do restaurante).
@@ -381,6 +393,7 @@ export interface Entrega {
   pagamentoOnlineStatus?: string | null
   criadoEm: string
   entregueEm?: string | null
+  prontoEm?: string | null
   latitude?: number | null
   longitude?: number | null
   localizacaoAtualizadaEm?: string | null

@@ -2,16 +2,18 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { entregaApi } from '../../api/entregaApi'
 import { configuracaoApi } from '../../api/configuracaoApi'
+import { produtoApi } from '../../api/produtoApi'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
+import { Modal } from '../../components/ui/Modal'
 import { Pagination } from '../../components/ui/Pagination'
 import { useToast } from '../../contexts/ToastContext'
 import { useNotification } from '../../contexts/NotificationContext'
 import { formatCurrency, formatDateTime, METODO_PAGAMENTO_LABEL } from '../../utils/formatters'
 import { formatarPeso, subtotalItem } from '../../utils/pesoItem'
 import { formatarVolume } from '../../utils/volumeItem'
-import type { Entrega, MetodoPagamento } from '../../types'
+import type { Entrega, MetodoPagamento, Produto } from '../../types'
 import styles from './GarconDeliveryLista.module.css'
 
 type StatusAtivo = 'AGUARDANDO' | 'CONFIRMADA' | 'ACEITA' | 'PRONTO_PARA_ENTREGA' | 'SAIU_PARA_ENTREGA'
@@ -43,6 +45,28 @@ const ACOES_ENTREGADOR_EXTERNO: Partial<Record<StatusAtivo, { label: string; fn:
   PRONTO_PARA_ENTREGA:  { label: 'Entregar ao entregador',   fn: (id) => entregaApi.saiu(id).then(() => entregaApi.entregar(id)) },
 }
 
+// Tempo de preparo esperado pra uma entrega (minutos) — o maior entre os
+// itens dela (a cozinha prepara em paralelo, então o que trava o pedido é o
+// item mais demorado, não a soma de todos). Cada item usa: a regra "acima do
+// limite" se a quantidade bater, senão o tempo próprio do produto, senão o
+// padrão do restaurante. Item avulso/sem produto cadastrado (produtoId -1,
+// ex: item de teste do iFood) sempre cai no padrão.
+function calcularTempoPrevistoMinutos(entrega: Entrega, produtosPorId: Map<number, Produto>, padraoMinutos: number): number {
+  let maior = 0
+  for (const item of entrega.itens) {
+    const produto = item.produtoId > 0 ? produtosPorId.get(item.produtoId) : undefined
+    let minutos = padraoMinutos
+    if (produto) {
+      const temRegraLimite = produto.tempoPreparoQuantidadeLimite != null && produto.tempoPreparoMinutosAcimaLimite != null
+      minutos = temRegraLimite && item.quantidade >= produto.tempoPreparoQuantidadeLimite!
+        ? produto.tempoPreparoMinutosAcimaLimite!
+        : (produto.tempoPreparoMinutos ?? padraoMinutos)
+    }
+    if (minutos > maior) maior = minutos
+  }
+  return maior || padraoMinutos
+}
+
 export function GarconDeliveryLista() {
   const navigate = useNavigate()
 
@@ -51,18 +75,30 @@ export function GarconDeliveryLista() {
   const [atualizando, setAtualizando] = useState<number | null>(null)
   const [verEntregues, setVerEntregues] = useState(false)
   const [verCancelados, setVerCancelados] = useState(false)
+  const [expandidosHistorico, setExpandidosHistorico] = useState<Set<number>>(new Set())
   const [confirmCancelar, setConfirmCancelar] = useState<number | null>(null)
+  const [detalhesAbertoId, setDetalhesAbertoId] = useState<number | null>(null)
   const [imprimindo, setImprimindo] = useState<Entrega | null>(null)
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const prevIdsRef = useRef<Set<number>>(new Set())
   const [entregadorExterno, setEntregadorExterno] = useState(false)
+  const [tempoPreparoPadraoMinutos, setTempoPreparoPadraoMinutos] = useState(15)
+  const [produtosPorId, setProdutosPorId] = useState<Map<number, Produto>>(new Map())
   const toast = useToast()
   const { confirmarPedidoPendente, rejeitarPedidoPendente } = useNotification()
   const acoes = entregadorExterno ? ACOES_ENTREGADOR_EXTERNO : ACOES
 
   useEffect(() => {
-    configuracaoApi.get().then(r => setEntregadorExterno(!!r.data.entregadorExterno)).catch(() => {})
+    configuracaoApi.get().then(r => {
+      setEntregadorExterno(!!r.data.entregadorExterno)
+      setTempoPreparoPadraoMinutos(r.data.tempoPreparoPadraoMinutos ?? 15)
+    }).catch(() => {})
+    // incluirInativos: um produto desativado depois de já ter pedidos em
+    // aberto ainda precisa aparecer aqui pro cronômetro calcular certo.
+    produtoApi.listar(undefined, true).then(r => {
+      setProdutosPorId(new Map(r.data.map(p => [p.id, p])))
+    }).catch(() => {})
   }, [])
 
   const load = useCallback(async (paginaAlvo = page) => {
@@ -144,6 +180,15 @@ export function GarconDeliveryLista() {
     setTimeout(() => window.print(), 50)
   }
 
+  const alternarExpandidoHistorico = (id: number) => {
+    setExpandidosHistorico(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
   const cancelar = async () => {
     if (confirmCancelar === null) return
     const id = confirmCancelar
@@ -192,66 +237,32 @@ export function GarconDeliveryLista() {
                 {cards.map(e => (
                   <div
                     key={e.id}
-                    className={`${styles.card} ${e.origemWhatsapp ? styles.cardWpp : ''}`}
+                    className={`${styles.card} ${e.origemWhatsapp ? styles.cardWpp : ''} ${e.origemIfood ? styles.cardIfood : ''}`}
                     style={{ borderTopColor: col.cor }}
                   >
                     <div className={styles.cardTop}>
-                      <span className={styles.cardId}>#{e.id}</span>
+                      <span className={styles.cardId}>#{e.origemIfood && e.ifoodDisplayId ? e.ifoodDisplayId : e.id}</span>
                       {e.origemWhatsapp && (
                         <span className={styles.wppBadge}>WhatsApp</span>
                       )}
-                      <span className={styles.cardTime}>{formatDateTime(e.criadoEm)}</span>
+                      {e.origemIfood && (
+                        <span className={styles.ifoodBadge}>iFood</span>
+                      )}
+                      {e.origemIfood && (
+                        <CronometroPedido
+                          entrega={e}
+                          tempoPrevistoMinutos={calcularTempoPrevistoMinutos(e, produtosPorId, tempoPreparoPadraoMinutos)}
+                        />
+                      )}
                     </div>
 
-                    <p className={styles.cardCliente}>{e.clienteNome}</p>
-                    {e.clienteTelefone && (
-                      <p className={styles.cardTel}>{e.clienteTelefone}</p>
-                    )}
-
-                    <p className={styles.cardEndereco}>
-                      {e.enderecoRua}
-                      {e.enderecoNumero ? `, ${e.enderecoNumero}` : ''}
-                      {e.enderecoBairro ? ` — ${e.enderecoBairro}` : ''}
-                      {e.enderecoCidade ? `, ${e.enderecoCidade}` : ''}
-                    </p>
-
-                    <p className={styles.cardPagamento}>
-                      💳 {METODO_PAGAMENTO_LABEL[e.metodoPagamento as MetodoPagamento] ?? e.metodoPagamento}
-                      {e.pagamentoOnline ? (
-                        e.pagamentoOnlineStatus === 'refunded' ? ' — estornado' : ' — ✓ pago online'
-                      ) : e.metodoPagamento === 'PIX' && (
-                        e.pagamentoPixValidado
-                          ? ' — ✓ pago'
-                          : ' — pagamento não validado'
-                      )}
-                    </p>
-
-                    {e.entregadorNome && (
-                      <p className={styles.cardEntregador}>🏍️ {e.entregadorNome}</p>
-                    )}
-
-                    <div className={styles.cardFooter}>
-                      <span className={styles.cardTotal}>{formatCurrency(e.total)}</span>
-                      <div className={styles.cardAcoes}>
-                        <a
-                          className={styles.mapsLink}
-                          href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
-                            [e.enderecoRua, e.enderecoNumero, e.enderecoBairro, e.enderecoCidade]
-                              .filter(Boolean).join(', ')
-                          )}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          title="Abrir no Maps"
-                        >
-                          Maps
-                        </a>
-                        <button
-                          className={styles.btnImprimir}
-                          onClick={() => imprimirComanda(e)}
-                          title="Imprimir comanda de entrega"
-                        >
-                          🖨️
-                        </button>
+                    <div className={styles.cardAcoes}>
+                      <button
+                        className={styles.btnDetalhes}
+                        onClick={() => setDetalhesAbertoId(e.id)}
+                      >
+                        Detalhes
+                      </button>
                         {e.status === 'AGUARDANDO' ? (
                           <>
                             {e.metodoPagamento === 'PIX' && !e.pagamentoPixValidado ? (
@@ -311,7 +322,6 @@ export function GarconDeliveryLista() {
                             ✕
                           </button>
                         )}
-                      </div>
                     </div>
                   </div>
                 ))}
@@ -333,14 +343,24 @@ export function GarconDeliveryLista() {
           {verEntregues && (
             <div className={styles.entreguesList}>
               {entregues.map(e => (
-                <div key={e.id} className={styles.entregueRow}>
-                  <span className={styles.entregueId}>#{e.id}</span>
-                  <span className={styles.entregueCliente}>{e.clienteNome}</span>
-                  <span className={styles.entregueEndereco}>
-                    {e.enderecoRua}{e.enderecoNumero ? `, ${e.enderecoNumero}` : ''}
-                  </span>
-                  <Badge variant="success" size="sm">Entregue</Badge>
-                  <span className={styles.entregueTotal}>{formatCurrency(e.total)}</span>
+                <div key={e.id} className={styles.entregueGrupo}>
+                  <div
+                    className={`${styles.entregueRow} ${styles.entregueRowExpandivel}`}
+                    onClick={() => alternarExpandidoHistorico(e.id)}
+                  >
+                    <span className={styles.entregueExpandirIcone}>{expandidosHistorico.has(e.id) ? '▾' : '▸'}</span>
+                    <span className={styles.entregueId}>#{e.origemIfood && e.ifoodDisplayId ? e.ifoodDisplayId : e.id}</span>
+                    {e.origemIfood && <Badge variant="danger" size="sm">iFood</Badge>}
+                    <span className={styles.entregueCliente}>{e.clienteNome}</span>
+                    <span className={styles.entregueEndereco}>
+                      {e.enderecoRua}{e.enderecoNumero ? `, ${e.enderecoNumero}` : ''}
+                    </span>
+                    <Badge variant="success" size="sm">Entregue</Badge>
+                    <span className={styles.entregueTotal}>{formatCurrency(e.total)}</span>
+                  </div>
+                  {expandidosHistorico.has(e.id) && (
+                    <DetalhesHistorico entrega={e} />
+                  )}
                 </div>
               ))}
             </div>
@@ -359,15 +379,25 @@ export function GarconDeliveryLista() {
           {verCancelados && (
             <div className={styles.entreguesList}>
               {cancelados.map(e => (
-                <div key={e.id} className={styles.entregueRow}>
-                  <span className={styles.entregueId}>#{e.id}</span>
-                  <span className={styles.entregueCliente}>{e.clienteNome}</span>
-                  <span className={styles.entregueEndereco}>
-                    {e.enderecoRua}{e.enderecoNumero ? `, ${e.enderecoNumero}` : ''}
-                    {e.motivoRejeicao && ` — ${e.motivoRejeicao}`}
-                  </span>
-                  <Badge variant="danger" size="sm">Cancelada</Badge>
-                  <span className={styles.entregueTotal}>{formatCurrency(e.total)}</span>
+                <div key={e.id} className={styles.entregueGrupo}>
+                  <div
+                    className={`${styles.entregueRow} ${styles.entregueRowExpandivel}`}
+                    onClick={() => alternarExpandidoHistorico(e.id)}
+                  >
+                    <span className={styles.entregueExpandirIcone}>{expandidosHistorico.has(e.id) ? '▾' : '▸'}</span>
+                    <span className={styles.entregueId}>#{e.origemIfood && e.ifoodDisplayId ? e.ifoodDisplayId : e.id}</span>
+                    {e.origemIfood && <Badge variant="danger" size="sm">iFood</Badge>}
+                    <span className={styles.entregueCliente}>{e.clienteNome}</span>
+                    <span className={styles.entregueEndereco}>
+                      {e.enderecoRua}{e.enderecoNumero ? `, ${e.enderecoNumero}` : ''}
+                      {e.motivoRejeicao && ` — ${e.motivoRejeicao}`}
+                    </span>
+                    <Badge variant="danger" size="sm">Cancelada</Badge>
+                    <span className={styles.entregueTotal}>{formatCurrency(e.total)}</span>
+                  </div>
+                  {expandidosHistorico.has(e.id) && (
+                    <DetalhesHistorico entrega={e} />
+                  )}
                 </div>
               ))}
             </div>
@@ -393,6 +423,20 @@ export function GarconDeliveryLista() {
         onConfirm={cancelar}
         onCancel={() => setConfirmCancelar(null)}
       />
+
+      {detalhesAbertoId !== null && (() => {
+        const e = entregas.find(x => x.id === detalhesAbertoId)
+        if (!e) return null
+        return (
+          <Modal
+            isOpen
+            onClose={() => setDetalhesAbertoId(null)}
+            title={`Pedido #${e.origemIfood && e.ifoodDisplayId ? e.ifoodDisplayId : e.id}`}
+          >
+            <DetalhesPedido entrega={e} onImprimir={() => imprimirComanda(e)} />
+          </Modal>
+        )
+      })()}
 
       {/* Comanda de entrega — escondida na tela, só some a visibilidade em
           @media print (ver GarconDeliveryLista.module.css), mesma técnica
@@ -433,6 +477,163 @@ export function GarconDeliveryLista() {
           <p className={styles.reciboCentro}>Volte sempre :)</p>
         </div>
       )}
+    </div>
+  )
+}
+
+// Painel de detalhes ao expandir uma linha do histórico (Concluídas/
+// Cancelados) — mesmas infos que o card ativo já mostra (telefone, itens,
+// pagamento, entregador), só que compacto, já que aqui é só consulta.
+function DetalhesHistorico({ entrega: e }: { entrega: Entrega }) {
+  return (
+    <div className={styles.entregueDetalhes} onClick={ev => ev.stopPropagation()}>
+      {e.clienteTelefone && (
+        <p className={styles.entregueDetalheLinha}><strong>Telefone:</strong> {e.clienteTelefone}</p>
+      )}
+      <p className={styles.entregueDetalheLinha}>
+        <strong>Endereço:</strong> {e.enderecoRua}
+        {e.enderecoNumero ? `, ${e.enderecoNumero}` : ''}
+        {e.enderecoBairro ? ` — ${e.enderecoBairro}` : ''}
+        {e.enderecoCidade ? `, ${e.enderecoCidade}` : ''}
+        {e.enderecoComplemento ? ` (${e.enderecoComplemento})` : ''}
+      </p>
+      <p className={styles.entregueDetalheLinha}>
+        <strong>Pagamento:</strong> {METODO_PAGAMENTO_LABEL[e.metodoPagamento as MetodoPagamento] ?? e.metodoPagamento}
+      </p>
+      {e.entregadorNome && (
+        <p className={styles.entregueDetalheLinha}><strong>Entregador:</strong> {e.entregadorNome}</p>
+      )}
+      {e.observacao && (
+        <p className={styles.entregueDetalheLinha}><strong>Observação:</strong> {e.observacao}</p>
+      )}
+      {e.motivoRejeicao && (
+        <p className={styles.entregueDetalheLinha}><strong>Motivo do cancelamento:</strong> {e.motivoRejeicao}</p>
+      )}
+      {e.origemIfood && e.ifoodOrderId && (
+        <p className={styles.entregueDetalheLinha}><strong>Pedido iFood:</strong> {e.ifoodOrderId}</p>
+      )}
+      <p className={styles.entregueDetalheLinha}>
+        <strong>Criado em:</strong> {formatDateTime(e.criadoEm)}
+        {e.entregueEm && <> · <strong>Entregue em:</strong> {formatDateTime(e.entregueEm)}</>}
+      </p>
+      <ul className={styles.entregueDetalheItens}>
+        {e.itens.map(item => (
+          <li key={item.id}>
+            {item.pesoGramas != null ? formatarPeso(item.pesoGramas) : item.volumeMililitros != null ? formatarVolume(item.volumeMililitros) : `${item.quantidade}×`} {item.produtoNome}
+            {item.comboNome && ` (${item.comboNome})`}
+            <span className={styles.entregueDetalheItemPreco}>{formatCurrency(subtotalItem(item.precoUnitario, item.quantidade, item.pesoGramas, item.volumeMililitros))}</span>
+          </li>
+        ))}
+      </ul>
+      {!!e.valorFrete && (
+        <p className={styles.entregueDetalheLinha}><strong>Frete:</strong> {formatCurrency(e.valorFrete)}</p>
+      )}
+    </div>
+  )
+}
+
+// Cronômetro do card ativo, só pra pedidos iFood: conta o tempo de preparo
+// (desde que o pedido chegou) até clicar em "Pronto", quando reinicia do
+// zero e passa a contar o tempo de entrega (desde prontoEm) até "Entregue".
+// Usa os timestamps persistidos (criadoEm/prontoEm), não um cronômetro só
+// de memória — senão recarregar a página perderia a contagem certa.
+function CronometroPedido({ entrega: e, tempoPrevistoMinutos }: { entrega: Entrega; tempoPrevistoMinutos: number }) {
+  const [, tick] = useState(0)
+
+  useEffect(() => {
+    const t = setInterval(() => tick(n => n + 1), 1000)
+    return () => clearInterval(t)
+  }, [])
+
+  const emPreparo = e.status === 'AGUARDANDO' || e.status === 'CONFIRMADA' || e.status === 'ACEITA'
+  const inicio = emPreparo ? e.criadoEm : e.prontoEm
+  if (!inicio) return null
+
+  const segundos = Math.max(0, Math.floor((Date.now() - new Date(inicio).getTime()) / 1000))
+  const h = Math.floor(segundos / 3600)
+  const m = Math.floor((segundos % 3600) / 60)
+  const s = segundos % 60
+  const texto = h > 0
+    ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+    : `${m}:${String(s).padStart(2, '0')}`
+
+  // Só o tempo de preparo tem meta configurada (produto/padrão) — o tempo de
+  // entrega não tem esse conceito hoje, então nunca fica "atrasado" visualmente.
+  const atrasado = emPreparo && segundos > tempoPrevistoMinutos * 60
+
+  return (
+    <span
+      className={`${styles.cronometro} ${emPreparo ? styles.cronometroPreparo : styles.cronometroEntrega} ${atrasado ? styles.cronometroAtrasado : ''}`}
+      title={emPreparo ? `Tempo de preparo (previsto: ${tempoPrevistoMinutos} min)` : 'Tempo de entrega'}
+    >
+      {emPreparo ? '🍳' : '🏍️'} {texto}
+    </span>
+  )
+}
+
+// Conteúdo do modal "Detalhes" do card ativo — os dados que antes ficavam
+// direto no card (cliente, endereço, pagamento, entregador, itens, total)
+// mais os atalhos de Maps/imprimir que também saíram do card.
+function DetalhesPedido({ entrega: e, onImprimir }: { entrega: Entrega; onImprimir: () => void }) {
+  return (
+    <div className={styles.modalDetalhes}>
+      <p className={styles.entregueDetalheLinha}><strong>Cliente:</strong> {e.clienteNome}</p>
+      {e.clienteTelefone && (
+        <p className={styles.entregueDetalheLinha}><strong>Telefone:</strong> {e.clienteTelefone}</p>
+      )}
+      <p className={styles.entregueDetalheLinha}>
+        <strong>Endereço:</strong> {e.enderecoRua}
+        {e.enderecoNumero ? `, ${e.enderecoNumero}` : ''}
+        {e.enderecoBairro ? ` — ${e.enderecoBairro}` : ''}
+        {e.enderecoCidade ? `, ${e.enderecoCidade}` : ''}
+        {e.enderecoComplemento ? ` (${e.enderecoComplemento})` : ''}
+      </p>
+      <p className={styles.entregueDetalheLinha}>
+        <strong>Pagamento:</strong> {METODO_PAGAMENTO_LABEL[e.metodoPagamento as MetodoPagamento] ?? e.metodoPagamento}
+        {e.pagamentoOnline
+          ? (e.pagamentoOnlineStatus === 'refunded' ? ' — estornado' : ' — ✓ pago online')
+          : e.metodoPagamento === 'PIX' && (e.pagamentoPixValidado ? ' — ✓ pago' : ' — pagamento não validado')}
+      </p>
+      {e.entregadorNome && (
+        <p className={styles.entregueDetalheLinha}><strong>Entregador:</strong> {e.entregadorNome}</p>
+      )}
+      {e.observacao && (
+        <p className={styles.entregueDetalheLinha}><strong>Observação:</strong> {e.observacao}</p>
+      )}
+      {e.origemIfood && e.ifoodOrderId && (
+        <p className={styles.entregueDetalheLinha}><strong>Pedido iFood:</strong> {e.ifoodOrderId}</p>
+      )}
+      <p className={styles.entregueDetalheLinha}><strong>Recebido em:</strong> {formatDateTime(e.criadoEm)}</p>
+
+      <ul className={styles.entregueDetalheItens}>
+        {e.itens.map(item => (
+          <li key={item.id}>
+            {item.pesoGramas != null ? formatarPeso(item.pesoGramas) : item.volumeMililitros != null ? formatarVolume(item.volumeMililitros) : `${item.quantidade}×`} {item.produtoNome}
+            {item.comboNome && ` (${item.comboNome})`}
+            <span className={styles.entregueDetalheItemPreco}>{formatCurrency(subtotalItem(item.precoUnitario, item.quantidade, item.pesoGramas, item.volumeMililitros))}</span>
+          </li>
+        ))}
+      </ul>
+      {!!e.valorFrete && (
+        <p className={styles.entregueDetalheLinha}><strong>Frete:</strong> {formatCurrency(e.valorFrete)}</p>
+      )}
+      <p className={styles.modalDetalhesTotal}><strong>Total:</strong> {formatCurrency(e.total)}</p>
+
+      <div className={styles.modalDetalhesAcoes}>
+        <a
+          className={styles.mapsLink}
+          href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+            [e.enderecoRua, e.enderecoNumero, e.enderecoBairro, e.enderecoCidade].filter(Boolean).join(', ')
+          )}`}
+          target="_blank"
+          rel="noreferrer"
+        >
+          Abrir no Maps
+        </a>
+        <button className={styles.btnImprimirModal} onClick={onImprimir} title="Imprimir comanda" aria-label="Imprimir comanda">
+          🖨️
+        </button>
+      </div>
     </div>
   )
 }

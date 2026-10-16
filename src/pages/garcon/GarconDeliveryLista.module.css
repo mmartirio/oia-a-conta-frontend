@@ -66,11 +66,43 @@
 .card:last-child { border-bottom: none; }
 .card:hover { background: var(--color-surface); }
 .cardWpp { border-left-color: #25d366; }
+.cardIfood { border-left-color: #ea1d2c; }
 
 .cardTop { display: flex; align-items: center; gap: 0.5rem; }
 .cardId { font-weight: 800; font-size: 1rem; color: var(--color-text); }
 .wppBadge { font-size: 0.6875rem; font-weight: 700; background: #dcfce7; color: #166534; padding: 0.125rem 0.4rem; border-radius: 999px; }
+.ifoodBadge { font-size: 0.6875rem; font-weight: 700; background: #fde2e2; color: #ea1d2c; padding: 0.125rem 0.4rem; border-radius: 999px; }
 .cardTime { font-size: 0.8125rem; color: var(--color-text-secondary); margin-left: auto; }
+
+.cronometro {
+  margin-left: auto;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+}
+.cronometroPreparo { background: #fef3c7; color: #92400e; }
+.cronometroEntrega { background: #dbeafe; color: #1e40af; }
+.cronometroAtrasado { background: #fee2e2; color: #b91c1c; animation: pulseAtrasado 1.5s ease-in-out infinite; }
+
+@keyframes pulseAtrasado {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.btnDetalhes {
+  padding: 0.3rem 0.625rem;
+  border: 1.5px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btnDetalhes:hover { background: var(--color-bg); }
 
 .cardCliente { font-size: 1.0625rem; font-weight: 700; color: var(--color-text); margin: 0; }
 .cardTel { font-size: 0.875rem; color: var(--color-text-secondary); margin: 0; }
@@ -210,6 +242,44 @@
 .entregueCliente { font-weight: 600; flex: 1; min-width: 120px; }
 .entregueEndereco { color: var(--color-text-secondary); flex: 2; min-width: 160px; }
 .entregueTotal { font-weight: 700; margin-left: auto; }
+
+.entregueRowExpandivel { cursor: pointer; }
+.entregueRowExpandivel:hover { background: var(--color-bg); }
+.entregueExpandirIcone { color: var(--color-text-secondary); width: 1rem; text-align: center; flex-shrink: 0; }
+
+.entregueDetalhes {
+  padding: 0.75rem 1rem 1rem 2.75rem;
+  border-top: 1px dashed var(--color-border);
+  background: var(--color-bg);
+  font-size: 0.8125rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  cursor: default;
+}
+.entregueDetalheLinha { color: var(--color-text); margin: 0; }
+.entregueDetalheItens { list-style: none; margin: 0.25rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.125rem; }
+.entregueDetalheItens li { display: flex; justify-content: space-between; gap: 0.5rem; color: var(--color-text-secondary); }
+.entregueDetalheItemPreco { font-weight: 600; color: var(--color-text); }
+
+/* ── Modal "Detalhes" (card ativo) ── */
+.modalDetalhes { display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.9375rem; }
+.modalDetalhesTotal { margin: 0.25rem 0 0; font-size: 1.0625rem; color: var(--color-text); }
+.modalDetalhesAcoes { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; }
+
+.btnImprimirModal {
+  width: 40px; height: 40px;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  font-size: 1.125rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.btnImprimirModal:hover { background: var(--color-bg); border-color: var(--color-primary); }
+.btnImprimirModal:active { transform: scale(0.94); }
 
 /* ── Responsivo ── */
 @media (max-width: 900px) {

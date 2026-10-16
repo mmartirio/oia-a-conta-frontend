@@ -117,8 +117,17 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       .catch(() => {})
   }
 
+  // Se a ação falhar (ex: pedido já saiu de AGUARDANDO por outro caminho —
+  // cancelamento pelo iFood, auto-rejeição por prazo em outra aba, etc.),
+  // resincroniza a lista com o servidor em vez de deixar o pedido preso aqui
+  // pra sempre com o alerta tocando sem parar e cada clique batendo 400.
   const confirmarPedidoPendente = async (id: number) => {
-    await entregaApi.confirmar(id)
+    try {
+      await entregaApi.confirmar(id)
+    } catch (err) {
+      carregarPedidosPendentes()
+      throw err
+    }
     pararAlertaPedidoCliente()
     setPedidosPendentes(prev => prev.filter(e => e.id !== id))
   }
@@ -127,13 +136,23 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   // (ver EntregaService.validarPagamentoPix), por isso sai da lista de
   // pendentes igual ao confirmar normal.
   const validarPagamentoPixPendente = async (id: number) => {
-    await entregaApi.validarPix(id)
+    try {
+      await entregaApi.validarPix(id)
+    } catch (err) {
+      carregarPedidosPendentes()
+      throw err
+    }
     pararAlertaPedidoCliente()
     setPedidosPendentes(prev => prev.filter(e => e.id !== id))
   }
 
   const rejeitarPedidoPendente = async (id: number, motivo: string) => {
-    await entregaApi.rejeitar(id, motivo)
+    try {
+      await entregaApi.rejeitar(id, motivo)
+    } catch (err) {
+      carregarPedidosPendentes()
+      throw err
+    }
     pararAlertaPedidoCliente()
     setPedidosPendentes(prev => prev.filter(e => e.id !== id))
   }
@@ -277,7 +296,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         autoRejeitandoRef.current.add(p.id)
         entregaApi.rejeitar(p.id, JUSTIFICATIVA_AUTO_REJEITAR)
           .then(() => setPedidosPendentes(prev => prev.filter(e => e.id !== p.id)))
-          .catch(() => {})
+          .catch(() => carregarPedidosPendentes())
           .finally(() => autoRejeitandoRef.current.delete(p.id))
       })
     }, VERIFICACAO_PRAZO_MS)

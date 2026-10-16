@@ -6,7 +6,6 @@ import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Modal } from '../../components/ui/Modal'
 import { Switch } from '../../components/ui/Switch'
-import { Select } from '../../components/ui/Select'
 import { Card } from '../../components/ui/Card'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { useToast } from '../../contexts/ToastContext'
@@ -57,6 +56,12 @@ interface ProdForm {
   imagemBase64: string | null
   // "" = produto não aparece no cardápio numerado do WhatsApp.
   numeroCardapio: string
+  // "" = usa o tempo padrão do restaurante (ver Configurações).
+  tempoPreparoMinutos: string
+  // Os dois seguintes juntos ou os dois vazios — regra "a partir de X
+  // unidades, usa Y minutos em vez do normal".
+  tempoPreparoQuantidadeLimite: string
+  tempoPreparoMinutosAcimaLimite: string
 }
 
 export function AdminCardapio() {
@@ -66,7 +71,6 @@ export function AdminCardapio() {
   const [produtos, setProdutos] = useState<Produto[]>([])
   const [filtroCategoria, setFiltroCategoria] = useState<number | undefined>()
   const [visualizacaoProd, setVisualizacaoProd] = useState<'grade' | 'lista'>('lista')
-  const [ordemProd, setOrdemProd] = useState<OrdemProduto>('numero')
 
   const [catModal, setCatModal] = useState(false)
   const [editCat, setEditCat] = useState<Categoria | null>(null)
@@ -76,7 +80,7 @@ export function AdminCardapio() {
 
   const [prodModal, setProdModal] = useState(false)
   const [editProd, setEditProd] = useState<Produto | null>(null)
-  const [prodForm, setProdForm] = useState<ProdForm>({ nome: '', descricao: '', preco: '', tipoPreco: 'UNIDADE', categoriaId: '', imagemBase64: null, numeroCardapio: '' })
+  const [prodForm, setProdForm] = useState<ProdForm>({ nome: '', descricao: '', preco: '', tipoPreco: 'UNIDADE', categoriaId: '', imagemBase64: null, numeroCardapio: '', tempoPreparoMinutos: '', tempoPreparoQuantidadeLimite: '', tempoPreparoMinutosAcimaLimite: '' })
   const [savingProd, setSavingProd] = useState(false)
   const [prodError, setProdError] = useState('')
 
@@ -185,7 +189,7 @@ export function AdminCardapio() {
   const openCreateProd = () => {
     setEditProd(null)
     const categoriaPadrao = categorias.find(c => c.ativo) ?? categorias[0]
-    setProdForm({ nome: '', descricao: '', preco: '', tipoPreco: 'UNIDADE', categoriaId: String(categoriaPadrao?.id ?? ''), imagemBase64: null, numeroCardapio: '' })
+    setProdForm({ nome: '', descricao: '', preco: '', tipoPreco: 'UNIDADE', categoriaId: String(categoriaPadrao?.id ?? ''), imagemBase64: null, numeroCardapio: '', tempoPreparoMinutos: '', tempoPreparoQuantidadeLimite: '', tempoPreparoMinutosAcimaLimite: '' })
     setProdError('')
     setProdModal(true)
   }
@@ -199,7 +203,10 @@ export function AdminCardapio() {
       tipoPreco: p.tipoPreco ?? 'UNIDADE',
       categoriaId: String(p.categoriaId),
       imagemBase64: p.imagemBase64 ?? null,
-      numeroCardapio: p.numeroCardapio != null ? String(p.numeroCardapio) : ''
+      numeroCardapio: p.numeroCardapio != null ? String(p.numeroCardapio) : '',
+      tempoPreparoMinutos: p.tempoPreparoMinutos != null ? String(p.tempoPreparoMinutos) : '',
+      tempoPreparoQuantidadeLimite: p.tempoPreparoQuantidadeLimite != null ? String(p.tempoPreparoQuantidadeLimite) : '',
+      tempoPreparoMinutosAcimaLimite: p.tempoPreparoMinutosAcimaLimite != null ? String(p.tempoPreparoMinutosAcimaLimite) : ''
     })
     setProdError('')
     setProdModal(true)
@@ -233,7 +240,10 @@ export function AdminCardapio() {
         tipoPreco: prodForm.tipoPreco,
         categoriaId: Number(prodForm.categoriaId),
         imagemBase64: prodForm.imagemBase64,
-        numeroCardapio: prodForm.numeroCardapio.trim() ? Number(prodForm.numeroCardapio) : undefined
+        numeroCardapio: prodForm.numeroCardapio.trim() ? Number(prodForm.numeroCardapio) : undefined,
+        tempoPreparoMinutos: prodForm.tempoPreparoMinutos.trim() ? Number(prodForm.tempoPreparoMinutos) : undefined,
+        tempoPreparoQuantidadeLimite: prodForm.tempoPreparoQuantidadeLimite.trim() ? Number(prodForm.tempoPreparoQuantidadeLimite) : undefined,
+        tempoPreparoMinutosAcimaLimite: prodForm.tempoPreparoMinutosAcimaLimite.trim() ? Number(prodForm.tempoPreparoMinutosAcimaLimite) : undefined
       }
       if (editProd) {
         await produtoApi.atualizar(editProd.id, payload)
@@ -324,18 +334,6 @@ export function AdminCardapio() {
               ))}
             </div>
             <div className={styles.toolbarRight}>
-              <Select
-                className={styles.ordenarSelect}
-                value={ordemProd}
-                onChange={e => setOrdemProd(e.target.value as OrdemProduto)}
-                aria-label="Ordenar produtos por"
-                title="Ordenar por"
-              >
-                <option value="numero">Nº WhatsApp</option>
-                <option value="nome">Nome</option>
-                <option value="preco">Preço</option>
-                <option value="recente">Recentes</option>
-              </Select>
               <div className={styles.viewToggle}>
                 <button
                   type="button"
@@ -362,7 +360,7 @@ export function AdminCardapio() {
 
           {visualizacaoProd === 'grade' ? (
             <div className={styles.prodGrid}>
-              {ordenarProdutos(produtos, ordemProd).map(p => (
+              {ordenarProdutos(produtos, 'numero').map(p => (
                 <Card key={p.id} className={styles.prodCard}>
                   <div className={styles.prodHeader}>
                     <div className={styles.prodHeaderLeft}>
@@ -402,7 +400,7 @@ export function AdminCardapio() {
             </div>
           ) : (
             <div className={styles.prodList}>
-              {ordenarProdutos(produtos, ordemProd).map(p => (
+              {ordenarProdutos(produtos, 'numero').map(p => (
                 <Card key={p.id} className={styles.prodListRow}>
                   {p.imagemBase64
                     ? <img src={p.imagemBase64} alt={p.nome} className={styles.prodListThumb} />
@@ -588,6 +586,37 @@ export function AdminCardapio() {
           <p className={styles.hint}>
             Número que o cliente digita no WhatsApp pra pedir esse produto (bate com a imagem do cardápio numerado enviada pelo bot). Deixe em branco se ele não aparece nessa imagem.
           </p>
+
+          <Input
+            label="Tempo de preparo (minutos, opcional)"
+            type="number"
+            min="1"
+            value={prodForm.tempoPreparoMinutos}
+            onChange={e => setProdForm(f => ({ ...f, tempoPreparoMinutos: e.target.value }))}
+            placeholder="Deixe em branco pra usar o tempo padrão"
+          />
+          <div className={styles.formRow}>
+            <Input
+              label="A partir de quantas unidades (opcional)"
+              type="number"
+              min="2"
+              value={prodForm.tempoPreparoQuantidadeLimite}
+              onChange={e => setProdForm(f => ({ ...f, tempoPreparoQuantidadeLimite: e.target.value }))}
+              placeholder="Ex: 5"
+            />
+            <Input
+              label="Novo tempo de preparo (minutos)"
+              type="number"
+              min="1"
+              value={prodForm.tempoPreparoMinutosAcimaLimite}
+              onChange={e => setProdForm(f => ({ ...f, tempoPreparoMinutosAcimaLimite: e.target.value }))}
+              placeholder="Ex: 25"
+            />
+          </div>
+          <p className={styles.hint}>
+            Preencha os dois campos acima só se o tempo de preparo aumentar a partir de uma certa quantidade no pedido (ex: até 4 unidades = tempo normal, 5 ou mais = tempo maior).
+          </p>
+
           <div className={styles.formRow}>
             <div className={styles.formField}>
               <label className={styles.label} htmlFor="prod-tipo-preco">Vendido por</label>

@@ -8,17 +8,10 @@ export interface IfoodStatus {
   catalogoSincronizadoEm?: string
 }
 
-export interface IfoodVinculoIniciar {
-  userCode: string
-  verificationUrl: string
-  verificationUrlComplete: string
-  expiresIn: number
-}
-
-export type IfoodVinculoStatusValor = 'NAO_INICIADO' | 'AGUARDANDO_AUTORIZACAO' | 'CONECTADO' | 'EXPIRADO'
-
-export interface IfoodVinculoStatus {
-  status: IfoodVinculoStatusValor
+export interface IfoodLojaDisponivel {
+  id: string
+  name: string
+  corporateName?: string
 }
 
 export interface IfoodCatalogoSync {
@@ -32,11 +25,13 @@ export const ifoodApi = {
   status: () =>
     api.get<IfoodStatus>('/api/ifood/admin/status'),
 
-  vincular: () =>
-    api.post<IfoodVinculoIniciar>('/api/ifood/admin/vincular'),
+  // Lojas já autorizadas pra esta aplicação no iFood (pelo Portal do
+  // Parceiro) e ainda não vinculadas a nenhum restaurante daqui.
+  lojasDisponiveis: () =>
+    api.get<IfoodLojaDisponivel[]>('/api/ifood/admin/lojas-disponiveis'),
 
-  vincularStatus: () =>
-    api.get<IfoodVinculoStatus>('/api/ifood/admin/vincular/status'),
+  vincular: (merchantId: string) =>
+    api.post<void>('/api/ifood/admin/vincular', { merchantId }),
 
   desconectar: () =>
     api.delete('/api/ifood/admin/desconectar'),
