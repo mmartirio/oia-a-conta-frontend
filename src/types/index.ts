@@ -129,6 +129,9 @@ export interface Estoque {
   quantidadeMinima: number
   controlado: boolean
   abaixoDoMinimo: boolean
+  // Custo médio ponderado das entradas com custo — null se nunca informado.
+  custoMedio?: number | null
+  valorEmEstoque?: number | null
 }
 
 export type TipoDesconto = 'PERCENTUAL' | 'FIXO'
@@ -199,6 +202,9 @@ export interface MovimentacaoEstoque {
   quantidadeResultante: number
   motivo?: string
   referenciaExterna?: string
+  // Só ENTRADA com custo informado (compra de insumo).
+  custoUnitario?: number | null
+  valorTotal?: number | null
   criadoPorNome?: string
   criadoEm: string
 }

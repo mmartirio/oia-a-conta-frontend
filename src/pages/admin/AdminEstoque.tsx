@@ -27,6 +27,8 @@ export function AdminEstoque() {
   const [movTipo, setMovTipo] = useState<TipoMovimentacaoEstoque>('ENTRADA')
   const [movQuantidade, setMovQuantidade] = useState('')
   const [movMotivo, setMovMotivo] = useState('')
+  // Custo por unidade da compra (só ENTRADA) — alimenta a aba Insumos do Financeiro.
+  const [movCusto, setMovCusto] = useState('')
   const [movSaving, setMovSaving] = useState(false)
   const [movError, setMovError] = useState('')
 
@@ -77,6 +79,7 @@ export function AdminEstoque() {
     setMovTipo('ENTRADA')
     setMovQuantidade('')
     setMovMotivo('')
+    setMovCusto('')
     setMovError('')
   }
 
@@ -91,7 +94,13 @@ export function AdminEstoque() {
     setMovError('')
     setMovSaving(true)
     try {
-      await estoqueApi.movimentar(movModal.produtoId, { tipo: movTipo, quantidade, motivo: movMotivo || undefined })
+      const custo = movTipo === 'ENTRADA' && movCusto.trim() !== '' ? Number(movCusto.replace(',', '.')) : undefined
+      if (custo !== undefined && (Number.isNaN(custo) || custo < 0)) {
+        setMovError('Custo inválido')
+        setMovSaving(false)
+        return
+      }
+      await estoqueApi.movimentar(movModal.produtoId, { tipo: movTipo, quantidade, motivo: movMotivo || undefined, custoUnitario: custo })
       setMovModal(null)
       load()
     } catch (err: unknown) {
@@ -124,6 +133,11 @@ export function AdminEstoque() {
               <span className={styles.rowNome}>{item.produtoNome}</span>
               <span className={styles.rowSaldo}>
                 Saldo: {item.controlado ? item.quantidade : '—'}
+                {item.controlado && item.valorEmEstoque != null && (
+                  <span className={styles.historicoMotivo}>
+                    {' '}· valor {item.valorEmEstoque.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </span>
+                )}
                 {item.abaixoDoMinimo && (
                   <Badge variant="danger" size="sm">Estoque baixo</Badge>
                 )}
@@ -203,6 +217,24 @@ export function AdminEstoque() {
             onChange={e => setMovQuantidade(e.target.value)}
             required
           />
+          {movTipo === 'ENTRADA' && (
+            <div>
+              <Input
+                label="Custo unitário (R$, opcional)"
+                type="number"
+                min={0}
+                step="0.01"
+                value={movCusto}
+                onChange={e => setMovCusto(e.target.value)}
+                placeholder="Quanto pagou por unidade"
+              />
+              <span className={styles.historicoMotivo}>
+                {movCusto && movQuantidade
+                  ? `Total da compra: ${(Number(movCusto.replace(',', '.')) * Number(movQuantidade)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} — entra no Financeiro › Insumos`
+                  : 'Informe para a compra aparecer no Financeiro › Insumos.'}
+              </span>
+            </div>
+          )}
           <Input
             label="Motivo (opcional)"
             value={movMotivo}
@@ -224,6 +256,11 @@ export function AdminEstoque() {
             <div key={m.id} className={styles.historicoRow}>
               <div className={styles.historicoInfo}>
                 <span>{TIPO_LABEL[m.tipo]} {m.quantidade > 0 ? `+${m.quantidade}` : m.quantidade} (saldo: {m.quantidadeResultante})</span>
+                {m.valorTotal != null && (
+                  <span className={styles.historicoMotivo}>
+                    Compra: {m.quantidade} × {Number(m.custoUnitario).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} = {m.valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </span>
+                )}
                 {m.motivo && <span className={styles.historicoMotivo}>{m.motivo}</span>}
                 <span className={styles.historicoData}>
                   {new Date(m.criadoEm).toLocaleString('pt-BR')}{m.criadoPorNome ? ` · ${m.criadoPorNome}` : ''}

@@ -11,7 +11,7 @@ export const estoqueApi = {
   configurar: (produtoId: number, data: { quantidadeMinima: number; controlado: boolean }) =>
     api.put<Estoque>(`/api/estoque/${produtoId}/config`, data),
 
-  movimentar: (produtoId: number, data: { tipo: TipoMovimentacaoEstoque; quantidade: number; motivo?: string }) =>
+  movimentar: (produtoId: number, data: { tipo: TipoMovimentacaoEstoque; quantidade: number; motivo?: string; custoUnitario?: number }) =>
     api.post<Estoque>(`/api/estoque/${produtoId}/movimentar`, data),
 
   listarMovimentacoes: (produtoId: number, page = 0, size = 20) =>
